@@ -1,6 +1,6 @@
 # 🎓 Order Flow & Market Structure Masterclass
 
-Welcome to the **Liquidity Pulse 3.6 Order Flow & Market Structure Masterclass**. This guide is designed for intermediate traders who have basic chart knowledge (candlesticks, support/resistance) but are new to **Order Flow**, **Auction Market Theory**, **Volume Profiles**, and **Liquidity Sweeps**.
+Welcome to the **Liquidity-Pulse Order Flow & Market Structure Masterclass**. This guide is designed for intermediate traders who have basic chart knowledge (candlesticks, support/resistance) but are new to **Order Flow**, **Auction Market Theory**, **Volume Profiles**, and **Liquidity Sweeps**.
 
 ---
 
@@ -123,7 +123,7 @@ When price hits a liquidation threshold, the exchange forcibly closes the positi
 When price moves rapidly:
 $$\text{Price Drop} \rightarrow \text{Long Liquidations} \rightarrow \text{Market Sells} \rightarrow \text{Further Price Drop} \rightarrow \text{Next Liquidation Tier}$$
 
-Liquidity Pulse 3.6 monitors `@forceOrder` streams over a **3-minute sliding window**:
+Liquidity-Pulse monitors `@forceOrder` streams over a **3-minute sliding window**:
 > [!WARNING]
 > When liquidation volume exceeds **$5,000,000 USD** in 3 minutes, market liquidity becomes temporarily depleted, creating sharp price wicks and high-probability mean-reversion bounce opportunities.
 
@@ -131,7 +131,7 @@ Liquidity Pulse 3.6 monitors `@forceOrder` streams over a **3-minute sliding win
 
 ## Module 6: Pine Script Horizontal S/R Density Clustering
 
-Liquidity Pulse 3.6 calculates support and resistance using quantitative Pine Script pivot logic rather than subjective human drawing.
+Liquidity-Pulse calculates support and resistance using quantitative Pine Script pivot logic rather than subjective human drawing.
 
 ### 6.1 Pivot Detection Math
 

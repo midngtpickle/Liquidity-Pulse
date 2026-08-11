@@ -1,5 +1,5 @@
 """
-Liquidity Pulse 3.6 - Dashboard Web Server
+Liquidity-Pulse - Dashboard Web Server
 
 Serves static web files from web/ and provides REST API endpoints for
 telemetry data, session briefing markdown, and pipeline refresh triggers.
@@ -45,7 +45,7 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
         elif path == "/api/briefing":
             self.handle_briefing_api()
         elif path == "/api/health":
-            self.send_json_response({"status": "healthy", "service": "LiquidityPulse3.6"})
+            self.send_json_response({"status": "healthy", "service": "LiquidityPulse"})
         else:
             # Fallback to standard static file handler
             super().do_GET()
@@ -106,7 +106,7 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
 def run_server(port: int = 8080):
     server_address = ("", port)
     httpd = HTTPServer(server_address, DashboardHTTPRequestHandler)
-    logger.info(f"⚡ Liquidity Pulse 3.6 Dashboard Web Server running on http://localhost:{port}")
+    logger.info(f"⚡ Liquidity-Pulse Dashboard Web Server running on http://localhost:{port}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

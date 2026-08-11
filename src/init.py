@@ -1,4 +1,4 @@
 """
-Liquidity Pulse 3.6 - Source Package
+Liquidity-Pulse - Source Package
 """
-__version__ = "3.6.0"
+__version__ = "1.0.0"

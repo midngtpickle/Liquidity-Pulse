@@ -1,5 +1,5 @@
 """
-Liquidity Pulse 3.6 - Real-time WebSocket Feed Client
+Liquidity-Pulse - Real-time WebSocket Feed Client
 
 Connects to Binance WebSocket streams for $BTC depth (@depth20@100ms) and
 liquidations (@forceOrder). Calculates bid/ask depth imbalance deltas across

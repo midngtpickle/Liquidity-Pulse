@@ -1,5 +1,5 @@
 """
-Liquidity Pulse 3.6 - Historical S/R Backtesting Engine
+Liquidity-Pulse - Historical S/R Backtesting Engine
 
 Simulates historical price tests against calculated Pine S/R clusters over 1,000+
 klines to benchmark bounce accuracy %, win rate, and conviction tier precision.
@@ -171,7 +171,7 @@ class SRBacktester:
         Prints formatted backtest summary report to console.
         """
         print("\n" + "=" * 70)
-        print("LIQUIDITY PULSE 3.6 - S/R BACKTEST BENCHMARK REPORT")
+        print("LIQUIDITY-PULSE - S/R BACKTEST BENCHMARK REPORT")
         print("=" * 70)
         print(f"Symbol:                {results['symbol']}")
         print(f"Train Dataset:         {results['train_candles']} candles")

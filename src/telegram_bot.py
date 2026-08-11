@@ -1,5 +1,5 @@
 """
-Liquidity Pulse 3.6 - Telegram Bot Alert Dispatcher
+Liquidity-Pulse - Telegram Bot Alert Dispatcher
 
 Dispatches structured Telegram alerts for session briefings and real-time
 liquidation cascades (> $5M) via Telegram Bot API.
@@ -68,7 +68,7 @@ class TelegramAlertDispatcher:
         res_text = "\n".join([f"  • <b>${r['price']:,.2f}</b> ({r['conviction']} - {r['touch_count']} touches)" for r in resistances])
 
         msg = (
-            f"🟢 <b>LIQUIDITY PULSE 3.6 — SESSION BRIEFING</b>\n\n"
+            f"🟢 <b>LIQUIDITY-PULSE — SESSION BRIEFING</b>\n\n"
             f"<b>Active Session:</b> {session_name}\n"
             f"<b>Symbol:</b> $BTCUSDT\n"
             f"<b>Current Price:</b> <code>${price:,.2f}</code>\n"

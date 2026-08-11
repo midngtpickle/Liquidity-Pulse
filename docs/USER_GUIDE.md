@@ -1,12 +1,12 @@
-# 📘 Liquidity Pulse 3.6 — User Operational Guide
+# 📘 Liquidity-Pulse — User Operational Guide
 
-Welcome to the **Liquidity Pulse 3.6 User Operational Guide**. This guide explains how to operate, configure, and monitor your autonomous $BTC market liquidity intelligence harness.
+Welcome to the **Liquidity-Pulse User Operational Guide**. This guide explains how to operate, configure, and monitor your autonomous $BTC market liquidity intelligence harness.
 
 ---
 
 ## 📐 1. Component & Architecture Overview
 
-Liquidity Pulse 3.6 operates using a **Sentinel & Subagent Architecture**:
+Liquidity-Pulse operates using a **Sentinel & Subagent Architecture**:
 
 ```
                          ┌─────────────────────────────┐
@@ -36,7 +36,7 @@ Liquidity Pulse 3.6 operates using a **Sentinel & Subagent Architecture**:
 
 ## 💻 Standalone Windows Operating & Startup Guide (No Antigravity Required)
 
-If you are running Liquidity Pulse 3.6 natively on a Windows computer outside of the Antigravity IDE, follow these instructions.
+If you are running Liquidity-Pulse natively on a Windows computer outside of the Antigravity IDE, follow these instructions.
 
 ### Option A: One-Click Automatic Startup (`start_all.bat`)
 The project includes a pre-configured Windows launcher batch script that automates virtual environment creation, dependency installation, pipeline execution, web server startup, and browser launch.

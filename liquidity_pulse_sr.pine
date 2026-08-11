@@ -1,5 +1,5 @@
 //@version=5
-indicator("Liquidity Pulse 3.6 - S/R Clusters & VPOC", shorttitle="LiquidityPulse 3.6", overlay=true, max_lines_count=100, max_labels_count=100)
+indicator("Liquidity-Pulse - S/R Clusters & VPOC", shorttitle="LiquidityPulse", overlay=true, max_lines_count=100, max_labels_count=100)
 
 // ============================================================================
 // INPUT PARAMETERS

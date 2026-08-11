@@ -1,7 +1,7 @@
 @echo off
-TITLE Liquidity Pulse 3.6 - Autonomous Launcher
+TITLE Liquidity-Pulse - Autonomous Launcher
 echo ================================================================
-echo      LIQUIDITY PULSE 3.6 - WINDOWS STANDALONE LAUNCHER
+echo      LIQUIDITY-PULSE - WINDOWS STANDALONE LAUNCHER
 echo ================================================================
 echo.
 

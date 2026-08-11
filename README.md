@@ -1,6 +1,6 @@
-# 🌊 Liquidity Pulse 3.6 — Autonomous $BTC Market & Liquidity Intelligence Harness
+# 🌊 Liquidity-Pulse — Autonomous $BTC Market & Liquidity Intelligence Harness
 
-**Liquidity Pulse 3.6** is an institutional-grade, multi-agent market structure and liquidity monitoring system powered by **Gemini 3.6** and built on the **Antigravity Harness Framework**.
+**Liquidity-Pulse** is an institutional-grade, multi-agent market structure and liquidity monitoring system built on the **Antigravity Harness Framework**.
 
 ---
 

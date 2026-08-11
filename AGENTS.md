@@ -1,6 +1,6 @@
-# Liquidity Pulse 3.6 — Multi-Agent Harness Manifest
+# Liquidity-Pulse — Multi-Agent Harness Manifest
 
-System Architecture for **Liquidity Pulse 3.6**: Autonomous $BTC market liquidity monitoring and session intelligence agent cluster powered by Gemini 3.6.
+System Architecture for **Liquidity-Pulse**: Autonomous $BTC market liquidity monitoring and session intelligence agent cluster.
 
 ---
 

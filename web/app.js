@@ -1,5 +1,5 @@
 /**
- * Liquidity Pulse 3.6 — Dashboard Frontend Logic
+ * Liquidity-Pulse — Dashboard Frontend Logic
  */
 
 document.addEventListener("DOMContentLoaded", () => {

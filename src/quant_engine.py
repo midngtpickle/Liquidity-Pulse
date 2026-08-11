@@ -1,5 +1,5 @@
 """
-Liquidity Pulse 3.6 - Quantitative Telemetry Engine
+Liquidity-Pulse - Quantitative Telemetry Engine
 
 Fetches 15m $BTC market data from public REST endpoints, calculates Pine Script-style
 Pivot High/Low Support & Resistance clusters, volume profile metrics, and exports
@@ -65,7 +65,7 @@ class QuantEngine:
         """
         Fetches kline/candlestick data with fallback handling.
         """
-        headers = {"User-Agent": "LiquidityPulse/3.6"}
+        headers = {"User-Agent": "LiquidityPulse/1.0"}
         
         # Primary: Binance REST
         try:
