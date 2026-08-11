@@ -1,0 +1,77 @@
+{
+  "symbol": "BTCUSDT",
+  "backtest_time_utc": "2026-08-11T10:28:46.953976+00:00",
+  "train_candles": 500,
+  "test_candles": 500,
+  "levels_evaluated": 6,
+  "total_level_tests": 133,
+  "successful_bounces": 18,
+  "breakthroughs": 115,
+  "overall_win_rate_pct": 13.53,
+  "high_conviction_stats": {
+    "tests": 133,
+    "bounces": 18,
+    "win_rate_pct": 13.53
+  },
+  "medium_conviction_stats": {
+    "tests": 0,
+    "bounces": 0,
+    "win_rate_pct": 0.0
+  },
+  "level_details": [
+    {
+      "price": 65025.22,
+      "type": "RESISTANCE",
+      "conviction": "HIGH",
+      "tests": 83,
+      "bounces": 8,
+      "breakthroughs": 75,
+      "win_rate_pct": 9.64
+    },
+    {
+      "price": 64473.95,
+      "type": "SUPPORT",
+      "conviction": "HIGH",
+      "tests": 30,
+      "bounces": 7,
+      "breakthroughs": 23,
+      "win_rate_pct": 23.33
+    },
+    {
+      "price": 63953.7,
+      "type": "SUPPORT",
+      "conviction": "HIGH",
+      "tests": 20,
+      "bounces": 3,
+      "breakthroughs": 17,
+      "win_rate_pct": 15.0
+    },
+    {
+      "price": 63523.33,
+      "type": "SUPPORT",
+      "conviction": "HIGH",
+      "tests": 0,
+      "bounces": 0,
+      "breakthroughs": 0,
+      "win_rate_pct": 0.0
+    },
+    {
+      "price": 63049.39,
+      "type": "SUPPORT",
+      "conviction": "HIGH",
+      "tests": 0,
+      "bounces": 0,
+      "breakthroughs": 0,
+      "win_rate_pct": 0.0
+    },
+    {
+      "price": 62340.09,
+      "type": "SUPPORT",
+      "conviction": "HIGH",
+      "tests": 0,
+      "bounces": 0,
+      "breakthroughs": 0,
+      "win_rate_pct": 0.0
+    }
+  ]
+}

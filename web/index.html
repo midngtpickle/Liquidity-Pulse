@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liquidity Pulse 3.6 — Institutional BTC Intelligence</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Chart.js & Marked.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="logo-icon">
+          <i class="fa-solid fa-bolt-lightning"></i>
+        </div>
+        <div class="brand-text">
+          <h1>Liquidity Pulse <span class="version-tag">v3.6</span></h1>
+          <span class="sub-text">Autonomous $BTC Market & Session Intelligence Harness</span>
+        </div>
+      </div>
+
+      <div class="header-metrics">
+        <div class="metric-pill">
+          <span class="label">SYMBOL</span>
+          <span class="val symbol-val">BTCUSDT</span>
+        </div>
+        <div class="metric-pill price-pill">
+          <span class="label">MID PRICE</span>
+          <span class="val price-val" id="header-price">$0.00</span>
+        </div>
+        <div class="metric-pill session-pill">
+          <span class="label">SESSION</span>
+          <span class="val session-val" id="header-session"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-primary" id="btn-refresh" title="Trigger Quant Engine Refresh">
+          <i class="fa-solid fa-rotate-right"></i> Refresh Telemetry
+        </button>
+        <div class="live-indicator">
+          <span class="pulse-dot"></span>
+          <span class="live-text">LIVE FEED</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Stats Row -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">24H RANGE</span>
+          <i class="fa-solid fa-chart-line stat-icon text-cyan"></i>
+        </div>
+        <div class="stat-value" id="stat-24h-range">---</div>
+        <div class="stat-footer text-muted" id="stat-24h-vol">24h Vol: ---</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">VPOC (FAIR VALUE)</span>
+          <i class="fa-solid fa-bullseye stat-icon text-gold"></i>
+        </div>
+        <div class="stat-value text-gold" id="stat-vpoc">$0.00</div>
+        <div class="stat-footer text-muted">Point of Control</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">HIGH CONVICTION S/R</span>
+          <i class="fa-solid fa-fire stat-icon text-fire"></i>
+        </div>
+        <div class="stat-value text-fire" id="stat-high-conviction">0</div>
+        <div class="stat-footer text-muted">Touch Frequency ≥ 3</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">MARKET BIAS</span>
+          <i class="fa-solid fa-compass stat-icon text-green"></i>
+        </div>
+        <div class="stat-value" id="stat-bias">NEUTRAL</div>
+        <div class="stat-footer text-muted" id="stat-bias-sub">Relative to VPOC</div>
+      </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-body">
+      <!-- Left Column: S/R Clusters & Depth Delta -->
+      <div class="left-col">
+        <!-- Pine S/R Clusters Heatmap Card -->
+        <div class="card card-sr">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-layer-group icon-gradient"></i> Pine Horizontal S/R Clusters
+            </div>
+            <div class="filter-group">
+              <button class="filter-btn active" data-filter="all">All</button>
+              <button class="filter-btn" data-filter="SUPPORT">Supports</button>
+              <button class="filter-btn" data-filter="RESISTANCE">Resistances</button>
+              <button class="filter-btn" data-filter="HIGH">High Conviction</button>
+            </div>
+          </div>
+          <div class="card-body no-padding">
+            <div class="table-responsive">
+              <table class="data-table" id="sr-table">
+                <thead>
+                  <tr>
+                    <th>Price Level</th>
+                    <th>Type</th>
+                    <th>Conviction</th>
+                    <th>Touches</th>
+                    <th>Distance %</th>
+                    <th>Volume Confluence</th>
+                  </tr>
+                </thead>
+                <tbody id="sr-table-body">
+                  <tr>
+                    <td colspan="6" class="text-center text-muted pad-20">Loading S/R Telemetry...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Liquidity Depth Delta Card -->
+        <div class="card card-depth">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-scale-unbalanced-flip icon-gradient"></i> Order Book Depth Delta Imbalance
+            </div>
+            <span class="badge badge-info">Real-time Stream</span>
+          </div>
+          <div class="card-body">
+            <div class="depth-bands-grid" id="depth-bands-container">
+              <!-- Rendered dynamically -->
+              <div class="depth-band-item">
+                <div class="band-header">
+                  <span>0.5% Depth Band</span>
+                  <span class="band-delta text-cyan">Balanced</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill bid-fill" style="width: 50%;"></div>
+                  <div class="progress-fill ask-fill" style="width: 50%;"></div>
+                </div>
+                <div class="band-footer">
+                  <span class="text-green"><i class="fa-solid fa-arrow-up"></i> Bids: $0M</span>
+                  <span class="text-red">Asks: $0M <i class="fa-solid fa-arrow-down"></i></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Volume Profile Chart & Session Briefing -->
+      <div class="right-col">
+        <!-- Volume Profile Chart Card -->
+        <div class="card card-vp">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-chart-column icon-gradient"></i> Volume Profile (500 Candles)
+            </div>
+            <div class="legend-pills">
+              <span class="legend-pill gold">VPOC</span>
+              <span class="legend-pill cyan">HVN</span>
+              <span class="legend-pill magenta">LVN</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrapper">
+              <canvas id="volumeProfileChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Session Briefing Markdown Card -->
+        <div class="card card-briefing">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-file-contract icon-gradient"></i> Institutional Session Briefing
+            </div>
+            <span class="badge badge-success" id="briefing-timestamp">Updated: ---</span>
+          </div>
+          <div class="card-body briefing-content" id="briefing-container">
+            <div class="placeholder-loading">
+              <i class="fa-solid fa-circle-notch fa-spin"></i> Loading session intelligence report...
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
+  </div>
+
+  <!-- App JavaScript -->
+  <script src="app.js"></script>
+</body>
+</html>

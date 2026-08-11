@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-08-11T10:15:48.542359+00:00",
+  "symbol": "BTCUSDT",
+  "current_price": 64244.0,
+  "high_24h": 65237.8,
+  "low_24h": 63806.27,
+  "volume_24h": 13609.45,
+  "sr_levels": [
+    {
+      "price": 64215.7,
+      "type": "SUPPORT",
+      "touch_count": 128,
+      "conviction": "HIGH",
+      "distance_pct": -0.04,
+      "volume_confluence": true
+    },
+    {
+      "price": 63851.3,
+      "type": "SUPPORT",
+      "touch_count": 57,
+      "conviction": "HIGH",
+      "distance_pct": -0.61,
+      "volume_confluence": true
+    },
+    {
+      "price": 64847.13,
+      "type": "RESISTANCE",
+      "touch_count": 291,
+      "conviction": "HIGH",
+      "distance_pct": 0.94,
+      "volume_confluence": true
+    },
+    {
+      "price": 65269.22,
+      "type": "RESISTANCE",
+      "touch_count": 146,
+      "conviction": "HIGH",
+      "distance_pct": 1.6,
+      "volume_confluence": true
+    }
+  ],
+  "volume_profile": {
+    "vpoc": 65005.9,
+    "hvn_zones": [
+      63913.03,
+      63972.1,
+      64828.67,
+      64887.75,
+      64917.28,
+      64976.36,
+      65005.9,
+      65035.43,
+      65064.97,
+      65183.12
+    ],
+    "lvn_zones": [
+      63883.49,
+      64119.79,
+      64178.86,
+      64208.4,
+      64503.77,
+      64533.31,
+      64680.99,
+      64710.53,
+      64740.06,
+      65301.26
+    ]
+  },
+  "market_summary": {
+    "total_candles_analyzed": 500,
+    "pine_pivots_found": 33,
+    "support_levels_count": 2,
+    "resistance_levels_count": 2,
+    "high_conviction_count": 4
+  }
+}
