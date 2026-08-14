@@ -1,12 +1,17 @@
 # 🌊 Liquidity-Pulse — Autonomous $BTC Market & Liquidity Intelligence Harness
 
-**Liquidity-Pulse** is an institutional-grade, multi-agent market structure and liquidity monitoring system built on the **Antigravity Harness Framework**.
+[![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![AI Harness Ready](https://img.shields.io/badge/AI%20Harness-Claude%20%7C%20Cursor%20%7C%20ChatGPT%20%7C%20OpenClaw-purple.svg)](#-multi-agent-harness--llm-integration)
+[![TradingView](https://img.shields.io/badge/TradingView-Pine%20Script%20v5-orange.svg)](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/liquidity_pulse_sr.pine)
+
+**Liquidity-Pulse** is an institutional-grade, multi-agent market structure and liquidity monitoring system built for algorithmic traders and autonomous AI agent harnesses.
 
 ---
 
 ## 🏛️ System Architecture
 
-Liquidity Pulse uses a **Sentinel & Subagent Pattern**:
+Liquidity-Pulse uses a **Sentinel & Subagent Pattern**:
 
 ```
                          ┌─────────────────────────────┐
@@ -20,7 +25,7 @@ Liquidity Pulse uses a **Sentinel & Subagent Pattern**:
 │    Quant Subagent    │                                 │    Macro Subagent    │
 │  - REST Kline Fetch  │                                 │  - Telemetry Synthesis│
 │  - Pine S/R Density  │                                 │  - Session Briefings │
-│  - Volume Profile    │                                 │  - Webhook Alerts    │
+│  - Volume Profile    │                                 │  - Discord/Telegram  │
 └──────────┬───────────┘                                 └──────────┬───────────┘
            │                                                        │
            ▼                                                        ▼
@@ -36,6 +41,9 @@ Liquidity Pulse uses a **Sentinel & Subagent Pattern**:
 ```
 Liquidity-Pulse/
 ├── AGENTS.md                          # Multi-agent roles & permissions manifest
+├── CLAUDE.md                          # Claude Code & Anthropic harness instructions
+├── .cursorrules                       # Cursor IDE & Windsurf AI rules
+├── LICENSE                            # Open-source MIT License
 ├── requirements.txt                   # Production Python dependencies
 ├── README.md                          # Framework documentation
 ├── READ.md                            # Quick summary guide
@@ -44,6 +52,7 @@ Liquidity-Pulse/
 ├── docs/
 │   ├── USER_GUIDE.md                  # Comprehensive user operational manual & API reference
 │   ├── ORDER_FLOW_MASTERCLASS.md      # Institutional Order Flow & Market Structure Masterclass
+│   ├── AGENT_INTEGRATION_GUIDE.md     # Multi-Agent & LLM Harness Integration Guide
 │   └── images/                        # Infographic diagrams
 ├── skills/
 │   └── pine_sr_calculator/
@@ -118,3 +127,34 @@ python src/ws_feed.py --duration 30
    - ▫️ **LOW / MINOR**: Isolated pivot points.
 4. **Volume Profile Analysis**: Calculates VPOC (Volume Point of Control), HVNs (High Volume Nodes), and LVNs (Low Volume Nodes).
 5. **Liquidity Cascade Alerting**: Tracks force orders over a 3-minute sliding window and alerts on $> \$5,000,000$ cascades.
+
+---
+
+## 🤖 Multi-Agent Harness & LLM Integration
+
+Liquidity-Pulse is built from the ground up for seamless operation with modern AI coding agents and autonomous frameworks:
+
+| Agent / Harness | Configuration File | How to Use |
+| :--- | :--- | :--- |
+| **Claude / Claude Code** | [`CLAUDE.md`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/CLAUDE.md) | Claude automatically reads `CLAUDE.md` to execute scripts, format briefings, and reason over telemetry. |
+| **Cursor / Windsurf** | [`.cursorrules`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/.cursorrules) | Cursor IDE loads `.cursorrules` to guide code modifications and terminal executions. |
+| **ChatGPT / OpenAI GPTs** | [`docs/AGENT_INTEGRATION_GUIDE.md`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/docs/AGENT_INTEGRATION_GUIDE.md) | Import the provided OpenAPI 3.1.0 schema into Custom GPT Actions to query `/api/telemetry` & `/api/depth`. |
+| **OpenClaw / LangChain / CrewAI** | [`docs/AGENT_INTEGRATION_GUIDE.md`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/docs/AGENT_INTEGRATION_GUIDE.md) | Use the Python `@tool` wrapper classes to query live market intelligence from your multi-agent pipelines. |
+| **Google Antigravity** | [`AGENTS.md`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/AGENTS.md) & [`skills/`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/skills/pine_sr_calculator/SKILL.md) | Native multi-agent Sentinel orchestrator with subagent delegation. |
+
+---
+
+## 🤝 Contributing & Open-Source Guidelines
+
+We welcome community contributions! To contribute:
+1. **Fork the Repository**: [https://github.com/midngtpickle/Liquidity-Pulse](https://github.com/midngtpickle/Liquidity-Pulse)
+2. **Create a Feature Branch**: `git checkout -b feat/your-feature-name`
+3. **Commit Changes**: Follow semantic commit formatting (`feat:`, `fix:`, `docs:`, `refactor:`)
+4. **Submit a Pull Request**: Provide a clear description and test verification steps.
+
+---
+
+## 📄 License
+
+This project is licensed under the **[MIT License](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/LICENSE)**. Free for personal, educational, and commercial algorithmic trading applications.
+

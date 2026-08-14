@@ -1,0 +1,30 @@
+# Liquidity-Pulse — Cursor & AI Agent Rules
+
+You are working inside the **Liquidity-Pulse** codebase, an autonomous $BTC market liquidity monitoring and session intelligence agent harness.
+
+## Project Structure & Key Files
+- `src/quant_engine.py`: Fetches 500 klines (Binance/Bybit), computes Pine pivots, 0.35% density clusters, and VPOC volume profile. Writes `workspace/telemetry_latest.json`.
+- `src/ws_feed.py`: Async WebSocket client connecting to `@depth20@100ms` and `@forceOrder`. Computes depth deltas and tracks $5M+ cascades. Writes `workspace/depth_latest.json`.
+- `src/sentinel.py`: Orchestrator that detects active session open (Asia 00:00, London 07:00, NY 13:30 UTC), executes `quant_engine.py`, generates `workspace/artifacts/SESSION_BRIEFING.md`, and dispatches Discord/Telegram alerts.
+- `src/server.py`: Concurrent ThreadingHTTPServer serving `web/` on port 8080 and exposing REST API + TradingView Webhook receiver (`POST /api/webhook/tradingview`).
+- `src/discord_webhook.py`: Dispatches color-coded Discord embed cards (Bulls Green, Bears Red, Liquidation Orange).
+- `src/telegram_bot.py`: Dispatches HTML alerts to Telegram channels.
+- `src/backtester.py`: Historical S/R backtesting and bounce accuracy benchmark script.
+- `web/`: Vanilla HTML/CSS/JS frontend dashboard with live polling, Chart.js volume profile, and Markdown briefing reader.
+- `docs/`: USER_GUIDE.md, ORDER_FLOW_MASTERCLASS.md, AGENT_INTEGRATION_GUIDE.md.
+
+## Development & Execution Commands
+- Install: `pip install -r requirements.txt`
+- Run Quant Telemetry: `python src/quant_engine.py`
+- Run Sentinel Pipeline: `python src/sentinel.py`
+- Start Dashboard Server: `python src/server.py --port 8080`
+- Start WebSocket Feed: `python src/ws_feed.py`
+- Run Backtester: `python src/backtester.py`
+- One-Click Windows: `.\start_all.bat`
+
+## Guidelines for Code Modifications
+1. Always preserve clean type hints and Pydantic schemas for data interchange.
+2. Ensure `src/server.py` uses non-blocking / threading concurrency for all endpoints.
+3. Keep REST API endpoints stateless and robust with JSON error responses.
+4. When writing documentation or briefs, adhere to institutional order flow standards (VPOC, HVN/LVN, Liquidity Sweeps, Absorption vs Exhaustion).
+5. All file paths should use `pathlib.Path` relative to project root.
