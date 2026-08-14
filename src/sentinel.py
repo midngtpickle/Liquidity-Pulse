@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from quant_engine import QuantEngine
 from telegram_bot import TelegramAlertDispatcher
+from discord_webhook import DiscordWebhookDispatcher
 
 logging.basicConfig(
     level=logging.INFO,
@@ -185,6 +186,10 @@ class SentinelOrchestrator:
         telegram = TelegramAlertDispatcher()
         session_name = self.detect_active_session()
         telegram.send_session_briefing_alert(telemetry, session_name)
+        
+        # Dispatch Discord rich embed alert
+        discord = DiscordWebhookDispatcher()
+        discord.send_session_briefing_embed(telemetry, session_name)
         
         logger.info(f"=== Sentinel Pipeline Completed Successfully ===")
         return briefing

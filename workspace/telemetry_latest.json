@@ -1,17 +1,17 @@
 {
-  "timestamp": "2026-08-14T10:32:30.510398+00:00",
+  "timestamp": "2026-08-14T10:40:20.093280+00:00",
   "symbol": "BTCUSDT",
-  "current_price": 62907.99,
+  "current_price": 62894.0,
   "high_24h": 63999.0,
   "low_24h": 62700.0,
-  "volume_24h": 11950.43,
+  "volume_24h": 12053.34,
   "sr_levels": [
     {
       "price": 62802.27,
       "type": "SUPPORT",
       "touch_count": 17,
       "conviction": "HIGH",
-      "distance_pct": -0.17,
+      "distance_pct": -0.15,
       "volume_confluence": false
     },
     {
@@ -19,7 +19,7 @@
       "type": "RESISTANCE",
       "touch_count": 176,
       "conviction": "HIGH",
-      "distance_pct": 0.87,
+      "distance_pct": 0.89,
       "volume_confluence": true
     },
     {
@@ -27,7 +27,7 @@
       "type": "RESISTANCE",
       "touch_count": 177,
       "conviction": "HIGH",
-      "distance_pct": 1.53,
+      "distance_pct": 1.55,
       "volume_confluence": true
     },
     {
@@ -35,7 +35,7 @@
       "type": "RESISTANCE",
       "touch_count": 110,
       "conviction": "HIGH",
-      "distance_pct": 2.05,
+      "distance_pct": 2.07,
       "volume_confluence": true
     },
     {
@@ -43,7 +43,7 @@
       "type": "RESISTANCE",
       "touch_count": 27,
       "conviction": "HIGH",
-      "distance_pct": 2.54,
+      "distance_pct": 2.57,
       "volume_confluence": false
     },
     {
@@ -51,7 +51,7 @@
       "type": "RESISTANCE",
       "touch_count": 86,
       "conviction": "HIGH",
-      "distance_pct": 3.1,
+      "distance_pct": 3.12,
       "volume_confluence": false
     },
     {
@@ -59,7 +59,7 @@
       "type": "RESISTANCE",
       "touch_count": 62,
       "conviction": "HIGH",
-      "distance_pct": 3.89,
+      "distance_pct": 3.92,
       "volume_confluence": false
     }
   ],
@@ -99,7 +99,7 @@
       },
       {
         "price": 62909.03,
-        "volume": 419.59,
+        "volume": 522.51,
         "tag": "NORMAL"
       },
       {

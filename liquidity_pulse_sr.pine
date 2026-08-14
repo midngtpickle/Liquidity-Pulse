@@ -116,3 +116,25 @@ if barstate.islast
              color=color.new(colorVPOC, 20), textcolor=color.black,
              style=label.style_label_left, size=size.small
              )
+
+// ============================================================================
+// TRADINGVIEW WEBHOOK ALERT CONDITIONS
+// ============================================================================
+// Detect when price crosses any high conviction level or VPOC
+bool alertSupportTouch = false
+bool alertResistanceTouch = false
+
+if array.size(pivotPrices) > 0
+    for k = 0 to math.min(array.size(pivotPrices) - 1, 10)
+        lvlP = array.get(pivotPrices, k)
+        lvlT = array.get(pivotTouches, k)
+        tolP = lvlP * clusterPct
+        if lvlT >= minTouchesHigh
+            if lvlP < close and low <= (lvlP + tolP) and low[1] > (lvlP + tolP)
+                alertSupportTouch := true
+            if lvlP > close and high >= (lvlP - tolP) and high[1] < (lvlP - tolP)
+                alertResistanceTouch := true
+
+alertcondition(alertSupportTouch, title="Liquidity-Pulse: Support Touch", message='{"symbol":"{{ticker}}","event":"SUPPORT_TOUCH","level_type":"SUPPORT","price":{{close}},"conviction":"HIGH","message":"Price tested High Conviction Support level"}')
+alertcondition(alertResistanceTouch, title="Liquidity-Pulse: Resistance Touch", message='{"symbol":"{{ticker}}","event":"RESISTANCE_TOUCH","level_type":"RESISTANCE","price":{{close}},"conviction":"HIGH","message":"Price tested High Conviction Resistance level"}')
+

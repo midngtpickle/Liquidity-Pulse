@@ -26,6 +26,7 @@ except ImportError:
     websockets = None
 
 from telegram_bot import TelegramAlertDispatcher
+from discord_webhook import DiscordWebhookDispatcher
 
 # Setup Logging
 logging.basicConfig(
@@ -159,6 +160,10 @@ class LiquidityPulseWS:
                 self.last_cascade_alert_time = now
                 telegram = TelegramAlertDispatcher()
                 telegram.send_liquidation_cascade_alert(total_cascade_usd, long_liqs, short_liqs, self.last_mid_price)
+                
+                # Dispatch Discord Embed Alert
+                discord = DiscordWebhookDispatcher()
+                discord.send_liquidation_alert_embed(total_cascade_usd, long_liqs, short_liqs, self.last_mid_price)
             else:
                 logger.info(f"Cascade alert suppressed due to active cooldown ({self.CASCADE_COOLDOWN_SECONDS}s).")
 

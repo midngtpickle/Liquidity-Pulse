@@ -34,13 +34,17 @@ Liquidity Pulse uses a **Sentinel & Subagent Pattern**:
 ## 📁 Directory & File Tree
 
 ```
-liquidity-pulse/
+Liquidity-Pulse/
 ├── AGENTS.md                          # Multi-agent roles & permissions manifest
 ├── requirements.txt                   # Production Python dependencies
 ├── README.md                          # Framework documentation
+├── READ.md                            # Quick summary guide
+├── start_all.bat                      # One-click Windows launcher script
+├── liquidity_pulse_sr.pine            # Official TradingView Pine Script v5 indicator
 ├── docs/
 │   ├── USER_GUIDE.md                  # Comprehensive user operational manual & API reference
-│   └── ORDER_FLOW_MASTERCLASS.md      # Institutional Order Flow & Market Structure Masterclass
+│   ├── ORDER_FLOW_MASTERCLASS.md      # Institutional Order Flow & Market Structure Masterclass
+│   └── images/                        # Infographic diagrams
 ├── skills/
 │   └── pine_sr_calculator/
 │       └── SKILL.md                   # Pine Script S/R & volume profile math skill
@@ -50,13 +54,19 @@ liquidity-pulse/
 │   ├── quant_engine.py                # REST data fetcher, S/R clustering & volume profile engine
 │   ├── ws_feed.py                     # Real-time WebSocket depth delta & liquidation cascade monitor
 │   ├── sentinel.py                    # Session intelligence orchestrator & briefing generator
-│   └── server.py                      # Dashboard HTTP API & static file web server
+│   ├── telegram_bot.py                # Telegram Bot API alert dispatcher
+│   ├── discord_webhook.py             # Discord Webhook rich visual embed dispatcher
+│   ├── backtester.py                  # Historical S/R backtester & accuracy benchmark
+│   └── server.py                      # Dashboard HTTP API & TradingView Webhook listener
 ├── web/
 │   ├── index.html                     # Visual web UI structure
 │   ├── styles.css                     # Dark mode quantitative glassmorphic styles
 │   └── app.js                         # Dynamic auto-polling frontend script
 └── workspace/
     ├── telemetry_latest.json          # Machine-readable market telemetry artifact
+    ├── depth_latest.json              # Live order book depth delta snapshot
+    ├── tradingview_signals.json       # Ingested TradingView alert history
+    ├── backtest_results.json          # Historical backtest benchmark results
     └── artifacts/
         ├── .gitkeep                   # Artifacts directory placeholder
         └── SESSION_BRIEFING.md        # Institutional-grade session intelligence output

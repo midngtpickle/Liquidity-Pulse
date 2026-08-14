@@ -1,0 +1,11 @@
+[
+  {
+    "symbol": "BTCUSDT",
+    "event": "SUPPORT_TOUCH",
+    "level_type": "SUPPORT",
+    "price": 62802.27,
+    "conviction": "HIGH",
+    "message": "Price tested High Conviction Support level at ,802.27",
+    "received_at": "2026-08-14T10:45:23.659183+00:00"
+  }
+]

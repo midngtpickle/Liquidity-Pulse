@@ -14,12 +14,15 @@ import threading
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
+from datetime import datetime, timezone
 
 # Add src to sys.path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from quant_engine import QuantEngine
 from sentinel import SentinelOrchestrator
+from discord_webhook import DiscordWebhookDispatcher
+from telegram_bot import TelegramAlertDispatcher
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,9 +36,11 @@ WORKSPACE_DIR = PROJECT_ROOT / "workspace"
 TELEMETRY_PATH = WORKSPACE_DIR / "telemetry_latest.json"
 DEPTH_PATH = WORKSPACE_DIR / "depth_latest.json"
 BRIEFING_PATH = WORKSPACE_DIR / "artifacts" / "SESSION_BRIEFING.md"
+SIGNALS_PATH = WORKSPACE_DIR / "tradingview_signals.json"
 
 # Mutex to ensure only one pipeline execution runs at a time
 _pipeline_lock = threading.Lock()
+_signals_lock = threading.Lock()
 ALLOWED_HOSTS = {"localhost", "127.0.0.1"}
 
 
@@ -53,6 +58,8 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
             self.handle_depth_api()
         elif path == "/api/briefing":
             self.handle_briefing_api()
+        elif path == "/api/tradingview/signals":
+            self.handle_tradingview_signals_api()
         elif path == "/api/health":
             self.send_json_response({"status": "healthy", "service": "LiquidityPulse"})
         else:
@@ -65,6 +72,8 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/refresh":
             self.handle_refresh_api()
+        elif path == "/api/webhook/tradingview":
+            self.handle_tradingview_webhook()
         else:
             self.send_error(404, "Endpoint not found")
 
@@ -141,6 +150,95 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
             {"status": "accepted", "message": "Telemetry & briefing refresh initiated."},
             status=202
         )
+
+    def handle_tradingview_webhook(self):
+        """
+        Receives webhook alerts from TradingView Pine Script, persists signal,
+        and broadcasts alerts to Discord & Telegram.
+        """
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            if content_length == 0:
+                self.send_json_response({"error": "Empty payload received"}, status=400)
+                return
+
+            body_bytes = self.rfile.read(content_length)
+            payload_str = body_bytes.decode("utf-8")
+            
+            try:
+                signal_data = json.loads(payload_str)
+            except json.JSONDecodeError:
+                # Handle plain text messages by wrapping into structured payload
+                signal_data = {
+                    "event": "CUSTOM_ALERT",
+                    "symbol": "BTCUSDT",
+                    "message": payload_str,
+                    "level_type": "NEUTRAL",
+                    "price": 0.0,
+                    "conviction": "MEDIUM"
+                }
+
+            # Stamp receive timestamp
+            signal_data["received_at"] = datetime.now(timezone.utc).isoformat()
+
+            logger.info(f"TradingView Webhook Alert received: {signal_data.get('event')} | {signal_data.get('message')}")
+
+            # Append to persistent signals file
+            with _signals_lock:
+                signals = []
+                if SIGNALS_PATH.exists():
+                    try:
+                        with open(SIGNALS_PATH, "r", encoding="utf-8") as f:
+                            signals = json.load(f)
+                    except Exception:
+                        signals = []
+                signals.append(signal_data)
+                # Keep last 100 signals
+                signals = signals[-100:]
+                with open(SIGNALS_PATH, "w", encoding="utf-8") as f:
+                    json.dump(signals, f, indent=2)
+
+            # Broadcast to Discord Webhook
+            discord = DiscordWebhookDispatcher()
+            discord.send_tradingview_signal_embed(signal_data)
+
+            # Broadcast to Telegram Bot
+            telegram = TelegramAlertDispatcher()
+            msg = (
+                f"🔔 <b>TradingView Alert ({signal_data.get('symbol', 'BTCUSDT')})</b>\n\n"
+                f"<b>Event:</b> <code>{signal_data.get('event')}</code>\n"
+                f"<b>Message:</b> {signal_data.get('message')}\n"
+                f"<b>Price:</b> <code>${signal_data.get('price', 0.0):,.2f}</code>\n"
+                f"<b>Conviction:</b> <code>{signal_data.get('conviction', 'HIGH')}</code>\n"
+                f"<b>Time:</b> {signal_data.get('received_at')}"
+            )
+            telegram.send_message(msg, parse_mode="HTML")
+
+            self.send_json_response({
+                "status": "success",
+                "message": "TradingView signal processed and dispatched.",
+                "signal": signal_data
+            }, status=200)
+
+        except Exception as err:
+            logger.error(f"Error handling TradingView webhook: {err}")
+            self.send_json_response({"error": str(err)}, status=500)
+
+    def handle_tradingview_signals_api(self):
+        """
+        Returns recent TradingView signal history.
+        """
+        if not SIGNALS_PATH.exists():
+            self.send_json_response({"signals": []}, status=200)
+            return
+        try:
+            with _signals_lock:
+                with open(SIGNALS_PATH, "r", encoding="utf-8") as f:
+                    signals = json.load(f)
+            self.send_json_response({"signals": signals}, status=200)
+        except Exception as err:
+            logger.error(f"Error reading signal history: {err}")
+            self.send_json_response({"error": str(err)}, status=500)
 
     def send_json_response(self, payload: dict, status: int = 200):
         body = json.dumps(payload).encode("utf-8")

@@ -168,13 +168,68 @@ The dashboard web server exposes REST API endpoints for integration:
 | Endpoint | Method | Description |
 | :--- | :--- | :--- |
 | `GET /api/telemetry` | `GET` | Returns machine-readable market telemetry JSON (`telemetry_latest.json`) |
+| `GET /api/depth` | `GET` | Returns real-time depth delta and band metrics (`depth_latest.json`) |
 | `GET /api/briefing` | `GET` | Returns latest session briefing markdown content (`SESSION_BRIEFING.md`) |
 | `POST /api/refresh` | `POST` | Triggers `QuantEngine` and updates telemetry & briefing on demand |
+| `POST /api/webhook/tradingview` | `POST` | Ingests TradingView alert webhook signals and broadcasts to Discord/Telegram |
+| `GET /api/tradingview/signals` | `GET` | Returns historical list of received TradingView alert signals |
 | `GET /api/health` | `GET` | Health check endpoint returning `{"status": "healthy"}` |
 
 ---
 
-## ⏰ 5. Automated Session Schedule & Daemons
+## 📲 6. Discord & Telegram Alert Setup
+
+### Discord Webhook Configuration
+1. Open your Discord server -> Channel Settings -> Integrations -> **Webhooks**.
+2. Click **New Webhook**, copy the Webhook URL.
+3. Set environment variable:
+   ```bash
+   # Windows PowerShell
+   $env:DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/your/webhook/url"
+   
+   # Windows CMD
+   set DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/your/webhook/url
+   ```
+4. **Dispatches**:
+   - 🟢 Color-coded Session Briefing Cards (Bulls in Green, Bears in Red) with VPOC, S/R tables, and clickable dashboard links.
+   - 🚨 High-urgency **$5M+ Liquidation Cascade Alert Embeds**.
+
+### Telegram Bot Configuration
+1. Create a bot with `@BotFather` on Telegram to get your `TELEGRAM_BOT_TOKEN`.
+2. Get your channel or user `TELEGRAM_CHAT_ID`.
+3. Set environment variables:
+   ```bash
+   $env:TELEGRAM_BOT_TOKEN="your_token_here"
+   $env:TELEGRAM_CHAT_ID="your_chat_id_here"
+   ```
+
+---
+
+## 📈 7. TradingView Webhook Integration
+
+Connect your TradingView charts directly into the Liquidity-Pulse server:
+
+1. In TradingView, add the **[`liquidity_pulse_sr.pine`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/liquidity_pulse_sr.pine)** indicator script.
+2. Click **Create Alert** on the indicator.
+3. In the alert settings:
+   - **Condition**: Select `Liquidity-Pulse: Support Touch` or `Liquidity-Pulse: Resistance Touch`.
+   - **Webhook URL**: Check the Webhook URL box and enter `http://your-server-ip:8080/api/webhook/tradingview` (or your ngrok / public URL).
+   - **Message**: Enter JSON payload:
+     ```json
+     {
+       "symbol": "{{ticker}}",
+       "event": "SUPPORT_TOUCH",
+       "level_type": "SUPPORT",
+       "price": {{close}},
+       "conviction": "HIGH",
+       "message": "High conviction support test on TradingView"
+     }
+     ```
+4. When triggered, the server receives the alert, saves it to `workspace/tradingview_signals.json`, and automatically relays rich embeds to your Discord channel and Telegram chat!
+
+---
+
+## ⏰ 8. Automated Session Schedule & Daemons
 
 To run the framework continuously in the background:
 - **WebSocket Daemon**: Runs `ws_feed.py` with automatic reconnection logic to capture liquidation cascades.
