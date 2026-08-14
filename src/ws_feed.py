@@ -3,16 +3,22 @@ Liquidity-Pulse - Real-time WebSocket Feed Client
 
 Connects to Binance WebSocket streams for $BTC depth (@depth20@100ms) and
 liquidations (@forceOrder). Calculates bid/ask depth imbalance deltas across
-0.5%, 1.0%, and 2.0% bands, and triggers alerts on liquidation cascades > $5,000,000
-in a 3-minute sliding window.
+0.5%, 1.0%, and 2.0% bands, exports real-time depth metrics to workspace/depth_latest.json,
+and triggers rate-limited alerts on liquidation cascades > $5,000,000 in a 3-minute sliding window.
 """
 
-import asyncio
+import os
+import sys
 import json
 import logging
 import time
+import asyncio
+from pathlib import Path
 from collections import deque
 from typing import Dict, List, Tuple
+
+# Add src to sys.path
+sys.path.insert(0, str(Path(__file__).parent))
 
 try:
     import websockets
@@ -28,21 +34,32 @@ logging.basicConfig(
 )
 logger = logging.getLogger("WSFeed")
 
+PROJECT_ROOT = Path(__file__).parent.parent
+WORKSPACE_DIR = PROJECT_ROOT / "workspace"
+DEPTH_FILE_PATH = WORKSPACE_DIR / "depth_latest.json"
+
 
 class LiquidityPulseWS:
     STREAM_URL = "wss://stream.binance.com:9443/stream?streams=btcusdt@depth20@100ms/btcusdt@forceOrder"
     CASCADE_THRESHOLD_USD = 5_000_000.0  # $5M
     CASCADE_WINDOW_SECONDS = 180  # 3 minutes
+    CASCADE_COOLDOWN_SECONDS = 180  # Cooldown between Telegram cascade alerts
 
     def __init__(self):
         # Sliding window for liquidations: tuple of (timestamp, usd_val, side, price)
         self.liquidation_window: deque[Tuple[float, float, str, float]] = deque()
         self.last_mid_price: float = 0.0
+        self.last_cascade_alert_time: float = 0.0
+        self.last_depth_write_time: float = 0.0
         self.running: bool = False
+
+        # Ensure workspace exists
+        WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
 
     def calculate_depth_delta(self, bids: List[List[str]], asks: List[List[str]]) -> Dict[str, Dict[str, float]]:
         """
-        Calculates bid/ask liquidity depth delta within 0.5%, 1.0%, and 2.0% depth bands.
+        Calculates bid/ask liquidity depth delta within 0.5%, 1.0%, and 2.0% depth bands
+        and writes depth telemetry to workspace/depth_latest.json.
         """
         if not bids or not asks:
             return {}
@@ -75,6 +92,23 @@ class LiquidityPulseWS:
                 "ask_depth_usd": round(ask_vol_usd, 2),
                 "imbalance_delta_pct": round(delta_pct, 2)
             }
+
+        # Write to depth_latest.json throttled at 500ms
+        now = time.time()
+        if now - self.last_depth_write_time >= 0.5:
+            self.last_depth_write_time = now
+            depth_payload = {
+                "timestamp": time.time(),
+                "mid_price": round(mid_price, 2),
+                "bands": results
+            }
+            try:
+                temp_path = DEPTH_FILE_PATH.with_suffix(".tmp")
+                with open(temp_path, "w", encoding="utf-8") as f:
+                    json.dump(depth_payload, f, indent=2)
+                temp_path.replace(DEPTH_FILE_PATH)
+            except Exception as err:
+                logger.debug(f"Error persisting depth snapshot: {err}")
 
         return results
 
@@ -120,9 +154,13 @@ class LiquidityPulseWS:
                 f"Current Mid-Price: ${self.last_mid_price:,.2f}\n"
                 f"{'='*70}\n"
             )
-            # Dispatch Telegram Alert
-            telegram = TelegramAlertDispatcher()
-            telegram.send_liquidation_cascade_alert(total_cascade_usd, long_liqs, short_liqs, self.last_mid_price)
+            # Dispatch Telegram Alert with cooldown to avoid API bans
+            if now - self.last_cascade_alert_time >= self.CASCADE_COOLDOWN_SECONDS:
+                self.last_cascade_alert_time = now
+                telegram = TelegramAlertDispatcher()
+                telegram.send_liquidation_cascade_alert(total_cascade_usd, long_liqs, short_liqs, self.last_mid_price)
+            else:
+                logger.info(f"Cascade alert suppressed due to active cooldown ({self.CASCADE_COOLDOWN_SECONDS}s).")
 
     async def listen(self, duration_sec: float = 0):
         """

@@ -9,12 +9,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- FontAwesome CDN -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- Chart.js & Marked.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+  <!-- Chart.js, Marked.js & DOMPurify (XSS Protection) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer></script>
   <!-- Custom Styles -->
   <link rel="stylesheet" href="styles.css">
+  <!-- App JavaScript -->
+  <script src="app.js" defer></script>
 </head>
 <body>
   <div class="app-container">
@@ -51,7 +54,7 @@
         </button>
         <div class="live-indicator">
           <span class="pulse-dot"></span>
-          <span class="live-text">LIVE FEED</span>
+          <span class="live-text" id="live-feed-status">LIVE FEED</span>
         </div>
       </div>
     </header>
@@ -141,23 +144,14 @@
             <div class="card-title">
               <i class="fa-solid fa-scale-unbalanced-flip icon-gradient"></i> Order Book Depth Delta Imbalance
             </div>
-            <span class="badge badge-info">Real-time Stream</span>
+            <span class="badge badge-info" id="depth-stream-badge">WebSocket Feed</span>
           </div>
           <div class="card-body">
             <div class="depth-bands-grid" id="depth-bands-container">
               <!-- Rendered dynamically -->
               <div class="depth-band-item">
                 <div class="band-header">
-                  <span>0.5% Depth Band</span>
-                  <span class="band-delta text-cyan">Balanced</span>
-                </div>
-                <div class="progress-bar">
-                  <div class="progress-fill bid-fill" style="width: 50%;"></div>
-                  <div class="progress-fill ask-fill" style="width: 50%;"></div>
-                </div>
-                <div class="band-footer">
-                  <span class="text-green"><i class="fa-solid fa-arrow-up"></i> Bids: $0M</span>
-                  <span class="text-red">Asks: $0M <i class="fa-solid fa-arrow-down"></i></span>
+                  <span>Connecting to Depth Stream...</span>
                 </div>
               </div>
             </div>
@@ -206,8 +200,5 @@
     <!-- Toast Notifications Container -->
     <div id="toast-container"></div>
   </div>
-
-  <!-- App JavaScript -->
-  <script src="app.js"></script>
 </body>
 </html>

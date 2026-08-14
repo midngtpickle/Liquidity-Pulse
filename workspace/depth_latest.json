@@ -1,0 +1,21 @@
+{
+  "timestamp": 1786703508.4930043,
+  "mid_price": 62905.48,
+  "bands": {
+    "0.5%": {
+      "bid_depth_usd": 681590.6,
+      "ask_depth_usd": 23497.76,
+      "imbalance_delta_pct": 93.33
+    },
+    "1.0%": {
+      "bid_depth_usd": 681590.6,
+      "ask_depth_usd": 23497.76,
+      "imbalance_delta_pct": 93.33
+    },
+    "2.0%": {
+      "bid_depth_usd": 681590.6,
+      "ask_depth_usd": 23497.76,
+      "imbalance_delta_pct": 93.33
+    }
+  }
+}

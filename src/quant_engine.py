@@ -9,9 +9,10 @@ structured telemetry to workspace/telemetry_latest.json.
 import os
 import sys
 import json
+import time
 import logging
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import numpy as np
 import requests
 from pydantic import BaseModel, Field
@@ -22,6 +23,10 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 logger = logging.getLogger("QuantEngine")
+
+# In-memory TTL cache to prevent exchange REST API rate limits
+_KLINE_CACHE: Dict[Tuple[str, str, int], Tuple[float, List[Dict[str, float]]]] = {}
+CACHE_TTL_SECONDS: float = 30.0
 
 
 # Data Schemas using Pydantic
@@ -34,10 +39,17 @@ class SRLevel(BaseModel):
     volume_confluence: bool = Field(..., description="True if level overlaps with high volume node")
 
 
+class VolumeProfileBin(BaseModel):
+    price: float = Field(..., description="Bin center price")
+    volume: float = Field(..., description="Accumulated volume in this price bin")
+    tag: str = Field(..., description="VPOC, HVN, LVN, or NORMAL")
+
+
 class VolumeProfile(BaseModel):
     vpoc: float = Field(..., description="Volume Point of Control (highest volume price level)")
     hvn_zones: List[float] = Field(..., description="High Volume Nodes (top percentile volume bins)")
     lvn_zones: List[float] = Field(..., description="Low Volume Nodes (bottom percentile volume bins)")
+    bins: List[VolumeProfileBin] = Field(default_factory=list, description="All histogram price bins")
 
 
 class TelemetryPayload(BaseModel):
@@ -61,10 +73,18 @@ class QuantEngine:
         self.interval = interval
         self.limit = limit
 
-    def fetch_klines(self) -> List[Dict[str, float]]:
+    def fetch_klines(self, use_cache: bool = True) -> List[Dict[str, float]]:
         """
-        Fetches kline/candlestick data with fallback handling.
+        Fetches kline/candlestick data with fallback handling and in-memory TTL caching.
         """
+        cache_key = (self.symbol, self.interval, self.limit)
+        now = time.time()
+        if use_cache and cache_key in _KLINE_CACHE:
+            cached_time, cached_klines = _KLINE_CACHE[cache_key]
+            if now - cached_time < CACHE_TTL_SECONDS:
+                logger.info(f"Serving {len(cached_klines)} klines from in-memory cache (age: {now - cached_time:.1f}s).")
+                return cached_klines
+
         headers = {"User-Agent": "LiquidityPulse/1.0"}
         
         # Primary: Binance REST
@@ -91,6 +111,7 @@ class QuantEngine:
                     "close_time": float(row[6])
                 })
             logger.info(f"Successfully fetched {len(klines)} klines from Binance.")
+            _KLINE_CACHE[cache_key] = (now, klines)
             return klines
         except Exception as err:
             logger.warning(f"Binance fetch failed: {err}. Attempting Bybit fallback...")
@@ -122,9 +143,14 @@ class QuantEngine:
                     "close_time": float(row[0]) + 900000.0
                 })
             logger.info(f"Successfully fetched {len(klines)} klines from Bybit.")
+            _KLINE_CACHE[cache_key] = (now, klines)
             return klines
         except Exception as err:
             logger.error(f"Bybit fallback failed: {err}")
+            # If network fails completely and we have stale cache, serve stale cache as fallback
+            if cache_key in _KLINE_CACHE:
+                logger.warning("Serving stale cached klines due to network failure.")
+                return _KLINE_CACHE[cache_key][1]
             raise RuntimeError(f"Failed to fetch market data from all REST endpoints: {err}")
 
     def calculate_pine_pivots(
@@ -164,7 +190,7 @@ class QuantEngine:
         threshold_pct: float = 0.0035
     ) -> List[SRLevel]:
         """
-        Clusters pivot points into density S/R zones, counts touches across full 500 candles,
+        Clusters pivot points into density S/R zones, counts touches across full candle set,
         and assigns conviction tiers.
         """
         if not pivots:
@@ -224,7 +250,8 @@ class QuantEngine:
         self, klines: List[Dict[str, float]], num_bins: int = 50
     ) -> VolumeProfile:
         """
-        Calculates Volume Point of Control (VPOC), High Volume Nodes (HVN), and Low Volume Nodes (LVN).
+        Calculates Volume Point of Control (VPOC), High Volume Nodes (HVN), Low Volume Nodes (LVN),
+        and price bin histogram for frontend charting.
         """
         prices = []
         volumes = []
@@ -241,30 +268,45 @@ class QuantEngine:
         vpoc = round(float((bin_edges[max_idx] + bin_edges[max_idx + 1]) / 2.0), 2)
 
         # HVN (top 20 percentile volume) & LVN (bottom 20 percentile volume)
-        p80 = np.percentile(hist, 80)
-        p20 = np.percentile(hist, 20)
+        p80 = float(np.percentile(hist, 80))
+        p20 = float(np.percentile(hist, 20))
 
         hvn_zones = []
         lvn_zones = []
+        all_bins: List[VolumeProfileBin] = []
 
         for idx, vol in enumerate(hist):
             center_price = round(float((bin_edges[idx] + bin_edges[idx + 1]) / 2.0), 2)
-            if vol >= p80:
+            vol_val = round(float(vol), 2)
+            tag = "NORMAL"
+
+            if idx == max_idx:
+                tag = "VPOC"
+            elif vol >= p80:
                 hvn_zones.append(center_price)
+                tag = "HVN"
             elif vol <= p20 and vol > 0:
                 lvn_zones.append(center_price)
+                tag = "LVN"
+
+            all_bins.append(VolumeProfileBin(
+                price=center_price,
+                volume=vol_val,
+                tag=tag
+            ))
 
         return VolumeProfile(
             vpoc=vpoc,
             hvn_zones=hvn_zones,
-            lvn_zones=lvn_zones
+            lvn_zones=lvn_zones,
+            bins=all_bins
         )
 
-    def run(self, output_path: str = "workspace/telemetry_latest.json") -> TelemetryPayload:
+    def run(self, output_path: str = "workspace/telemetry_latest.json", use_cache: bool = True) -> TelemetryPayload:
         """
         Main execution workflow.
         """
-        klines = self.fetch_klines()
+        klines = self.fetch_klines(use_cache=use_cache)
         current_price = round(klines[-1]["close"], 2)
         high_24h = round(max(k["high"] for k in klines[-96:]), 2)
         low_24h = round(min(k["low"] for k in klines[-96:]), 2)
@@ -317,4 +359,4 @@ if __name__ == "__main__":
     output_file = os.path.join(workspace_dir, "telemetry_latest.json")
 
     engine = QuantEngine(symbol="BTCUSDT", interval="15m", limit=500)
-    engine.run(output_path=output_file)
+    engine.run(output_path=output_file, use_cache=False)

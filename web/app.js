@@ -4,17 +4,29 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   let telemetryData = null;
+  let depthData = null;
   let currentFilter = "all";
   let vpChart = null;
+  let telemetryTimer = null;
+  let briefingTimer = null;
+  let depthTimer = null;
 
   const btnRefresh = document.getElementById("btn-refresh");
   const filterBtns = document.querySelectorAll(".filter-btn");
 
   // Initial Fetch & Start Polling
-  fetchTelemetry();
-  fetchBriefing();
-  setInterval(fetchTelemetry, 5000);
-  setInterval(fetchBriefing, 15000);
+  fetchAllData();
+  startPolling();
+
+  // Page Visibility API to optimize client CPU and backend network load
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      stopPolling();
+    } else {
+      fetchAllData();
+      startPolling();
+    }
+  });
 
   // Event Listeners
   btnRefresh.addEventListener("click", triggerManualRefresh);
@@ -27,6 +39,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  function startPolling() {
+    stopPolling();
+    telemetryTimer = setInterval(fetchTelemetry, 5000);
+    depthTimer = setInterval(fetchDepth, 2000);
+    briefingTimer = setInterval(fetchBriefing, 15000);
+  }
+
+  function stopPolling() {
+    if (telemetryTimer) clearInterval(telemetryTimer);
+    if (depthTimer) clearInterval(depthTimer);
+    if (briefingTimer) clearInterval(briefingTimer);
+  }
+
+  function fetchAllData() {
+    fetchTelemetry();
+    fetchDepth();
+    fetchBriefing();
+  }
+
   async function fetchTelemetry() {
     try {
       const res = await fetch("/api/telemetry");
@@ -35,9 +66,19 @@ document.addEventListener("DOMContentLoaded", () => {
       renderHeaderAndStats();
       renderSRTable();
       renderVolumeProfileChart();
-      renderDepthDelta();
     } catch (err) {
       console.error("Telemetry fetch error:", err);
+    }
+  }
+
+  async function fetchDepth() {
+    try {
+      const res = await fetch("/api/depth");
+      if (!res.ok) return;
+      depthData = await res.json();
+      renderDepthDelta();
+    } catch (err) {
+      console.debug("Depth fetch error:", err);
     }
   }
 
@@ -49,7 +90,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const briefingContainer = document.getElementById("briefing-container");
       
       if (data.content && typeof marked !== "undefined") {
-        briefingContainer.innerHTML = marked.parse(data.content);
+        const rawHtml = marked.parse(data.content);
+        // DOMPurify sanitization against XSS attacks
+        const cleanHtml = typeof DOMPurify !== "undefined" ? DOMPurify.sanitize(rawHtml) : rawHtml;
+        briefingContainer.innerHTML = cleanHtml;
         document.getElementById("briefing-timestamp").innerText = "Updated Live";
       }
     } catch (err) {
@@ -63,14 +107,16 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch("/api/refresh", { method: "POST" });
       const data = await res.json();
-      showToast(data.message || "Telemetry refreshed!");
-      await fetchTelemetry();
-      await fetchBriefing();
+      showToast(data.message || "Refresh initiated!", res.status === 429 ? "error" : "success");
+      // Wait slightly and fetch new data
+      setTimeout(fetchAllData, 1500);
     } catch (err) {
       showToast("Error triggering refresh: " + err.message, "error");
     } finally {
-      btnRefresh.disabled = false;
-      btnRefresh.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Refresh Telemetry`;
+      setTimeout(() => {
+        btnRefresh.disabled = false;
+        btnRefresh.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Refresh Telemetry`;
+      }, 2000);
     }
   }
 
@@ -91,11 +137,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("stat-high-conviction").innerText = summary.high_conviction_count || 0;
 
     // Session determination
-    const nowUtcHour = new Date().getUTCHours();
-    let sessionName = "NY CLOSE";
-    if (nowUtcHour >= 0 && nowUtcHour < 7) sessionName = "ASIA (00:00 UTC)";
-    else if (nowUtcHour >= 7 && nowUtcHour < 13.5) sessionName = "LONDON (07:00 UTC)";
-    else if (nowUtcHour >= 13.5 && nowUtcHour < 21) sessionName = "NEW YORK (13:30 UTC)";
+    const nowUtcHour = new Date().getUTCHours() + (new Date().getUTCMinutes() / 60.0);
+    let sessionName = "NY CLOSE (21:00 UTC)";
+    if (nowUtcHour >= 0 && nowUtcHour < 7) sessionName = "ASIA (00:00 UTC Open)";
+    else if (nowUtcHour >= 7 && nowUtcHour < 13.5) sessionName = "LONDON (07:00 UTC Open)";
+    else if (nowUtcHour >= 13.5 && nowUtcHour < 21) sessionName = "NEW YORK (13:30 UTC Open)";
 
     document.getElementById("header-session").innerText = sessionName;
 
@@ -147,28 +193,41 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderVolumeProfileChart() {
     if (!telemetryData || !telemetryData.volume_profile) return;
 
-    const ctx = document.getElementById("volumeProfileChart").getContext("2d");
+    const canvas = document.getElementById("volumeProfileChart");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
     const vp = telemetryData.volume_profile;
     const vpoc = vp.vpoc;
-    const hvns = vp.hvn_zones || [];
-    const lvns = vp.lvn_zones || [];
+    const hvns = new Set(vp.hvn_zones || []);
+    const lvns = new Set(vp.lvn_zones || []);
 
-    // Synthesize sample bin visual representation
-    const sampleBins = [];
-    const basePrice = vpoc - 1000;
-    for (let i = 0; i < 15; i++) {
-      const binPrice = roundVal(basePrice + i * 150, 2);
-      let vol = Math.floor(Math.random() * 500 + 200);
-      if (Math.abs(binPrice - vpoc) < 100) vol = 1200; // max volume at VPOC
-      sampleBins.push({ price: binPrice, volume: vol });
+    let bins = vp.bins;
+    // If backend provided structured bins, sample them for charting
+    if (bins && bins.length > 0) {
+      // Pick representative sample (e.g. 20 bins)
+      const step = Math.max(1, Math.floor(bins.length / 20));
+      bins = bins.filter((_, idx) => idx % step === 0);
+    } else {
+      // Fallback: construct bins around key levels
+      const basePrice = vpoc - 1000;
+      bins = [];
+      for (let i = 0; i < 15; i++) {
+        const binPrice = roundVal(basePrice + i * 150, 2);
+        let vol = 250;
+        let tag = "NORMAL";
+        if (Math.abs(binPrice - vpoc) < 100) { vol = 1000; tag = "VPOC"; }
+        else if (Array.from(hvns).some(h => Math.abs(h - binPrice) < 100)) { vol = 700; tag = "HVN"; }
+        else if (Array.from(lvns).some(l => Math.abs(l - binPrice) < 100)) { vol = 80; tag = "LVN"; }
+        bins.push({ price: binPrice, volume: vol, tag });
+      }
     }
 
-    const labels = sampleBins.map(b => `$${b.price}`);
-    const dataVals = sampleBins.map(b => b.volume);
-    const bgColors = sampleBins.map(b => {
-      if (Math.abs(b.price - vpoc) < 100) return "#ffd700"; // gold VPOC
-      if (hvns.some(h => Math.abs(h - b.price) < 100)) return "#00f2fe"; // cyan HVN
-      if (lvns.some(l => Math.abs(l - b.price) < 100)) return "#e040fb"; // magenta LVN
+    const labels = bins.map(b => `$${b.price.toLocaleString()}`);
+    const dataVals = bins.map(b => b.volume);
+    const bgColors = bins.map(b => {
+      if (b.tag === "VPOC" || Math.abs(b.price - vpoc) < 50) return "#ffd700"; // gold VPOC
+      if (b.tag === "HVN" || Array.from(hvns).some(h => Math.abs(h - b.price) < 75)) return "#00f2fe"; // cyan HVN
+      if (b.tag === "LVN" || Array.from(lvns).some(l => Math.abs(l - b.price) < 75)) return "#e040fb"; // magenta LVN
       return "rgba(255, 255, 255, 0.15)";
     });
 
@@ -195,6 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
+        animation: { duration: 400 },
         plugins: {
           legend: { display: false }
         },
@@ -214,31 +274,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderDepthDelta() {
     const container = document.getElementById("depth-bands-container");
-    // Synthetic dynamic calculation representation from telemetry
-    const bands = [
-      { band: "0.5%", bidPct: 54, askPct: 46, bidUSD: 14.2, askUSD: 12.1 },
-      { band: "1.0%", bidPct: 58, askPct: 42, bidUSD: 28.5, askUSD: 20.6 },
-      { band: "2.0%", bidPct: 51, askPct: 49, bidUSD: 62.1, askUSD: 59.8 }
-    ];
+    if (!container) return;
 
-    container.innerHTML = bands.map(b => {
-      const delta = (b.bidPct - b.askPct).toFixed(1);
-      const deltaText = delta > 0 ? `+${delta}% (Bid Heavy)` : `${delta}% (Ask Heavy)`;
-      const deltaClass = delta > 0 ? "text-green" : "text-red";
+    const bandsData = depthData?.bands;
+    if (!bandsData || Object.keys(bandsData).length === 0) {
+      container.innerHTML = `
+        <div class="depth-band-item">
+          <div class="band-header">
+            <span>Orderbook Stream</span>
+            <span class="band-delta text-muted">Awaiting stream packets...</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const bandKeys = ["0.5%", "1.0%", "2.0%"];
+    container.innerHTML = bandKeys.map(key => {
+      const b = bandsData[key] || { bid_depth_usd: 0, ask_depth_usd: 0, imbalance_delta_pct: 0 };
+      const bidUSD = (b.bid_depth_usd / 1_000_000).toFixed(2);
+      const askUSD = (b.ask_depth_usd / 1_000_000).toFixed(2);
+      const totalUSD = b.bid_depth_usd + b.ask_depth_usd;
+      const bidPct = totalUSD > 0 ? Math.round((b.bid_depth_usd / totalUSD) * 100) : 50;
+      const askPct = 100 - bidPct;
+
+      const delta = b.imbalance_delta_pct;
+      const deltaText = delta > 0 ? `+${delta.toFixed(1)}% (Bid Heavy)` : `${delta.toFixed(1)}% (Ask Heavy)`;
+      const deltaClass = delta > 0 ? "text-green" : (delta < 0 ? "text-red" : "text-muted");
 
       return `
         <div class="depth-band-item">
           <div class="band-header">
-            <span>${b.band} Depth Band</span>
+            <span>${key} Depth Band</span>
             <span class="band-delta ${deltaClass}">${deltaText}</span>
           </div>
           <div class="progress-bar">
-            <div class="progress-fill bid-fill" style="width: ${b.bidPct}%;"></div>
-            <div class="progress-fill ask-fill" style="width: ${b.askPct}%;"></div>
+            <div class="progress-fill bid-fill" style="width: ${bidPct}%;"></div>
+            <div class="progress-fill ask-fill" style="width: ${askPct}%;"></div>
           </div>
           <div class="band-footer">
-            <span class="text-green"><i class="fa-solid fa-arrow-up"></i> Bids: $${b.bidUSD}M</span>
-            <span class="text-red">Asks: $${b.askUSD}M <i class="fa-solid fa-arrow-down"></i></span>
+            <span class="text-green"><i class="fa-solid fa-arrow-up"></i> Bids: $${bidUSD}M (${bidPct}%)</span>
+            <span class="text-red">Asks: $${askUSD}M (${askPct}%) <i class="fa-solid fa-arrow-down"></i></span>
           </div>
         </div>
       `;
@@ -247,6 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function showToast(msg, type = "success") {
     const container = document.getElementById("toast-container");
+    if (!container) return;
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
     toast.style.cssText = `

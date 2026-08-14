@@ -23,9 +23,16 @@ class TelegramAlertDispatcher:
         self.bot_token = bot_token or os.environ.get("TELEGRAM_BOT_TOKEN")
         self.chat_id = chat_id or os.environ.get("TELEGRAM_CHAT_ID")
         self.api_url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage" if self.bot_token else ""
+        self.dashboard_url = os.environ.get("DASHBOARD_URL", "http://localhost:8080")
 
     def is_configured(self) -> bool:
         return bool(self.bot_token and self.chat_id)
+
+    def _sanitize_error(self, err_msg: str) -> str:
+        """Removes sensitive bot tokens from error strings before logging."""
+        if self.bot_token and self.bot_token in err_msg:
+            return err_msg.replace(self.bot_token, "[REDACTED_BOT_TOKEN]")
+        return err_msg
 
     def send_message(self, text: str, parse_mode: str = "HTML") -> bool:
         """
@@ -48,7 +55,8 @@ class TelegramAlertDispatcher:
             logger.info("Telegram message dispatched successfully.")
             return True
         except Exception as err:
-            logger.error(f"Failed to dispatch Telegram message: {err}")
+            safe_err = self._sanitize_error(str(err))
+            logger.error(f"Failed to dispatch Telegram message: {safe_err}")
             return False
 
     def send_session_briefing_alert(self, telemetry: Dict[str, Any], session_name: str) -> bool:
@@ -61,11 +69,11 @@ class TelegramAlertDispatcher:
         low_24h = telemetry.get("low_24h", 0.0)
         sr_levels = telemetry.get("sr_levels", [])
 
-        supports = [l for l in sr_levels if l["type"] == "SUPPORT"][:3]
-        resistances = [l for l in sr_levels if l["type"] == "RESISTANCE"][:3]
+        supports = [l for l in sr_levels if l.get("type") == "SUPPORT"][:3]
+        resistances = [l for l in sr_levels if l.get("type") == "RESISTANCE"][:3]
 
-        sup_text = "\n".join([f"  • <b>${s['price']:,.2f}</b> ({s['conviction']} - {s['touch_count']} touches)" for s in supports])
-        res_text = "\n".join([f"  • <b>${r['price']:,.2f}</b> ({r['conviction']} - {r['touch_count']} touches)" for r in resistances])
+        sup_text = "\n".join([f"  • <b>${s.get('price', 0):,.2f}</b> ({s.get('conviction', '')} - {s.get('touch_count', 0)} touches)" for s in supports])
+        res_text = "\n".join([f"  • <b>${r.get('price', 0):,.2f}</b> ({r.get('conviction', '')} - {r.get('touch_count', 0)} touches)" for r in resistances])
 
         msg = (
             f"🟢 <b>LIQUIDITY-PULSE — SESSION BRIEFING</b>\n\n"
@@ -76,7 +84,7 @@ class TelegramAlertDispatcher:
             f"<b>24h Range:</b> ${low_24h:,.2f} - ${high_24h:,.2f}\n\n"
             f"<b>🛡️ Support Clusters:</b>\n{sup_text if sup_text else '  • None'}\n\n"
             f"<b>⚔️ Resistance Clusters:</b>\n{res_text if res_text else '  • None'}\n\n"
-            f"📊 View Dashboard: http://localhost:8080"
+            f"📊 View Dashboard: {self.dashboard_url}"
         )
         return self.send_message(msg, parse_mode="HTML")
 

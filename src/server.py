@@ -2,14 +2,16 @@
 Liquidity-Pulse - Dashboard Web Server
 
 Serves static web files from web/ and provides REST API endpoints for
-telemetry data, session briefing markdown, and pipeline refresh triggers.
+telemetry data, depth metrics, session briefing markdown, and pipeline refresh triggers.
+Uses ThreadingHTTPServer for concurrent, non-blocking HTTP handling.
 """
 
 import os
 import sys
 import json
 import logging
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+import threading
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -29,7 +31,12 @@ PROJECT_ROOT = Path(__file__).parent.parent
 WEB_DIR = PROJECT_ROOT / "web"
 WORKSPACE_DIR = PROJECT_ROOT / "workspace"
 TELEMETRY_PATH = WORKSPACE_DIR / "telemetry_latest.json"
+DEPTH_PATH = WORKSPACE_DIR / "depth_latest.json"
 BRIEFING_PATH = WORKSPACE_DIR / "artifacts" / "SESSION_BRIEFING.md"
+
+# Mutex to ensure only one pipeline execution runs at a time
+_pipeline_lock = threading.Lock()
+ALLOWED_HOSTS = {"localhost", "127.0.0.1"}
 
 
 class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
@@ -42,12 +49,14 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/telemetry":
             self.handle_telemetry_api()
+        elif path == "/api/depth":
+            self.handle_depth_api()
         elif path == "/api/briefing":
             self.handle_briefing_api()
         elif path == "/api/health":
             self.send_json_response({"status": "healthy", "service": "LiquidityPulse"})
         else:
-            # Fallback to standard static file handler
+            # Fallback to static file handler
             super().do_GET()
 
     def do_POST(self):
@@ -71,6 +80,26 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
             logger.error(f"Error reading telemetry: {err}")
             self.send_json_response({"error": str(err)}, status=500)
 
+    def handle_depth_api(self):
+        if not DEPTH_PATH.exists():
+            # If ws_feed hasn't written snapshot yet, synthesize fallback structure
+            self.send_json_response({
+                "status": "waiting_for_feed",
+                "bands": {
+                    "0.5%": {"bid_depth_usd": 0.0, "ask_depth_usd": 0.0, "imbalance_delta_pct": 0.0},
+                    "1.0%": {"bid_depth_usd": 0.0, "ask_depth_usd": 0.0, "imbalance_delta_pct": 0.0},
+                    "2.0%": {"bid_depth_usd": 0.0, "ask_depth_usd": 0.0, "imbalance_delta_pct": 0.0}
+                }
+            })
+            return
+        try:
+            with open(DEPTH_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self.send_json_response(data)
+        except Exception as err:
+            logger.error(f"Error reading depth data: {err}")
+            self.send_json_response({"error": str(err)}, status=500)
+
     def handle_briefing_api(self):
         if not BRIEFING_PATH.exists():
             self.send_json_response({"content": "# No briefing generated yet."}, status=200)
@@ -84,29 +113,55 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
             self.send_json_response({"error": str(err)}, status=500)
 
     def handle_refresh_api(self):
-        try:
-            logger.info("Manual telemetry refresh triggered via API...")
-            sentinel = SentinelOrchestrator(project_root=str(PROJECT_ROOT))
-            sentinel.run_pipeline()
-            self.send_json_response({"status": "success", "message": "Telemetry & briefing refreshed successfully."})
-        except Exception as err:
-            logger.error(f"Error executing manual refresh: {err}")
-            self.send_json_response({"error": str(err)}, status=500)
+        """
+        Asynchronously triggers pipeline refresh without blocking server threads.
+        """
+        if not _pipeline_lock.acquire(blocking=False):
+            self.send_json_response(
+                {"status": "busy", "message": "Pipeline refresh is already running in background."},
+                status=429
+            )
+            return
+
+        def _worker():
+            try:
+                logger.info("Executing background telemetry & briefing refresh...")
+                sentinel = SentinelOrchestrator(project_root=str(PROJECT_ROOT))
+                sentinel.run_pipeline()
+                logger.info("Background refresh finished successfully.")
+            except Exception as err:
+                logger.error(f"Background refresh encountered error: {err}")
+            finally:
+                _pipeline_lock.release()
+
+        worker_thread = threading.Thread(target=_worker, daemon=True)
+        worker_thread.start()
+
+        self.send_json_response(
+            {"status": "accepted", "message": "Telemetry & briefing refresh initiated."},
+            status=202
+        )
 
     def send_json_response(self, payload: dict, status: int = 200):
         body = json.dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
+        
+        # Origin validation for CORS
+        origin = self.headers.get("Origin", "")
+        if origin:
+            parsed_origin = urlparse(origin)
+            if parsed_origin.hostname in ALLOWED_HOSTS:
+                self.send_header("Access-Control-Allow-Origin", origin)
         self.end_headers()
         self.wfile.write(body)
 
 
 def run_server(port: int = 8080):
     server_address = ("", port)
-    httpd = HTTPServer(server_address, DashboardHTTPRequestHandler)
-    logger.info(f"⚡ Liquidity-Pulse Dashboard Web Server running on http://localhost:{port}")
+    httpd = ThreadingHTTPServer(server_address, DashboardHTTPRequestHandler)
+    logger.info(f"⚡ Liquidity-Pulse Concurrent Dashboard Server running on http://localhost:{port}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
