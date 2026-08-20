@@ -7,6 +7,7 @@ liquidation cascades (> $5M) via Telegram Bot API.
 
 import os
 import sys
+import re
 import logging
 import requests
 from typing import Optional, Dict, Any
@@ -30,9 +31,10 @@ class TelegramAlertDispatcher:
 
     def _sanitize_error(self, err_msg: str) -> str:
         """Removes sensitive bot tokens from error strings before logging."""
-        if self.bot_token and self.bot_token in err_msg:
-            return err_msg.replace(self.bot_token, "[REDACTED_BOT_TOKEN]")
-        return err_msg
+        sanitized = re.sub(r"bot[0-9]+:[A-Za-z0-9_-]+", "bot[REDACTED_BOT_TOKEN]", err_msg)
+        if self.bot_token and self.bot_token in sanitized:
+            sanitized = sanitized.replace(self.bot_token, "[REDACTED_BOT_TOKEN]")
+        return sanitized
 
     def send_message(self, text: str, parse_mode: str = "HTML") -> bool:
         """

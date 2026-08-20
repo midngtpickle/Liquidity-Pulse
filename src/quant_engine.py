@@ -210,17 +210,18 @@ class QuantEngine:
                 else:
                     clusters.append([price])
 
+        # Pre-compute numpy arrays for vectorized touch counting
+        lows_arr = np.array([k["low"] for k in klines], dtype=np.float64)
+        highs_arr = np.array([k["high"] for k in klines], dtype=np.float64)
+
         sr_levels: List[SRLevel] = []
         for cluster in clusters:
             level_price = round(float(np.mean(cluster)), 2)
             
-            # Count touches across all klines
+            # Vectorized touch count calculation across all klines
             tolerance = level_price * threshold_pct
-            touch_count = 0
-            for k in klines:
-                # Candle range intersects [level_price - tolerance, level_price + tolerance]
-                if k["low"] <= (level_price + tolerance) and k["high"] >= (level_price - tolerance):
-                    touch_count += 1
+            touch_mask = (lows_arr <= (level_price + tolerance)) & (highs_arr >= (level_price - tolerance))
+            touch_count = int(np.count_nonzero(touch_mask))
 
             level_type = "SUPPORT" if level_price < current_price else "RESISTANCE"
             distance_pct = round(((level_price - current_price) / current_price) * 100, 2)

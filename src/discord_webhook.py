@@ -9,6 +9,7 @@ Dispatches institutional rich embed notifications to Discord channels via Webhoo
 
 import os
 import sys
+import re
 import json
 import logging
 import requests
@@ -35,6 +36,13 @@ class DiscordWebhookDispatcher:
     def is_configured(self) -> bool:
         return bool(self.webhook_url and self.webhook_url.startswith("https://discord.com/api/webhooks/"))
 
+    def _sanitize_error(self, err_msg: str) -> str:
+        """Removes sensitive webhook token parts from error strings before logging."""
+        sanitized = re.sub(r"webhooks/\d+/[A-Za-z0-9_-]+", "webhooks/[REDACTED_WEBHOOK_URL]", err_msg)
+        if self.webhook_url and self.webhook_url in sanitized:
+            sanitized = sanitized.replace(self.webhook_url, "[REDACTED_WEBHOOK_URL]")
+        return sanitized
+
     def send_raw_payload(self, payload: Dict[str, Any]) -> bool:
         """
         Sends JSON payload to Discord webhook endpoint or logs dry-run output.
@@ -49,7 +57,8 @@ class DiscordWebhookDispatcher:
             logger.info("Discord embed dispatched successfully.")
             return True
         except Exception as err:
-            logger.error(f"Failed to dispatch Discord embed: {err}")
+            safe_err = self._sanitize_error(str(err))
+            logger.error(f"Failed to dispatch Discord embed: {safe_err}")
             return False
 
     def send_session_briefing_embed(
