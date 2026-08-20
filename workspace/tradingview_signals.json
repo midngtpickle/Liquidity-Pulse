@@ -7,5 +7,31 @@
     "conviction": "HIGH",
     "message": "Price tested High Conviction Support level at ,802.27",
     "received_at": "2026-08-14T10:45:23.659183+00:00"
+  },
+  {
+    "event": "TEST_ALERT",
+    "symbol": "BTCUSDT",
+    "price": 64000.0,
+    "received_at": "2026-08-20T00:57:13.557665+00:00"
+  },
+  {
+    "event": "TEST_ALERT_2",
+    "symbol": "BTCUSDT",
+    "price": 64500.0,
+    "secret": "super-secret-key-123",
+    "received_at": "2026-08-20T00:57:13.576346+00:00"
+  },
+  {
+    "event": "TEST_ALERT",
+    "symbol": "BTCUSDT",
+    "price": 64000.0,
+    "received_at": "2026-08-20T00:57:22.807211+00:00"
+  },
+  {
+    "event": "TEST_ALERT_2",
+    "symbol": "BTCUSDT",
+    "price": 64500.0,
+    "secret": "super-secret-key-123",
+    "received_at": "2026-08-20T00:57:22.825608+00:00"
   }
 ]

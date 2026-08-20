@@ -1,349 +1,356 @@
 {
-  "timestamp": "2026-08-14T10:40:20.093280+00:00",
+  "timestamp": "2026-08-20T01:10:42.356474+00:00",
   "symbol": "BTCUSDT",
-  "current_price": 62894.0,
-  "high_24h": 63999.0,
-  "low_24h": 62700.0,
-  "volume_24h": 12053.34,
+  "current_price": 69324.4,
+  "high_24h": 70000.0,
+  "low_24h": 64166.0,
+  "volume_24h": 30212.34,
   "sr_levels": [
     {
-      "price": 62802.27,
+      "price": 69500.0,
+      "type": "RESISTANCE",
+      "touch_count": 19,
+      "conviction": "HIGH",
+      "distance_pct": 0.25,
+      "volume_confluence": false
+    },
+    {
+      "price": 70000.0,
+      "type": "RESISTANCE",
+      "touch_count": 6,
+      "conviction": "HIGH",
+      "distance_pct": 0.97,
+      "volume_confluence": false
+    },
+    {
+      "price": 65058.81,
       "type": "SUPPORT",
-      "touch_count": 17,
+      "touch_count": 16,
       "conviction": "HIGH",
-      "distance_pct": -0.15,
+      "distance_pct": -6.15,
       "volume_confluence": false
     },
     {
-      "price": 63456.68,
-      "type": "RESISTANCE",
-      "touch_count": 176,
+      "price": 64780.0,
+      "type": "SUPPORT",
+      "touch_count": 53,
       "conviction": "HIGH",
-      "distance_pct": 0.89,
+      "distance_pct": -6.56,
       "volume_confluence": true
     },
     {
-      "price": 63869.6,
-      "type": "RESISTANCE",
-      "touch_count": 177,
+      "price": 64544.67,
+      "type": "SUPPORT",
+      "touch_count": 127,
       "conviction": "HIGH",
-      "distance_pct": 1.55,
+      "distance_pct": -6.89,
       "volume_confluence": true
     },
     {
-      "price": 64195.6,
-      "type": "RESISTANCE",
-      "touch_count": 110,
+      "price": 64121.51,
+      "type": "SUPPORT",
+      "touch_count": 105,
       "conviction": "HIGH",
-      "distance_pct": 2.07,
+      "distance_pct": -7.51,
       "volume_confluence": true
     },
     {
-      "price": 64507.71,
-      "type": "RESISTANCE",
-      "touch_count": 27,
+      "price": 63717.17,
+      "type": "SUPPORT",
+      "touch_count": 39,
       "conviction": "HIGH",
-      "distance_pct": 2.57,
-      "volume_confluence": false
+      "distance_pct": -8.09,
+      "volume_confluence": true
     },
     {
-      "price": 64859.25,
-      "type": "RESISTANCE",
-      "touch_count": 86,
+      "price": 63376.39,
+      "type": "SUPPORT",
+      "touch_count": 74,
       "conviction": "HIGH",
-      "distance_pct": 3.12,
-      "volume_confluence": false
+      "distance_pct": -8.58,
+      "volume_confluence": true
     },
     {
-      "price": 65356.51,
-      "type": "RESISTANCE",
-      "touch_count": 62,
+      "price": 63026.74,
+      "type": "SUPPORT",
+      "touch_count": 217,
       "conviction": "HIGH",
-      "distance_pct": 3.92,
-      "volume_confluence": false
+      "distance_pct": -9.08,
+      "volume_confluence": true
     }
   ],
   "volume_profile": {
-    "vpoc": 63421.99,
+    "vpoc": 64244.19,
     "hvn_zones": [
-      63473.28,
-      63524.58,
-      63575.88,
-      63781.06,
-      63832.35,
-      63883.65,
-      63934.94,
-      64088.83,
-      64140.13
+      62850.31,
+      62989.7,
+      63129.08,
+      63547.25,
+      64104.8,
+      64383.57,
+      64662.35,
+      68007.65,
+      68286.43
     ],
-    "lvn_zones": [
-      62960.33,
-      63011.62,
-      63268.1,
-      64396.6,
-      64447.9,
-      64499.19,
-      64653.08,
-      64806.97
-    ],
+    "lvn_zones": [],
     "bins": [
       {
-        "price": 62806.44,
-        "volume": 668.5,
+        "price": 62850.31,
+        "volume": 2105.85,
+        "tag": "HVN"
+      },
+      {
+        "price": 62989.7,
+        "volume": 4241.95,
+        "tag": "HVN"
+      },
+      {
+        "price": 63129.08,
+        "volume": 5450.56,
+        "tag": "HVN"
+      },
+      {
+        "price": 63268.47,
+        "volume": 671.31,
         "tag": "NORMAL"
       },
       {
-        "price": 62857.74,
-        "volume": 662.78,
+        "price": 63407.86,
+        "volume": 1694.63,
         "tag": "NORMAL"
       },
       {
-        "price": 62909.03,
-        "volume": 522.51,
+        "price": 63547.25,
+        "volume": 3088.94,
+        "tag": "HVN"
+      },
+      {
+        "price": 63686.64,
+        "volume": 1780.99,
         "tag": "NORMAL"
       },
       {
-        "price": 62960.33,
-        "volume": 242.84,
-        "tag": "LVN"
-      },
-      {
-        "price": 63011.62,
-        "volume": 386.79,
-        "tag": "LVN"
-      },
-      {
-        "price": 63062.92,
-        "volume": 574.14,
+        "price": 63826.02,
+        "volume": 191.88,
         "tag": "NORMAL"
       },
       {
-        "price": 63114.22,
-        "volume": 1251.31,
+        "price": 63965.41,
+        "volume": 776.32,
         "tag": "NORMAL"
       },
       {
-        "price": 63165.51,
-        "volume": 483.37,
-        "tag": "NORMAL"
+        "price": 64104.8,
+        "volume": 3882.25,
+        "tag": "HVN"
       },
       {
-        "price": 63216.81,
-        "volume": 394.52,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 63268.1,
-        "volume": 99.34,
-        "tag": "LVN"
-      },
-      {
-        "price": 63319.4,
-        "volume": 659.64,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 63370.69,
-        "volume": 940.19,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 63421.99,
-        "volume": 3918.85,
+        "price": 64244.19,
+        "volume": 6268.05,
         "tag": "VPOC"
       },
       {
-        "price": 63473.28,
-        "volume": 2766.1,
+        "price": 64383.57,
+        "volume": 5379.48,
         "tag": "HVN"
       },
       {
-        "price": 63524.58,
-        "volume": 2395.56,
+        "price": 64522.96,
+        "volume": 1745.48,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 64662.35,
+        "volume": 2572.23,
         "tag": "HVN"
       },
       {
-        "price": 63575.88,
-        "volume": 2564.78,
-        "tag": "HVN"
-      },
-      {
-        "price": 63627.17,
-        "volume": 1977.77,
+        "price": 64801.74,
+        "volume": 1606.54,
         "tag": "NORMAL"
       },
       {
-        "price": 63678.47,
-        "volume": 1488.49,
+        "price": 64941.12,
+        "volume": 1217.06,
         "tag": "NORMAL"
       },
       {
-        "price": 63729.76,
-        "volume": 2248.5,
+        "price": 65080.51,
+        "volume": 1170.62,
         "tag": "NORMAL"
       },
       {
-        "price": 63781.06,
-        "volume": 2477.86,
-        "tag": "HVN"
-      },
-      {
-        "price": 63832.35,
-        "volume": 2402.51,
-        "tag": "HVN"
-      },
-      {
-        "price": 63883.65,
-        "volume": 2268.58,
-        "tag": "HVN"
-      },
-      {
-        "price": 63934.94,
-        "volume": 3524.52,
-        "tag": "HVN"
-      },
-      {
-        "price": 63986.24,
-        "volume": 2175.21,
+        "price": 65219.9,
+        "volume": 628.21,
         "tag": "NORMAL"
       },
       {
-        "price": 64037.53,
-        "volume": 1747.99,
+        "price": 65359.29,
+        "volume": 831.12,
         "tag": "NORMAL"
       },
       {
-        "price": 64088.83,
-        "volume": 2279.39,
-        "tag": "HVN"
-      },
-      {
-        "price": 64140.13,
-        "volume": 2837.34,
-        "tag": "HVN"
-      },
-      {
-        "price": 64191.42,
-        "volume": 547.3,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 64242.72,
-        "volume": 608.36,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 64294.01,
-        "volume": 1915.82,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 64345.31,
-        "volume": 1166.39,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 64396.6,
-        "volume": 194.77,
-        "tag": "LVN"
-      },
-      {
-        "price": 64447.9,
-        "volume": 231.89,
-        "tag": "LVN"
-      },
-      {
-        "price": 64499.19,
-        "volume": 391.31,
-        "tag": "LVN"
-      },
-      {
-        "price": 64550.49,
+        "price": 65498.68,
         "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 64601.79,
-        "volume": 483.57,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 64653.08,
-        "volume": 285.94,
-        "tag": "LVN"
-      },
-      {
-        "price": 64704.38,
+        "price": 65638.06,
         "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 64755.67,
-        "volume": 904.02,
+        "price": 65777.45,
+        "volume": 906.25,
         "tag": "NORMAL"
       },
       {
-        "price": 64806.97,
-        "volume": 391.99,
-        "tag": "LVN"
-      },
-      {
-        "price": 64858.26,
-        "volume": 699.74,
+        "price": 65916.84,
+        "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 64909.56,
-        "volume": 923.87,
+        "price": 66056.23,
+        "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 64960.85,
-        "volume": 1232.61,
+        "price": 66195.61,
+        "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 65012.15,
-        "volume": 1363.18,
+        "price": 66335.0,
+        "volume": 1528.05,
         "tag": "NORMAL"
       },
       {
-        "price": 65063.44,
-        "volume": 1065.01,
+        "price": 66474.39,
+        "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 65114.74,
-        "volume": 1129.48,
+        "price": 66613.78,
+        "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 65166.04,
-        "volume": 1022.22,
+        "price": 66753.16,
+        "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 65217.33,
-        "volume": 1896.88,
+        "price": 66892.55,
+        "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 65268.63,
-        "volume": 831.52,
+        "price": 67031.94,
+        "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 65319.92,
-        "volume": 876.1,
+        "price": 67171.33,
+        "volume": 0.0,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 67310.72,
+        "volume": 0.0,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 67450.1,
+        "volume": 0.0,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 67589.49,
+        "volume": 0.0,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 67728.88,
+        "volume": 0.0,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 67868.27,
+        "volume": 0.0,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 68007.65,
+        "volume": 4854.5,
+        "tag": "HVN"
+      },
+      {
+        "price": 68147.04,
+        "volume": 514.02,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 68286.43,
+        "volume": 3449.41,
+        "tag": "HVN"
+      },
+      {
+        "price": 68425.82,
+        "volume": 1981.89,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 68565.2,
+        "volume": 758.86,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 68704.59,
+        "volume": 1788.78,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 68843.98,
+        "volume": 0.0,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 68983.37,
+        "volume": 0.0,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 69122.76,
+        "volume": 885.19,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 69262.14,
+        "volume": 1420.24,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 69401.53,
+        "volume": 1273.59,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 69540.92,
+        "volume": 1862.46,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 69680.31,
+        "volume": 1153.43,
         "tag": "NORMAL"
       }
     ]
   },
   "market_summary": {
     "total_candles_analyzed": 500,
-    "pine_pivots_found": 35,
-    "support_levels_count": 1,
-    "resistance_levels_count": 6,
-    "high_conviction_count": 7
+    "pine_pivots_found": 27,
+    "support_levels_count": 7,
+    "resistance_levels_count": 2,
+    "high_conviction_count": 9
   }
 }

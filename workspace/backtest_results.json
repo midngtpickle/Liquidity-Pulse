@@ -1,17 +1,17 @@
 {
   "symbol": "BTCUSDT",
-  "backtest_time_utc": "2026-08-14T10:32:39.716508+00:00",
+  "backtest_time_utc": "2026-08-20T01:11:07.429140+00:00",
   "train_candles": 500,
   "test_candles": 500,
-  "levels_evaluated": 5,
-  "total_level_tests": 149,
-  "successful_bounces": 21,
-  "breakthroughs": 128,
-  "overall_win_rate_pct": 14.09,
+  "levels_evaluated": 7,
+  "total_level_tests": 114,
+  "successful_bounces": 15,
+  "breakthroughs": 99,
+  "overall_win_rate_pct": 13.16,
   "high_conviction_stats": {
-    "tests": 149,
-    "bounces": 21,
-    "win_rate_pct": 14.09
+    "tests": 114,
+    "bounces": 15,
+    "win_rate_pct": 13.16
   },
   "medium_conviction_stats": {
     "tests": 0,
@@ -20,49 +20,67 @@
   },
   "level_details": [
     {
-      "price": 65001.64,
+      "price": 62679.17,
+      "type": "SUPPORT",
+      "conviction": "HIGH",
+      "tests": 7,
+      "bounces": 3,
+      "breakthroughs": 4,
+      "win_rate_pct": 42.86
+    },
+    {
+      "price": 63374.16,
       "type": "RESISTANCE",
       "conviction": "HIGH",
-      "tests": 32,
-      "bounces": 2,
+      "tests": 22,
+      "bounces": 3,
+      "breakthroughs": 19,
+      "win_rate_pct": 13.64
+    },
+    {
+      "price": 63747.26,
+      "type": "RESISTANCE",
+      "conviction": "HIGH",
+      "tests": 9,
+      "bounces": 1,
+      "breakthroughs": 8,
+      "win_rate_pct": 11.11
+    },
+    {
+      "price": 64100.05,
+      "type": "RESISTANCE",
+      "conviction": "HIGH",
+      "tests": 28,
+      "bounces": 0,
+      "breakthroughs": 28,
+      "win_rate_pct": 0.0
+    },
+    {
+      "price": 64507.71,
+      "type": "RESISTANCE",
+      "conviction": "HIGH",
+      "tests": 36,
+      "bounces": 6,
       "breakthroughs": 30,
-      "win_rate_pct": 6.25
+      "win_rate_pct": 16.67
     },
     {
-      "price": 64504.24,
-      "type": "SUPPORT",
-      "conviction": "HIGH",
-      "tests": 8,
-      "bounces": 1,
-      "breakthroughs": 7,
-      "win_rate_pct": 12.5
-    },
-    {
-      "price": 65390.99,
+      "price": 64892.82,
       "type": "RESISTANCE",
       "conviction": "HIGH",
-      "tests": 18,
-      "bounces": 8,
-      "breakthroughs": 10,
-      "win_rate_pct": 44.44
-    },
-    {
-      "price": 64078.46,
-      "type": "SUPPORT",
-      "conviction": "HIGH",
-      "tests": 40,
+      "tests": 10,
       "bounces": 1,
-      "breakthroughs": 39,
-      "win_rate_pct": 2.5
+      "breakthroughs": 9,
+      "win_rate_pct": 10.0
     },
     {
-      "price": 63524.65,
-      "type": "SUPPORT",
+      "price": 65370.63,
+      "type": "RESISTANCE",
       "conviction": "HIGH",
-      "tests": 51,
-      "bounces": 9,
-      "breakthroughs": 42,
-      "win_rate_pct": 17.65
+      "tests": 2,
+      "bounces": 1,
+      "breakthroughs": 1,
+      "win_rate_pct": 50.0
     }
   ]
 }
