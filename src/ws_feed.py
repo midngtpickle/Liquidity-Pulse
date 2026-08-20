@@ -95,12 +95,18 @@ class LiquidityPulseWS:
                 "imbalance_delta_pct": round(delta_pct, 2)
             }
 
-        # Write to depth_latest.json throttled at 500ms
+        # Write to depth_latest.json throttled at 2.0s or on significant delta/price shifts
         now = time.time()
-        if now - self.last_depth_write_time >= 0.5:
+        d_05 = results.get("0.5%", {}).get("imbalance_delta_pct", 0.0)
+        delta_shifted = abs(d_05 - getattr(self, "last_written_delta", 0.0)) >= 2.0
+        price_shifted = abs(mid_price - getattr(self, "last_written_price", 0.0)) / (mid_price or 1.0) >= 0.0005
+
+        if (now - self.last_depth_write_time >= 2.0) or (now - self.last_depth_write_time >= 0.5 and (delta_shifted or price_shifted)):
             self.last_depth_write_time = now
+            self.last_written_delta = d_05
+            self.last_written_price = mid_price
             depth_payload = {
-                "timestamp": time.time(),
+                "timestamp": now,
                 "mid_price": round(mid_price, 2),
                 "bands": results
             }

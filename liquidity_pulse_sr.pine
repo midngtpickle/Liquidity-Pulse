@@ -10,6 +10,7 @@ clusterPct       = input.float(0.35, title="Cluster Density Threshold (%)", minv
 minTouchesHigh   = input.int(3, title="Min Touches for High Conviction", minval=2, group="Conviction Settings")
 showLabels       = input.bool(true, title="Show Conviction Labels", group="Display Settings")
 showVPOC         = input.bool(true, title="Show VPOC Line", group="Display Settings")
+vpocBars         = input.int(300, title="VPOC Lookback Bars", minval=50, maxval=500, group="Display Settings")
 showTable        = input.bool(true, title="Show S/R Telemetry Table", group="Display Settings")
 
 // Colors
@@ -96,11 +97,12 @@ if barstate.islast
     // DRAW VPOC LINE
     // ============================================================================
     if showVPOC
-        // NOTE: Pine Script uses a 100-bar rolling peak-volume bar proxy for lightweight real-time chart rendering,
+        // NOTE: Pine Script uses a configurable rolling peak-volume bar proxy (default 300 bars) for real-time chart rendering,
         // while the Python QuantEngine backend calculates a 50-bin weighted histogram across 500 bars.
         float maxVol = 0.0
         float vpocPrice = close
-        for j = 0 to 99
+        int scanBars = math.min(bar_index, vpocBars)
+        for j = 0 to scanBars - 1
             if volume[j] > maxVol
                 maxVol := volume[j]
                 vpocPrice := (high[j] + low[j]) / 2.0

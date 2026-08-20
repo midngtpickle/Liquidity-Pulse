@@ -45,5 +45,14 @@ start "Liquidity Pulse Dashboard Server" cmd /k "venv\Scripts\activate.bat && py
 timeout /t 2 >nul
 start http://localhost:8080
 
-echo Press any key to stop all background processes...
-pause
+echo.
+echo ================================================================
+echo  Press any key in this window to STOP all services and exit...
+echo ================================================================
+pause >nul
+
+echo.
+echo Stopping Liquidity-Pulse services...
+taskkill /FI "WINDOWTITLE eq Liquidity Pulse WebSocket Feed*" /T /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq Liquidity Pulse Dashboard Server*" /T /F >nul 2>&1
+echo [OK] All services stopped cleanly.
