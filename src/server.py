@@ -13,7 +13,7 @@ import logging
 import threading
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 from datetime import datetime, timezone
 
 # Add src to sys.path
@@ -42,6 +42,10 @@ SIGNALS_PATH = WORKSPACE_DIR / "tradingview_signals.json"
 _pipeline_lock = threading.Lock()
 _signals_lock = threading.Lock()
 ALLOWED_HOSTS = {"localhost", "127.0.0.1"}
+
+# Security configurations
+TRADINGVIEW_WEBHOOK_SECRET = os.environ.get("TRADINGVIEW_WEBHOOK_SECRET", "")
+MAX_PAYLOAD_BYTES = 64 * 1024  # 64 KB maximum payload limit
 
 
 class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
@@ -153,13 +157,21 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
 
     def handle_tradingview_webhook(self):
         """
-        Receives webhook alerts from TradingView Pine Script, persists signal,
-        and broadcasts alerts to Discord & Telegram.
+        Receives webhook alerts from TradingView Pine Script, validates authentication,
+        persists signal, and asynchronously broadcasts alerts to Discord & Telegram.
         """
         try:
             content_length = int(self.headers.get("Content-Length", 0))
             if content_length == 0:
                 self.send_json_response({"error": "Empty payload received"}, status=400)
+                return
+
+            if content_length > MAX_PAYLOAD_BYTES:
+                logger.warning(f"Rejected oversized TradingView webhook payload ({content_length} bytes)")
+                self.send_json_response(
+                    {"error": f"Payload too large. Maximum allowed size is {MAX_PAYLOAD_BYTES} bytes."},
+                    status=413
+                )
                 return
 
             body_bytes = self.rfile.read(content_length)
@@ -177,6 +189,24 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
                     "price": 0.0,
                     "conviction": "MEDIUM"
                 }
+
+            # Authenticate Webhook Secret if configured
+            if TRADINGVIEW_WEBHOOK_SECRET:
+                parsed_url = urlparse(self.path)
+                query_params = parse_qs(parsed_url.query)
+                query_secret = query_params.get("secret", [""])[0]
+                header_secret = self.headers.get("X-Webhook-Secret", "")
+                auth_header = self.headers.get("Authorization", "")
+                bearer_secret = auth_header[7:].strip() if auth_header.startswith("Bearer ") else ""
+                body_secret = signal_data.get("secret", "") if isinstance(signal_data, dict) else ""
+
+                provided_secret = header_secret or query_secret or bearer_secret or body_secret
+                if provided_secret != TRADINGVIEW_WEBHOOK_SECRET:
+                    logger.warning("Unauthorized TradingView webhook access attempt (mismatched secret).")
+                    self.send_json_response({"error": "Unauthorized: Invalid or missing webhook secret."}, status=401)
+                    return
+            else:
+                logger.debug("TRADINGVIEW_WEBHOOK_SECRET not set; processing unauthenticated webhook request.")
 
             # Stamp receive timestamp
             signal_data["received_at"] = datetime.now(timezone.utc).isoformat()
@@ -198,25 +228,33 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
                 with open(SIGNALS_PATH, "w", encoding="utf-8") as f:
                     json.dump(signals, f, indent=2)
 
-            # Broadcast to Discord Webhook
-            discord = DiscordWebhookDispatcher()
-            discord.send_tradingview_signal_embed(signal_data)
+            # Asynchronously broadcast to Discord & Telegram without blocking HTTP response
+            def _async_dispatch(sig: dict):
+                try:
+                    discord = DiscordWebhookDispatcher()
+                    discord.send_tradingview_signal_embed(sig)
+                except Exception as d_err:
+                    logger.error(f"Error dispatching TradingView signal to Discord: {d_err}")
 
-            # Broadcast to Telegram Bot
-            telegram = TelegramAlertDispatcher()
-            msg = (
-                f"🔔 <b>TradingView Alert ({signal_data.get('symbol', 'BTCUSDT')})</b>\n\n"
-                f"<b>Event:</b> <code>{signal_data.get('event')}</code>\n"
-                f"<b>Message:</b> {signal_data.get('message')}\n"
-                f"<b>Price:</b> <code>${signal_data.get('price', 0.0):,.2f}</code>\n"
-                f"<b>Conviction:</b> <code>{signal_data.get('conviction', 'HIGH')}</code>\n"
-                f"<b>Time:</b> {signal_data.get('received_at')}"
-            )
-            telegram.send_message(msg, parse_mode="HTML")
+                try:
+                    telegram = TelegramAlertDispatcher()
+                    msg = (
+                        f"🔔 <b>TradingView Alert ({sig.get('symbol', 'BTCUSDT')})</b>\n\n"
+                        f"<b>Event:</b> <code>{sig.get('event')}</code>\n"
+                        f"<b>Message:</b> {sig.get('message')}\n"
+                        f"<b>Price:</b> <code>${float(sig.get('price', 0.0)):,.2f}</code>\n"
+                        f"<b>Conviction:</b> <code>{sig.get('conviction', 'HIGH')}</code>\n"
+                        f"<b>Time:</b> {sig.get('received_at')}"
+                    )
+                    telegram.send_message(msg, parse_mode="HTML")
+                except Exception as t_err:
+                    logger.error(f"Error dispatching TradingView signal to Telegram: {t_err}")
+
+            threading.Thread(target=_async_dispatch, args=(signal_data,), daemon=True).start()
 
             self.send_json_response({
                 "status": "success",
-                "message": "TradingView signal processed and dispatched.",
+                "message": "TradingView signal accepted and queued for dispatch.",
                 "signal": signal_data
             }, status=200)
 
@@ -256,10 +294,10 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
 
-def run_server(port: int = 8080):
-    server_address = ("", port)
+def run_server(host: str = "127.0.0.1", port: int = 8080):
+    server_address = (host, port)
     httpd = ThreadingHTTPServer(server_address, DashboardHTTPRequestHandler)
-    logger.info(f"⚡ Liquidity-Pulse Concurrent Dashboard Server running on http://localhost:{port}")
+    logger.info(f"⚡ Liquidity-Pulse Concurrent Dashboard Server running on http://{host}:{port}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
@@ -271,7 +309,8 @@ def run_server(port: int = 8080):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Liquidity Pulse Dashboard Server")
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host address to bind to (default 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8080, help="Port to listen on (default 8080)")
     args = parser.parse_args()
 
-    run_server(port=args.port)
+    run_server(host=args.host, port=args.port)

@@ -12,6 +12,7 @@ import sys
 import json
 import logging
 import time
+import threading
 import asyncio
 from pathlib import Path
 from collections import deque
@@ -155,15 +156,28 @@ class LiquidityPulseWS:
                 f"Current Mid-Price: ${self.last_mid_price:,.2f}\n"
                 f"{'='*70}\n"
             )
-            # Dispatch Telegram Alert with cooldown to avoid API bans
+            # Dispatch Telegram and Discord Alerts non-blockingly with cooldown to avoid API bans / event loop freezes
             if now - self.last_cascade_alert_time >= self.CASCADE_COOLDOWN_SECONDS:
                 self.last_cascade_alert_time = now
                 telegram = TelegramAlertDispatcher()
-                telegram.send_liquidation_cascade_alert(total_cascade_usd, long_liqs, short_liqs, self.last_mid_price)
-                
-                # Dispatch Discord Embed Alert
                 discord = DiscordWebhookDispatcher()
-                discord.send_liquidation_alert_embed(total_cascade_usd, long_liqs, short_liqs, self.last_mid_price)
+                
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.run_in_executor(None, telegram.send_liquidation_cascade_alert, total_cascade_usd, long_liqs, short_liqs, self.last_mid_price)
+                    loop.run_in_executor(None, discord.send_liquidation_alert_embed, total_cascade_usd, long_liqs, short_liqs, self.last_mid_price)
+                except RuntimeError:
+                    # Fallback if executing outside an active asyncio loop
+                    threading.Thread(
+                        target=telegram.send_liquidation_cascade_alert,
+                        args=(total_cascade_usd, long_liqs, short_liqs, self.last_mid_price),
+                        daemon=True
+                    ).start()
+                    threading.Thread(
+                        target=discord.send_liquidation_alert_embed,
+                        args=(total_cascade_usd, long_liqs, short_liqs, self.last_mid_price),
+                        daemon=True
+                    ).start()
             else:
                 logger.info(f"Cascade alert suppressed due to active cooldown ({self.CASCADE_COOLDOWN_SECONDS}s).")
 
