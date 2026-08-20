@@ -12,6 +12,7 @@ import os
 import sys
 import json
 import logging
+import concurrent.futures
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -181,15 +182,15 @@ class SentinelOrchestrator:
         logger.info(f"=== Starting Liquidity-Pulse Sentinel Pipeline ===")
         telemetry = self.run_quant_pipeline()
         briefing = self.generate_session_briefing(telemetry)
-        
-        # Dispatch Telegram session briefing alert
-        telegram = TelegramAlertDispatcher()
         session_name = self.detect_active_session()
-        telegram.send_session_briefing_alert(telemetry, session_name)
         
-        # Dispatch Discord rich embed alert
+        # Concurrent alert dispatch in parallel worker threads
+        telegram = TelegramAlertDispatcher()
         discord = DiscordWebhookDispatcher()
-        discord.send_session_briefing_embed(telemetry, session_name)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            fut_tg = executor.submit(telegram.send_session_briefing_alert, telemetry, session_name)
+            fut_dc = executor.submit(discord.send_session_briefing_embed, telemetry, session_name)
+            concurrent.futures.wait([fut_tg, fut_dc], timeout=15.0)
         
         logger.info(f"=== Sentinel Pipeline Completed Successfully ===")
         return briefing

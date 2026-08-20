@@ -11,6 +11,7 @@ import sys
 import json
 import logging
 import threading
+import hashlib
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
@@ -278,11 +279,23 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
             logger.error(f"Error reading signal history: {err}")
             self.send_json_response({"error": str(err)}, status=500)
 
-    def send_json_response(self, payload: dict, status: int = 200):
+    def send_json_response(self, payload: dict, status: int = 200, max_age: int = 1):
         body = json.dumps(payload).encode("utf-8")
+        etag = f'"{hashlib.md5(body).hexdigest()}"'
+        
+        # Check conditional GET
+        if status == 200 and self.headers.get("If-None-Match") == etag:
+            self.send_response(304)
+            self.send_header("ETag", etag)
+            self.send_header("Cache-Control", f"public, max-age={max_age}, must-revalidate")
+            self.end_headers()
+            return
+
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("ETag", etag)
+        self.send_header("Cache-Control", f"public, max-age={max_age}, must-revalidate")
         
         # Origin validation for CORS
         origin = self.headers.get("Origin", "")

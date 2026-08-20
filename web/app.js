@@ -11,6 +11,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let briefingTimer = null;
   let depthTimer = null;
 
+  // Render caching fingerprints to prevent DOM thrashing
+  let _lastSRFingerprint = "";
+  let _lastHeaderFingerprint = "";
+  let _lastVPFingerprint = "";
+
   const btnRefresh = document.getElementById("btn-refresh");
   const filterBtns = document.querySelectorAll(".filter-btn");
 
@@ -35,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
       filterBtns.forEach(b => b.classList.remove("active"));
       e.target.classList.add("active");
       currentFilter = e.target.getAttribute("data-filter");
+      _lastSRFingerprint = ""; // force re-render on filter change
       renderSRTable();
     });
   });
@@ -130,6 +136,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const vol24h = telemetryData.volume_24h || 0;
     const summary = telemetryData.market_summary || {};
 
+    const fingerprint = `${currentPrice}_${vpoc}_${high24h}_${low24h}_${vol24h}_${summary.high_conviction_count}`;
+    if (fingerprint === _lastHeaderFingerprint) return;
+    _lastHeaderFingerprint = fingerprint;
+
     document.getElementById("header-price").innerText = `$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
     document.getElementById("stat-24h-range").innerText = `$${low24h.toLocaleString()} - $${high24h.toLocaleString()}`;
     document.getElementById("stat-24h-vol").innerText = `24h Vol: ${vol24h.toLocaleString(undefined, {maximumFractionDigits: 1})} BTC`;
@@ -166,6 +176,10 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (currentFilter === "RESISTANCE") levels = levels.filter(l => l.type === "RESISTANCE");
     else if (currentFilter === "HIGH") levels = levels.filter(l => l.conviction === "HIGH");
 
+    const fingerprint = `${currentFilter}_` + levels.map(l => `${l.price}_${l.touch_count}_${l.conviction}_${l.distance_pct}_${l.volume_confluence}`).join("|");
+    if (fingerprint === _lastSRFingerprint) return;
+    _lastSRFingerprint = fingerprint;
+
     if (levels.length === 0) {
       tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted pad-20">No levels match filter criteria.</td></tr>`;
       return;
@@ -201,25 +215,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const hvns = new Set(vp.hvn_zones || []);
     const lvns = new Set(vp.lvn_zones || []);
 
-    let bins = vp.bins;
-    // If backend provided structured bins, sample them for charting
-    if (bins && bins.length > 0) {
-      // Pick representative sample (e.g. 20 bins)
-      const step = Math.max(1, Math.floor(bins.length / 20));
-      bins = bins.filter((_, idx) => idx % step === 0);
-    } else {
-      // Fallback: construct bins around key levels
-      const basePrice = vpoc - 1000;
-      bins = [];
-      for (let i = 0; i < 15; i++) {
-        const binPrice = roundVal(basePrice + i * 150, 2);
-        let vol = 250;
-        let tag = "NORMAL";
-        if (Math.abs(binPrice - vpoc) < 100) { vol = 1000; tag = "VPOC"; }
-        else if (Array.from(hvns).some(h => Math.abs(h - binPrice) < 100)) { vol = 700; tag = "HVN"; }
-        else if (Array.from(lvns).some(l => Math.abs(l - binPrice) < 100)) { vol = 80; tag = "LVN"; }
-        bins.push({ price: binPrice, volume: vol, tag });
-      }
+    let bins = vp.bins || [];
+    if (bins.length === 0) {
+      return;
     }
 
     const labels = bins.map(b => `$${b.price.toLocaleString()}`);
@@ -231,11 +229,17 @@ document.addEventListener("DOMContentLoaded", () => {
       return "rgba(255, 255, 255, 0.15)";
     });
 
+    const fingerprint = `${vpoc}_` + dataVals.join(",");
+    if (fingerprint === _lastVPFingerprint && vpChart) {
+      return;
+    }
+    _lastVPFingerprint = fingerprint;
+
     if (vpChart) {
       vpChart.data.labels = labels;
       vpChart.data.datasets[0].data = dataVals;
       vpChart.data.datasets[0].backgroundColor = bgColors;
-      vpChart.update();
+      vpChart.update("none");
       return;
     }
 
@@ -254,7 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 400 },
+        animation: { duration: 300 },
         plugins: {
           legend: { display: false }
         },
@@ -277,21 +281,36 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!container) return;
 
     const bandsData = depthData?.bands;
-    if (!bandsData || Object.keys(bandsData).length === 0) {
-      container.innerHTML = `
-        <div class="depth-band-item">
+    const bandKeys = ["0.5%", "1.0%", "2.0%"];
+
+    // Initialize band skeleton DOM elements if not already present
+    if (!container.querySelector('[data-band="0.5%"]')) {
+      container.innerHTML = bandKeys.map(key => `
+        <div class="depth-band-item" data-band="${key}">
           <div class="band-header">
-            <span>Orderbook Stream</span>
-            <span class="band-delta text-muted">Awaiting stream packets...</span>
+            <span>${key} Depth Band</span>
+            <span class="band-delta text-muted">Connecting...</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill bid-fill" style="width: 50%;"></div>
+            <div class="progress-fill ask-fill" style="width: 50%;"></div>
+          </div>
+          <div class="band-footer">
+            <span class="band-bid-info text-green"><i class="fa-solid fa-arrow-up"></i> Bids: $0.00M (50%)</span>
+            <span class="band-ask-info text-red">Asks: $0.00M (50%) <i class="fa-solid fa-arrow-down"></i></span>
           </div>
         </div>
-      `;
-      return;
+      `).join("");
     }
 
-    const bandKeys = ["0.5%", "1.0%", "2.0%"];
-    container.innerHTML = bandKeys.map(key => {
+    if (!bandsData || Object.keys(bandsData).length === 0) return;
+
+    // In-place update of existing DOM nodes for smooth CSS width transitions
+    bandKeys.forEach(key => {
       const b = bandsData[key] || { bid_depth_usd: 0, ask_depth_usd: 0, imbalance_delta_pct: 0 };
+      const itemEl = container.querySelector(`[data-band="${key}"]`);
+      if (!itemEl) return;
+
       const bidUSD = (b.bid_depth_usd / 1_000_000).toFixed(2);
       const askUSD = (b.ask_depth_usd / 1_000_000).toFixed(2);
       const totalUSD = b.bid_depth_usd + b.ask_depth_usd;
@@ -302,23 +321,24 @@ document.addEventListener("DOMContentLoaded", () => {
       const deltaText = delta > 0 ? `+${delta.toFixed(1)}% (Bid Heavy)` : `${delta.toFixed(1)}% (Ask Heavy)`;
       const deltaClass = delta > 0 ? "text-green" : (delta < 0 ? "text-red" : "text-muted");
 
-      return `
-        <div class="depth-band-item">
-          <div class="band-header">
-            <span>${key} Depth Band</span>
-            <span class="band-delta ${deltaClass}">${deltaText}</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill bid-fill" style="width: ${bidPct}%;"></div>
-            <div class="progress-fill ask-fill" style="width: ${askPct}%;"></div>
-          </div>
-          <div class="band-footer">
-            <span class="text-green"><i class="fa-solid fa-arrow-up"></i> Bids: $${bidUSD}M (${bidPct}%)</span>
-            <span class="text-red">Asks: $${askUSD}M (${askPct}%) <i class="fa-solid fa-arrow-down"></i></span>
-          </div>
-        </div>
-      `;
-    }).join("");
+      const deltaEl = itemEl.querySelector(".band-delta");
+      if (deltaEl) {
+        deltaEl.textContent = deltaText;
+        deltaEl.className = `band-delta ${deltaClass}`;
+      }
+
+      const bidFill = itemEl.querySelector(".bid-fill");
+      if (bidFill) bidFill.style.width = `${bidPct}%`;
+
+      const askFill = itemEl.querySelector(".ask-fill");
+      if (askFill) askFill.style.width = `${askPct}%`;
+
+      const bidInfo = itemEl.querySelector(".band-bid-info");
+      if (bidInfo) bidInfo.innerHTML = `<i class="fa-solid fa-arrow-up"></i> Bids: $${bidUSD}M (${bidPct}%)`;
+
+      const askInfo = itemEl.querySelector(".band-ask-info");
+      if (askInfo) askInfo.innerHTML = `Asks: $${askUSD}M (${askPct}%) <i class="fa-solid fa-arrow-down"></i>`;
+    });
   }
 
   function showToast(msg, type = "success") {
@@ -340,9 +360,5 @@ document.addEventListener("DOMContentLoaded", () => {
     toast.innerText = msg;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
-  }
-
-  function roundVal(val, decimals = 2) {
-    return Number(Math.round(val + "e" + decimals) + "e-" + decimals);
   }
 });
