@@ -14,3 +14,6 @@ Thumbs.db
 # IDE specific
 .idea/
 .vscode/
+
+# Recorded order book history (grows continuously; not source)
+workspace/depth_history/

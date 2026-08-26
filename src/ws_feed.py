@@ -32,6 +32,7 @@ except ImportError:
 
 import requests
 
+from depth_recorder import DepthRecorder
 from telegram_bot import TelegramAlertDispatcher
 from discord_webhook import DiscordWebhookDispatcher
 
@@ -45,6 +46,7 @@ logger = logging.getLogger("WSFeed")
 PROJECT_ROOT = Path(__file__).parent.parent
 WORKSPACE_DIR = PROJECT_ROOT / "workspace"
 DEPTH_FILE_PATH = WORKSPACE_DIR / "depth_latest.json"
+DEPTH_HISTORY_DIR = WORKSPACE_DIR / "depth_history"
 
 
 class LocalOrderBook:
@@ -151,7 +153,8 @@ class LiquidityPulseWS:
     CASCADE_COOLDOWN_SECONDS = 180  # Cooldown between Telegram cascade alerts
     SEED_RETRY_SECONDS = 2.0  # Floor between order book snapshot attempts
 
-    def __init__(self):
+    def __init__(self, recorder: "DepthRecorder | None" = None):
+        self.recorder = recorder
         # Sliding window for liquidations: tuple of (timestamp, usd_val, side, price)
         self.liquidation_window: deque[Tuple[float, float, str, float]] = deque()
         self.last_mid_price: float = 0.0
@@ -369,6 +372,8 @@ class LiquidityPulseWS:
                     # A dropped socket means missed diff events, so the book from
                     # the previous session can no longer be trusted.
                     self.order_book.reset()
+                    if self.recorder:
+                        self.recorder.mark_gap("reconnect")
                     while self.running:
                         if duration_sec > 0 and (time.time() - start_time) >= duration_sec:
                             logger.info(f"Reached execution duration limit ({duration_sec}s). Stopping.")
@@ -395,9 +400,17 @@ class LiquidityPulseWS:
                                         f"(event U={data.get('U')} vs last_update_id={self.order_book.last_update_id}). "
                                         "Reseeding from snapshot."
                                     )
+                                    if self.recorder:
+                                        self.recorder.mark_gap(
+                                            "sequence_gap",
+                                            f"U={data.get('U')} last={self.order_book.last_update_id}"
+                                        )
                                     self.order_book.reset()
                                     await self.seed_order_book()
                                     continue
+
+                                if self.recorder:
+                                    self.recorder.record(self.order_book)
 
                                 depth_metrics = self.calculate_depth_delta()
                                 if "0.5%" in depth_metrics:
@@ -431,10 +444,28 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Liquidity Pulse WebSocket Feed Client")
     parser.add_argument("--duration", type=float, default=0, help="Duration to run in seconds (0 for indefinite)")
+    parser.add_argument("--record", action="store_true",
+                        help="Append order book history to workspace/depth_history/ for later analysis")
+    parser.add_argument("--record-interval", type=float, default=1.0,
+                        help="Seconds between derived depth records (default 1.0)")
+    parser.add_argument("--snapshot-interval", type=float, default=60.0,
+                        help="Seconds between full book snapshots (default 60)")
     args = parser.parse_args()
 
-    client = LiquidityPulseWS()
+    recorder = None
+    if args.record:
+        recorder = DepthRecorder(
+            DEPTH_HISTORY_DIR,
+            derived_interval=args.record_interval,
+            snapshot_interval=args.snapshot_interval
+        )
+        recorder.mark_gap("start")
+
+    client = LiquidityPulseWS(recorder=recorder)
     try:
         asyncio.run(client.listen(duration_sec=args.duration))
     except KeyboardInterrupt:
         logger.info("WebSocket client stopped by user.")
+    finally:
+        if recorder:
+            recorder.close()

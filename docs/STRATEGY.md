@@ -231,8 +231,24 @@ benchmark undermines that use. What the benchmark does undermine is treating the
 probability, or gating alerts as though HIGH were more likely to hold than MEDIUM.
 
 The depth imbalance is the signal in this system that has *not* been shown to lack an
-edge — it has simply never been tested, because it needs recorded order-book history that
-nobody has. If you want that answered, the prerequisite is starting a depth recorder now.
+edge — it has simply never been tested, because testing it needs order-book history that
+exchanges do not serve. That history can only come from data recorded beforehand:
+
+```bash
+python src/ws_feed.py --record
+```
+
+This appends to `workspace/depth_history/`, one gzipped JSONL file per UTC day, at roughly
+12MB/day. It writes derived band metrics every second across five band widths, a 500-level
+book snapshot every minute so features nobody has thought of yet can still be recomputed,
+and an explicit `gap` record on every reconnect, resync, start and stop — so analysis can
+treat a break in continuity as a boundary instead of interpolating across it.
+
+Each derived record carries the book's `span`, the reach it is complete to. Bands wider
+than that span are floors rather than measurements; filter on it before trusting a wide
+band. At 15m resolution you get 96 samples a day, so a sample large enough for the same
+walk-forward-plus-control treatment is one to two months away. Purchased L2 history from a
+market data vendor is the alternative to waiting.
 
 ---
 

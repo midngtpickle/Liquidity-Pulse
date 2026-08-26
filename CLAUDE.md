@@ -66,6 +66,11 @@ python src/server.py --port 8080
 # 4. Start Live WebSocket depth delta & liquidation monitor
 python src/ws_feed.py
 
+# 4b. Same, but also record order book history for later analysis
+#     Exchanges do not serve historical order books, so the depth signal can only be
+#     tested against data recorded beforehand. ~12MB/day gzipped.
+python src/ws_feed.py --record
+
 # 5. Run Walk-Forward S/R Benchmark (5,000 candles, with random-level control)
 python src/backtester.py
 
@@ -88,6 +93,8 @@ python src/telegram_bot.py --dry-run
 | `src/server.py` | Concurrent HTTP server & TradingView webhook relay | Serves `web/`, handles `/api/telemetry`, `/api/depth`, `/api/webhook/tradingview` |
 | `src/discord_webhook.py` | Visual rich embed cards for Discord | Dispatches formatted embeds using `DISCORD_WEBHOOK_URL` |
 | `src/telegram_bot.py` | HTML alert dispatcher for Telegram | Dispatches messages using `TELEGRAM_BOT_TOKEN` & `TELEGRAM_CHAT_ID` |
+| `src/depth_recorder.py` | Gzipped JSONL order book history, one file per UTC day | Invoked by `ws_feed.py --record` $ightarrow$ Writes `workspace/depth_history/` |
+| `src/derivation_study.py` | Compares level derivations against a random control | Reads Binance history $ightarrow$ Writes `workspace/derivation_study.json` |
 | `src/backtester.py` | Historical S/R bounce accuracy benchmark | Simulates train/test splits $\rightarrow$ Writes `workspace/backtest_results.json` |
 | `liquidity_pulse_sr.pine` | Official TradingView Pine Script v5 indicator | Overlays S/R lines, VPOC, and sends alert webhooks to `src/server.py` |
 
