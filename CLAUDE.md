@@ -66,7 +66,7 @@ python src/server.py --port 8080
 # 4. Start Live WebSocket depth delta & liquidation monitor
 python src/ws_feed.py
 
-# 5. Run Historical S/R Backtester Benchmark (1,000 historical candles)
+# 5. Run Walk-Forward S/R Benchmark (5,000 candles, with random-level control)
 python src/backtester.py
 
 # 6. Test Discord Webhook embed dispatcher (dry-run mode)

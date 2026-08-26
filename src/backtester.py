@@ -15,7 +15,9 @@ reported as UNRESOLVED rather than silently counted as failures.
 import os
 import sys
 import json
+import random
 import logging
+import statistics
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
 import numpy as np
@@ -166,6 +168,32 @@ class SRBacktester:
 
         return records
 
+    @staticmethod
+    def control_levels(active_levels: List[SRLevel], rng: random.Random) -> List[SRLevel]:
+        """
+        Null-hypothesis levels: the same count, drawn uniformly across the price band the
+        real levels occupy, carrying none of the pivot-cluster derivation.
+
+        Drawing from the real band rather than anywhere on the chart keeps the comparison
+        honest. The question is whether a derived level beats an arbitrary price in the
+        same region, not whether it beats a line somewhere price never went.
+        """
+        if not active_levels:
+            return []
+        low = min(l.price for l in active_levels)
+        high = max(l.price for l in active_levels)
+        return [
+            SRLevel(
+                price=rng.uniform(low, high),
+                type="SUPPORT",
+                touch_count=3,
+                conviction="HIGH",
+                distance_pct=0.0,
+                volume_confluence=True
+            )
+            for _ in active_levels
+        ]
+
     def run_backtest(
         self,
         cluster_threshold_pct: float = 0.0035,
@@ -174,7 +202,8 @@ class SRBacktester:
         resolve_bars: int = 8,
         lookback: int = 500,
         horizon: int = 50,
-        min_touches: int = 2
+        min_touches: int = 2,
+        control_seeds: int = 5
     ) -> Dict[str, Any]:
         """
         Walk-forward evaluation.
@@ -197,7 +226,8 @@ class SRBacktester:
             "resolve_bars": resolve_bars,
             "lookback": lookback,
             "horizon": horizon,
-            "min_touches": min_touches
+            "min_touches": min_touches,
+            "control_seeds": control_seeds
         }
 
         results: Dict[str, Any] = {
@@ -212,10 +242,19 @@ class SRBacktester:
             "conviction_stats": {
                 tier: {outcome: 0 for outcome in OUTCOMES} for tier in CONVICTION_TIERS
             },
-            "fold_details": []
+            "fold_details": [],
+            "control": {
+                "seeds": control_seeds,
+                "totals": {outcome: 0 for outcome in OUTCOMES},
+                "hold_rate_pct_per_seed": []
+            }
         }
 
         levels_per_fold: List[int] = []
+        control_totals: List[Dict[str, int]] = [
+            {outcome: 0 for outcome in OUTCOMES} for _ in range(control_seeds)
+        ]
+        rngs = [random.Random(seed) for seed in range(control_seeds)]
 
         for fold_index, start in enumerate(range(lookback, len(klines) - horizon + 1, horizon)):
             train_klines = klines[start - lookback:start]
@@ -245,6 +284,16 @@ class SRBacktester:
                 results["totals"][outcome] += 1
                 results["conviction_stats"][tier][outcome] += 1
 
+            # Same evaluation, same fold, randomly placed levels. A hold rate quoted
+            # without this alongside it is not interpretable.
+            for seed_index in range(control_seeds):
+                control = self.control_levels(active_levels, rngs[seed_index])
+                for record in self.evaluate_fold(
+                    control, test_klines, cluster_threshold_pct,
+                    target_pct, break_margin_pct, resolve_bars
+                ):
+                    control_totals[seed_index][record["outcome"]] += 1
+
             results["folds"] += 1
             results["fold_details"].append({
                 "fold_index": fold_index,
@@ -261,6 +310,21 @@ class SRBacktester:
             round(float(np.mean(levels_per_fold)), 2) if levels_per_fold else 0.0
         )
         results["hold_rate_pct"] = self.hold_rate(results["totals"])
+
+        seed_rates = [self.hold_rate(t) for t in control_totals]
+        for totals in control_totals:
+            for outcome in OUTCOMES:
+                results["control"]["totals"][outcome] += totals[outcome]
+        results["control"]["hold_rate_pct_per_seed"] = seed_rates
+        if seed_rates:
+            mean_rate = statistics.mean(seed_rates)
+            sd_rate = statistics.pstdev(seed_rates)
+            results["control"]["hold_rate_pct_mean"] = round(mean_rate, 2)
+            results["control"]["hold_rate_pct_sd"] = round(sd_rate, 2)
+            results["edge_points"] = round(results["hold_rate_pct"] - mean_rate, 2)
+            results["edge_sd"] = (
+                round(abs(results["edge_points"]) / sd_rate, 2) if sd_rate > 0 else None
+            )
         for tier in CONVICTION_TIERS:
             stats = results["conviction_stats"][tier]
             stats["hold_rate_pct"] = self.hold_rate(stats)
@@ -310,6 +374,24 @@ class SRBacktester:
             s = results["conviction_stats"][tier]
             print(f"{tier:<10}{s['HOLD']:>8}{s['BREAK']:>8}{s['UNRESOLVED']:>8}"
                   f"{s['hold_rate_pct']:>11}%")
+
+        control = results.get("control", {})
+        if control.get("hold_rate_pct_per_seed"):
+            print("-" * 74)
+            print(f"CONTROL ({control['seeds']} seeds of randomly placed levels, same evaluation)")
+            print(f"  random hold rate:  {control['hold_rate_pct_mean']}%  "
+                  f"(sd {control['hold_rate_pct_sd']})")
+            print(f"  real hold rate:    {results['hold_rate_pct']}%")
+            edge = results.get("edge_points")
+            edge_sd = results.get("edge_sd")
+            verdict = (
+                "no detectable edge over random levels"
+                if edge_sd is None or edge_sd < 2.0
+                else "edge exceeds the random spread"
+            )
+            print(f"  EDGE:              {edge:+.2f} points"
+                  + (f"  ({edge_sd} sd)" if edge_sd is not None else ""))
+            print(f"  => {verdict}")
         print("=" * 74 + "\n")
 
 
@@ -324,6 +406,8 @@ if __name__ == "__main__":
     parser.add_argument("--break-margin", type=float, default=0.0035)
     parser.add_argument("--resolve-bars", type=int, default=8)
     parser.add_argument("--min-touches", type=int, default=2)
+    parser.add_argument("--control-seeds", type=int, default=5,
+                        help="Random-level control runs (0 disables)")
     args = parser.parse_args()
 
     backtester = SRBacktester(symbol="BTCUSDT", interval="15m", total_candles=args.candles)
@@ -333,7 +417,8 @@ if __name__ == "__main__":
         resolve_bars=args.resolve_bars,
         lookback=args.lookback,
         horizon=args.horizon,
-        min_touches=args.min_touches
+        min_touches=args.min_touches,
+        control_seeds=args.control_seeds
     )
     backtester.print_summary(res)
 
