@@ -1,0 +1,189 @@
+{
+  "symbol": "BTCUSDT",
+  "interval": "15m",
+  "run_time_utc": "2026-08-26T12:05:17.557342+00:00",
+  "params": {
+    "lookback": 500,
+    "horizon": 50,
+    "zone_tolerance_pct": 0.0035,
+    "target_pct": 0.005,
+    "break_margin_pct": 0.0035,
+    "resolve_bars": 32,
+    "anchor": "entry",
+    "control_seeds": 30,
+    "min_resolved": 100
+  },
+  "conditions_tested": 17,
+  "results": [
+    {
+      "condition": "all touches (baseline)",
+      "resolved": 2344,
+      "hold_rate_pct": 38.57,
+      "control_mean_pct": 40.14,
+      "control_sd": 1.27,
+      "edge_points": -1.57,
+      "edge_sd": 1.24,
+      "underpowered": false
+    },
+    {
+      "condition": "with trend",
+      "resolved": 843,
+      "hold_rate_pct": 38.67,
+      "control_mean_pct": 41.14,
+      "control_sd": 1.9,
+      "edge_points": -2.46,
+      "edge_sd": 1.3,
+      "underpowered": false
+    },
+    {
+      "condition": "against trend",
+      "resolved": 1173,
+      "hold_rate_pct": 38.96,
+      "control_mean_pct": 40.16,
+      "control_sd": 1.42,
+      "edge_points": -1.2,
+      "edge_sd": 0.85,
+      "underpowered": false
+    },
+    {
+      "condition": "no trend",
+      "resolved": 328,
+      "hold_rate_pct": 36.89,
+      "control_mean_pct": 36.88,
+      "control_sd": 2.73,
+      "edge_points": 0.01,
+      "edge_sd": 0.01,
+      "underpowered": false
+    },
+    {
+      "condition": "above VPOC",
+      "resolved": 1315,
+      "hold_rate_pct": 39.16,
+      "control_mean_pct": 40.62,
+      "control_sd": 1.65,
+      "edge_points": -1.46,
+      "edge_sd": 0.88,
+      "underpowered": false
+    },
+    {
+      "condition": "below VPOC",
+      "resolved": 1029,
+      "hold_rate_pct": 37.8,
+      "control_mean_pct": 39.55,
+      "control_sd": 1.62,
+      "edge_points": -1.74,
+      "edge_sd": 1.08,
+      "underpowered": false
+    },
+    {
+      "condition": "sweep (pierced, closed back)",
+      "resolved": 52,
+      "hold_rate_pct": 32.69,
+      "control_mean_pct": 37.73,
+      "control_sd": 6.07,
+      "edge_points": -5.03,
+      "edge_sd": 0.83,
+      "underpowered": true
+    },
+    {
+      "condition": "no sweep",
+      "resolved": 2292,
+      "hold_rate_pct": 38.7,
+      "control_mean_pct": 40.2,
+      "control_sd": 1.24,
+      "edge_points": -1.5,
+      "edge_sd": 1.21,
+      "underpowered": false
+    },
+    {
+      "condition": "heavy volume touch (>1.5x)",
+      "resolved": 872,
+      "hold_rate_pct": 37.27,
+      "control_mean_pct": 39.43,
+      "control_sd": 1.52,
+      "edge_points": -2.15,
+      "edge_sd": 1.41,
+      "underpowered": false
+    },
+    {
+      "condition": "light volume touch (<0.7x)",
+      "resolved": 561,
+      "hold_rate_pct": 41.53,
+      "control_mean_pct": 40.12,
+      "control_sd": 2.38,
+      "edge_points": 1.41,
+      "edge_sd": 0.59,
+      "underpowered": false
+    },
+    {
+      "condition": "fast approach",
+      "resolved": 777,
+      "hold_rate_pct": 36.55,
+      "control_mean_pct": 38.74,
+      "control_sd": 1.29,
+      "edge_points": -2.19,
+      "edge_sd": 1.69,
+      "underpowered": false
+    },
+    {
+      "condition": "slow approach",
+      "resolved": 831,
+      "hold_rate_pct": 40.19,
+      "control_mean_pct": 41.18,
+      "control_sd": 2.17,
+      "edge_points": -0.99,
+      "edge_sd": 0.46,
+      "underpowered": false
+    },
+    {
+      "condition": "high volatility",
+      "resolved": 407,
+      "hold_rate_pct": 37.84,
+      "control_mean_pct": 40.45,
+      "control_sd": 2.25,
+      "edge_points": -2.61,
+      "edge_sd": 1.16,
+      "underpowered": false
+    },
+    {
+      "condition": "low volatility",
+      "resolved": 596,
+      "hold_rate_pct": 36.58,
+      "control_mean_pct": 38.13,
+      "control_sd": 2.16,
+      "edge_points": -1.55,
+      "edge_sd": 0.72,
+      "underpowered": false
+    },
+    {
+      "condition": "Asia session",
+      "resolved": 633,
+      "hold_rate_pct": 37.91,
+      "control_mean_pct": 40.42,
+      "control_sd": 2.01,
+      "edge_points": -2.5,
+      "edge_sd": 1.25,
+      "underpowered": false
+    },
+    {
+      "condition": "London session",
+      "resolved": 569,
+      "hold_rate_pct": 39.19,
+      "control_mean_pct": 38.2,
+      "control_sd": 2.16,
+      "edge_points": 0.99,
+      "edge_sd": 0.46,
+      "underpowered": false
+    },
+    {
+      "condition": "New York session",
+      "resolved": 1142,
+      "hold_rate_pct": 38.62,
+      "control_mean_pct": 40.9,
+      "control_sd": 1.43,
+      "edge_points": -2.29,
+      "edge_sd": 1.6,
+      "underpowered": false
+    }
+  ]
+}
