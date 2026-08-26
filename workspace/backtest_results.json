@@ -1,86 +1,934 @@
 {
   "symbol": "BTCUSDT",
-  "backtest_time_utc": "2026-08-20T01:11:07.429140+00:00",
-  "train_candles": 500,
-  "test_candles": 500,
-  "levels_evaluated": 7,
-  "total_level_tests": 114,
-  "successful_bounces": 15,
-  "breakthroughs": 99,
-  "overall_win_rate_pct": 13.16,
-  "high_conviction_stats": {
-    "tests": 114,
-    "bounces": 15,
-    "win_rate_pct": 13.16
-  },
-  "medium_conviction_stats": {
-    "tests": 0,
-    "bounces": 0,
-    "win_rate_pct": 0.0
-  },
-  "level_details": [
-    {
-      "price": 62679.17,
-      "type": "SUPPORT",
-      "conviction": "HIGH",
-      "tests": 7,
-      "bounces": 3,
-      "breakthroughs": 4,
-      "win_rate_pct": 42.86
+  "interval": "15m",
+  "backtest_time_utc": "2026-08-26T10:40:08.007782+00:00",
+  "method": "walk_forward",
+  "total_candles": 5000,
+  "lookback_candles": 500,
+  "horizon_candles": 50,
+  "folds": 90,
+  "total_level_tests": 1437,
+  "successful_bounces": 408,
+  "breakthroughs": 1029,
+  "overall_win_rate_pct": 28.39,
+  "conviction_stats": {
+    "HIGH": {
+      "tests": 1185,
+      "bounces": 334,
+      "win_rate_pct": 28.19
     },
-    {
-      "price": 63374.16,
-      "type": "RESISTANCE",
-      "conviction": "HIGH",
-      "tests": 22,
-      "bounces": 3,
-      "breakthroughs": 19,
-      "win_rate_pct": 13.64
+    "MEDIUM": {
+      "tests": 252,
+      "bounces": 74,
+      "win_rate_pct": 29.37
     },
-    {
-      "price": 63747.26,
-      "type": "RESISTANCE",
-      "conviction": "HIGH",
-      "tests": 9,
-      "bounces": 1,
-      "breakthroughs": 8,
-      "win_rate_pct": 11.11
-    },
-    {
-      "price": 64100.05,
-      "type": "RESISTANCE",
-      "conviction": "HIGH",
-      "tests": 28,
+    "LOW": {
+      "tests": 0,
       "bounces": 0,
-      "breakthroughs": 28,
       "win_rate_pct": 0.0
+    }
+  },
+  "fold_details": [
+    {
+      "train_end_index": 500,
+      "train_end_time_utc": "2026-07-10T13:44:59.999000+00:00",
+      "reference_price": 64381.15,
+      "levels_evaluated": 8,
+      "tests": 23,
+      "bounces": 5,
+      "breakthroughs": 18,
+      "win_rate_pct": 21.74
     },
     {
-      "price": 64507.71,
-      "type": "RESISTANCE",
-      "conviction": "HIGH",
-      "tests": 36,
-      "bounces": 6,
-      "breakthroughs": 30,
+      "train_end_index": 550,
+      "train_end_time_utc": "2026-07-11T02:14:59.999000+00:00",
+      "reference_price": 64006.98,
+      "levels_evaluated": 8,
+      "tests": 14,
+      "bounces": 1,
+      "breakthroughs": 13,
+      "win_rate_pct": 7.14
+    },
+    {
+      "train_end_index": 600,
+      "train_end_time_utc": "2026-07-11T14:44:59.999000+00:00",
+      "reference_price": 64419.78,
+      "levels_evaluated": 8,
+      "tests": 18,
+      "bounces": 3,
+      "breakthroughs": 15,
       "win_rate_pct": 16.67
     },
     {
-      "price": 64892.82,
-      "type": "RESISTANCE",
-      "conviction": "HIGH",
-      "tests": 10,
-      "bounces": 1,
-      "breakthroughs": 9,
-      "win_rate_pct": 10.0
+      "train_end_index": 650,
+      "train_end_time_utc": "2026-07-12T03:14:59.999000+00:00",
+      "reference_price": 64089.21,
+      "levels_evaluated": 8,
+      "tests": 18,
+      "bounces": 5,
+      "breakthroughs": 13,
+      "win_rate_pct": 27.78
     },
     {
-      "price": 65370.63,
-      "type": "RESISTANCE",
-      "conviction": "HIGH",
-      "tests": 2,
-      "bounces": 1,
-      "breakthroughs": 1,
+      "train_end_index": 700,
+      "train_end_time_utc": "2026-07-12T15:44:59.999000+00:00",
+      "reference_price": 64152.9,
+      "levels_evaluated": 8,
+      "tests": 18,
+      "bounces": 7,
+      "breakthroughs": 11,
+      "win_rate_pct": 38.89
+    },
+    {
+      "train_end_index": 750,
+      "train_end_time_utc": "2026-07-13T04:14:59.999000+00:00",
+      "reference_price": 62817.97,
+      "levels_evaluated": 9,
+      "tests": 20,
+      "bounces": 10,
+      "breakthroughs": 10,
       "win_rate_pct": 50.0
+    },
+    {
+      "train_end_index": 800,
+      "train_end_time_utc": "2026-07-13T16:44:59.999000+00:00",
+      "reference_price": 62366.49,
+      "levels_evaluated": 9,
+      "tests": 17,
+      "bounces": 6,
+      "breakthroughs": 11,
+      "win_rate_pct": 35.29
+    },
+    {
+      "train_end_index": 850,
+      "train_end_time_utc": "2026-07-14T05:14:59.999000+00:00",
+      "reference_price": 62824.16,
+      "levels_evaluated": 9,
+      "tests": 25,
+      "bounces": 5,
+      "breakthroughs": 20,
+      "win_rate_pct": 20.0
+    },
+    {
+      "train_end_index": 900,
+      "train_end_time_utc": "2026-07-14T17:44:59.999000+00:00",
+      "reference_price": 64520.2,
+      "levels_evaluated": 9,
+      "tests": 21,
+      "bounces": 4,
+      "breakthroughs": 17,
+      "win_rate_pct": 19.05
+    },
+    {
+      "train_end_index": 950,
+      "train_end_time_utc": "2026-07-15T06:14:59.999000+00:00",
+      "reference_price": 65044.01,
+      "levels_evaluated": 10,
+      "tests": 23,
+      "bounces": 9,
+      "breakthroughs": 14,
+      "win_rate_pct": 39.13
+    },
+    {
+      "train_end_index": 1000,
+      "train_end_time_utc": "2026-07-15T18:44:59.999000+00:00",
+      "reference_price": 64975.02,
+      "levels_evaluated": 11,
+      "tests": 17,
+      "bounces": 8,
+      "breakthroughs": 9,
+      "win_rate_pct": 47.06
+    },
+    {
+      "train_end_index": 1050,
+      "train_end_time_utc": "2026-07-16T07:14:59.999000+00:00",
+      "reference_price": 64656.0,
+      "levels_evaluated": 11,
+      "tests": 27,
+      "bounces": 13,
+      "breakthroughs": 14,
+      "win_rate_pct": 48.15
+    },
+    {
+      "train_end_index": 1100,
+      "train_end_time_utc": "2026-07-16T19:44:59.999000+00:00",
+      "reference_price": 64204.02,
+      "levels_evaluated": 11,
+      "tests": 16,
+      "bounces": 3,
+      "breakthroughs": 13,
+      "win_rate_pct": 18.75
+    },
+    {
+      "train_end_index": 1150,
+      "train_end_time_utc": "2026-07-17T08:14:59.999000+00:00",
+      "reference_price": 62892.0,
+      "levels_evaluated": 10,
+      "tests": 20,
+      "bounces": 11,
+      "breakthroughs": 9,
+      "win_rate_pct": 55.0
+    },
+    {
+      "train_end_index": 1200,
+      "train_end_time_utc": "2026-07-17T20:44:59.999000+00:00",
+      "reference_price": 64111.16,
+      "levels_evaluated": 10,
+      "tests": 13,
+      "bounces": 0,
+      "breakthroughs": 13,
+      "win_rate_pct": 0.0
+    },
+    {
+      "train_end_index": 1250,
+      "train_end_time_utc": "2026-07-18T09:14:59.999000+00:00",
+      "reference_price": 63974.56,
+      "levels_evaluated": 10,
+      "tests": 16,
+      "bounces": 4,
+      "breakthroughs": 12,
+      "win_rate_pct": 25.0
+    },
+    {
+      "train_end_index": 1300,
+      "train_end_time_utc": "2026-07-18T21:44:59.999000+00:00",
+      "reference_price": 64647.22,
+      "levels_evaluated": 8,
+      "tests": 18,
+      "bounces": 3,
+      "breakthroughs": 15,
+      "win_rate_pct": 16.67
+    },
+    {
+      "train_end_index": 1350,
+      "train_end_time_utc": "2026-07-19T10:14:59.999000+00:00",
+      "reference_price": 64575.57,
+      "levels_evaluated": 6,
+      "tests": 16,
+      "bounces": 4,
+      "breakthroughs": 12,
+      "win_rate_pct": 25.0
+    },
+    {
+      "train_end_index": 1400,
+      "train_end_time_utc": "2026-07-19T22:44:59.999000+00:00",
+      "reference_price": 64807.43,
+      "levels_evaluated": 6,
+      "tests": 26,
+      "bounces": 14,
+      "breakthroughs": 12,
+      "win_rate_pct": 53.85
+    },
+    {
+      "train_end_index": 1450,
+      "train_end_time_utc": "2026-07-20T11:14:59.999000+00:00",
+      "reference_price": 64384.56,
+      "levels_evaluated": 7,
+      "tests": 20,
+      "bounces": 9,
+      "breakthroughs": 11,
+      "win_rate_pct": 45.0
+    },
+    {
+      "train_end_index": 1500,
+      "train_end_time_utc": "2026-07-20T23:44:59.999000+00:00",
+      "reference_price": 65219.9,
+      "levels_evaluated": 6,
+      "tests": 6,
+      "bounces": 2,
+      "breakthroughs": 4,
+      "win_rate_pct": 33.33
+    },
+    {
+      "train_end_index": 1550,
+      "train_end_time_utc": "2026-07-21T12:14:59.999000+00:00",
+      "reference_price": 66405.74,
+      "levels_evaluated": 8,
+      "tests": 0,
+      "bounces": 0,
+      "breakthroughs": 0,
+      "win_rate_pct": 0.0
+    },
+    {
+      "train_end_index": 1600,
+      "train_end_time_utc": "2026-07-22T00:44:59.999000+00:00",
+      "reference_price": 66704.71,
+      "levels_evaluated": 10,
+      "tests": 22,
+      "bounces": 5,
+      "breakthroughs": 17,
+      "win_rate_pct": 22.73
+    },
+    {
+      "train_end_index": 1650,
+      "train_end_time_utc": "2026-07-22T13:14:59.999000+00:00",
+      "reference_price": 65649.72,
+      "levels_evaluated": 9,
+      "tests": 17,
+      "bounces": 4,
+      "breakthroughs": 13,
+      "win_rate_pct": 23.53
+    },
+    {
+      "train_end_index": 1700,
+      "train_end_time_utc": "2026-07-23T01:44:59.999000+00:00",
+      "reference_price": 65790.01,
+      "levels_evaluated": 8,
+      "tests": 14,
+      "bounces": 1,
+      "breakthroughs": 13,
+      "win_rate_pct": 7.14
+    },
+    {
+      "train_end_index": 1750,
+      "train_end_time_utc": "2026-07-23T14:14:59.999000+00:00",
+      "reference_price": 65049.99,
+      "levels_evaluated": 7,
+      "tests": 20,
+      "bounces": 3,
+      "breakthroughs": 17,
+      "win_rate_pct": 15.0
+    },
+    {
+      "train_end_index": 1800,
+      "train_end_time_utc": "2026-07-24T02:44:59.999000+00:00",
+      "reference_price": 65059.98,
+      "levels_evaluated": 6,
+      "tests": 16,
+      "bounces": 5,
+      "breakthroughs": 11,
+      "win_rate_pct": 31.25
+    },
+    {
+      "train_end_index": 1850,
+      "train_end_time_utc": "2026-07-24T15:14:59.999000+00:00",
+      "reference_price": 64142.01,
+      "levels_evaluated": 6,
+      "tests": 13,
+      "bounces": 1,
+      "breakthroughs": 12,
+      "win_rate_pct": 7.69
+    },
+    {
+      "train_end_index": 1900,
+      "train_end_time_utc": "2026-07-25T03:44:59.999000+00:00",
+      "reference_price": 64093.21,
+      "levels_evaluated": 7,
+      "tests": 15,
+      "bounces": 2,
+      "breakthroughs": 13,
+      "win_rate_pct": 13.33
+    },
+    {
+      "train_end_index": 1950,
+      "train_end_time_utc": "2026-07-25T16:14:59.999000+00:00",
+      "reference_price": 64208.0,
+      "levels_evaluated": 7,
+      "tests": 11,
+      "bounces": 2,
+      "breakthroughs": 9,
+      "win_rate_pct": 18.18
+    },
+    {
+      "train_end_index": 2000,
+      "train_end_time_utc": "2026-07-26T04:44:59.999000+00:00",
+      "reference_price": 64579.98,
+      "levels_evaluated": 7,
+      "tests": 15,
+      "bounces": 2,
+      "breakthroughs": 13,
+      "win_rate_pct": 13.33
+    },
+    {
+      "train_end_index": 2050,
+      "train_end_time_utc": "2026-07-26T17:14:59.999000+00:00",
+      "reference_price": 64772.0,
+      "levels_evaluated": 7,
+      "tests": 15,
+      "bounces": 4,
+      "breakthroughs": 11,
+      "win_rate_pct": 26.67
+    },
+    {
+      "train_end_index": 2100,
+      "train_end_time_utc": "2026-07-27T05:44:59.999000+00:00",
+      "reference_price": 65384.0,
+      "levels_evaluated": 7,
+      "tests": 27,
+      "bounces": 11,
+      "breakthroughs": 16,
+      "win_rate_pct": 40.74
+    },
+    {
+      "train_end_index": 2150,
+      "train_end_time_utc": "2026-07-27T18:14:59.999000+00:00",
+      "reference_price": 64962.67,
+      "levels_evaluated": 7,
+      "tests": 13,
+      "bounces": 3,
+      "breakthroughs": 10,
+      "win_rate_pct": 23.08
+    },
+    {
+      "train_end_index": 2200,
+      "train_end_time_utc": "2026-07-28T06:44:59.999000+00:00",
+      "reference_price": 63580.0,
+      "levels_evaluated": 7,
+      "tests": 11,
+      "bounces": 7,
+      "breakthroughs": 4,
+      "win_rate_pct": 63.64
+    },
+    {
+      "train_end_index": 2250,
+      "train_end_time_utc": "2026-07-28T19:14:59.999000+00:00",
+      "reference_price": 63761.86,
+      "levels_evaluated": 8,
+      "tests": 16,
+      "bounces": 8,
+      "breakthroughs": 8,
+      "win_rate_pct": 50.0
+    },
+    {
+      "train_end_index": 2300,
+      "train_end_time_utc": "2026-07-29T07:44:59.999000+00:00",
+      "reference_price": 64498.0,
+      "levels_evaluated": 7,
+      "tests": 24,
+      "bounces": 12,
+      "breakthroughs": 12,
+      "win_rate_pct": 50.0
+    },
+    {
+      "train_end_index": 2350,
+      "train_end_time_utc": "2026-07-29T20:14:59.999000+00:00",
+      "reference_price": 63611.28,
+      "levels_evaluated": 7,
+      "tests": 18,
+      "bounces": 6,
+      "breakthroughs": 12,
+      "win_rate_pct": 33.33
+    },
+    {
+      "train_end_index": 2400,
+      "train_end_time_utc": "2026-07-30T08:44:59.999000+00:00",
+      "reference_price": 64348.0,
+      "levels_evaluated": 6,
+      "tests": 21,
+      "bounces": 3,
+      "breakthroughs": 18,
+      "win_rate_pct": 14.29
+    },
+    {
+      "train_end_index": 2450,
+      "train_end_time_utc": "2026-07-30T21:14:59.999000+00:00",
+      "reference_price": 64756.41,
+      "levels_evaluated": 6,
+      "tests": 21,
+      "bounces": 6,
+      "breakthroughs": 15,
+      "win_rate_pct": 28.57
+    },
+    {
+      "train_end_index": 2500,
+      "train_end_time_utc": "2026-07-31T09:44:59.999000+00:00",
+      "reference_price": 63692.0,
+      "levels_evaluated": 7,
+      "tests": 12,
+      "bounces": 2,
+      "breakthroughs": 10,
+      "win_rate_pct": 16.67
+    },
+    {
+      "train_end_index": 2550,
+      "train_end_time_utc": "2026-07-31T22:14:59.999000+00:00",
+      "reference_price": 63002.47,
+      "levels_evaluated": 8,
+      "tests": 16,
+      "bounces": 2,
+      "breakthroughs": 14,
+      "win_rate_pct": 12.5
+    },
+    {
+      "train_end_index": 2600,
+      "train_end_time_utc": "2026-08-01T10:44:59.999000+00:00",
+      "reference_price": 63058.56,
+      "levels_evaluated": 8,
+      "tests": 14,
+      "bounces": 2,
+      "breakthroughs": 12,
+      "win_rate_pct": 14.29
+    },
+    {
+      "train_end_index": 2650,
+      "train_end_time_utc": "2026-08-01T23:14:59.999000+00:00",
+      "reference_price": 62807.69,
+      "levels_evaluated": 7,
+      "tests": 19,
+      "bounces": 1,
+      "breakthroughs": 18,
+      "win_rate_pct": 5.26
+    },
+    {
+      "train_end_index": 2700,
+      "train_end_time_utc": "2026-08-02T11:44:59.999000+00:00",
+      "reference_price": 63116.0,
+      "levels_evaluated": 7,
+      "tests": 21,
+      "bounces": 3,
+      "breakthroughs": 18,
+      "win_rate_pct": 14.29
+    },
+    {
+      "train_end_index": 2750,
+      "train_end_time_utc": "2026-08-03T00:14:59.999000+00:00",
+      "reference_price": 63425.05,
+      "levels_evaluated": 7,
+      "tests": 18,
+      "bounces": 6,
+      "breakthroughs": 12,
+      "win_rate_pct": 33.33
+    },
+    {
+      "train_end_index": 2800,
+      "train_end_time_utc": "2026-08-03T12:44:59.999000+00:00",
+      "reference_price": 62767.32,
+      "levels_evaluated": 7,
+      "tests": 25,
+      "bounces": 8,
+      "breakthroughs": 17,
+      "win_rate_pct": 32.0
+    },
+    {
+      "train_end_index": 2850,
+      "train_end_time_utc": "2026-08-04T01:14:59.999000+00:00",
+      "reference_price": 63476.82,
+      "levels_evaluated": 7,
+      "tests": 25,
+      "bounces": 7,
+      "breakthroughs": 18,
+      "win_rate_pct": 28.0
+    },
+    {
+      "train_end_index": 2900,
+      "train_end_time_utc": "2026-08-04T13:44:59.999000+00:00",
+      "reference_price": 64013.8,
+      "levels_evaluated": 7,
+      "tests": 28,
+      "bounces": 10,
+      "breakthroughs": 18,
+      "win_rate_pct": 35.71
+    },
+    {
+      "train_end_index": 2950,
+      "train_end_time_utc": "2026-08-05T02:14:59.999000+00:00",
+      "reference_price": 64460.13,
+      "levels_evaluated": 6,
+      "tests": 28,
+      "bounces": 9,
+      "breakthroughs": 19,
+      "win_rate_pct": 32.14
+    },
+    {
+      "train_end_index": 3000,
+      "train_end_time_utc": "2026-08-05T14:44:59.999000+00:00",
+      "reference_price": 64429.13,
+      "levels_evaluated": 6,
+      "tests": 13,
+      "bounces": 3,
+      "breakthroughs": 10,
+      "win_rate_pct": 23.08
+    },
+    {
+      "train_end_index": 3050,
+      "train_end_time_utc": "2026-08-06T03:14:59.999000+00:00",
+      "reference_price": 64572.0,
+      "levels_evaluated": 6,
+      "tests": 15,
+      "bounces": 9,
+      "breakthroughs": 6,
+      "win_rate_pct": 60.0
+    },
+    {
+      "train_end_index": 3100,
+      "train_end_time_utc": "2026-08-06T15:44:59.999000+00:00",
+      "reference_price": 64754.0,
+      "levels_evaluated": 6,
+      "tests": 15,
+      "bounces": 3,
+      "breakthroughs": 12,
+      "win_rate_pct": 20.0
+    },
+    {
+      "train_end_index": 3150,
+      "train_end_time_utc": "2026-08-07T04:14:59.999000+00:00",
+      "reference_price": 64308.93,
+      "levels_evaluated": 6,
+      "tests": 14,
+      "bounces": 1,
+      "breakthroughs": 13,
+      "win_rate_pct": 7.14
+    },
+    {
+      "train_end_index": 3200,
+      "train_end_time_utc": "2026-08-07T16:44:59.999000+00:00",
+      "reference_price": 64949.64,
+      "levels_evaluated": 7,
+      "tests": 15,
+      "bounces": 3,
+      "breakthroughs": 12,
+      "win_rate_pct": 20.0
+    },
+    {
+      "train_end_index": 3250,
+      "train_end_time_utc": "2026-08-08T05:14:59.999000+00:00",
+      "reference_price": 64994.01,
+      "levels_evaluated": 7,
+      "tests": 14,
+      "bounces": 1,
+      "breakthroughs": 13,
+      "win_rate_pct": 7.14
+    },
+    {
+      "train_end_index": 3300,
+      "train_end_time_utc": "2026-08-08T17:44:59.999000+00:00",
+      "reference_price": 65122.18,
+      "levels_evaluated": 5,
+      "tests": 13,
+      "bounces": 0,
+      "breakthroughs": 13,
+      "win_rate_pct": 0.0
+    },
+    {
+      "train_end_index": 3350,
+      "train_end_time_utc": "2026-08-09T06:14:59.999000+00:00",
+      "reference_price": 64815.45,
+      "levels_evaluated": 5,
+      "tests": 16,
+      "bounces": 0,
+      "breakthroughs": 16,
+      "win_rate_pct": 0.0
+    },
+    {
+      "train_end_index": 3400,
+      "train_end_time_utc": "2026-08-09T18:44:59.999000+00:00",
+      "reference_price": 65220.0,
+      "levels_evaluated": 4,
+      "tests": 23,
+      "bounces": 9,
+      "breakthroughs": 14,
+      "win_rate_pct": 39.13
+    },
+    {
+      "train_end_index": 3450,
+      "train_end_time_utc": "2026-08-10T07:14:59.999000+00:00",
+      "reference_price": 65266.01,
+      "levels_evaluated": 4,
+      "tests": 17,
+      "bounces": 3,
+      "breakthroughs": 14,
+      "win_rate_pct": 17.65
+    },
+    {
+      "train_end_index": 3500,
+      "train_end_time_utc": "2026-08-10T19:44:59.999000+00:00",
+      "reference_price": 64031.35,
+      "levels_evaluated": 3,
+      "tests": 10,
+      "bounces": 2,
+      "breakthroughs": 8,
+      "win_rate_pct": 20.0
+    },
+    {
+      "train_end_index": 3550,
+      "train_end_time_utc": "2026-08-11T08:14:59.999000+00:00",
+      "reference_price": 64048.99,
+      "levels_evaluated": 4,
+      "tests": 13,
+      "bounces": 3,
+      "breakthroughs": 10,
+      "win_rate_pct": 23.08
+    },
+    {
+      "train_end_index": 3600,
+      "train_end_time_utc": "2026-08-11T20:44:59.999000+00:00",
+      "reference_price": 63678.0,
+      "levels_evaluated": 5,
+      "tests": 13,
+      "bounces": 0,
+      "breakthroughs": 13,
+      "win_rate_pct": 0.0
+    },
+    {
+      "train_end_index": 3650,
+      "train_end_time_utc": "2026-08-12T09:14:59.999000+00:00",
+      "reference_price": 63856.0,
+      "levels_evaluated": 6,
+      "tests": 19,
+      "bounces": 5,
+      "breakthroughs": 14,
+      "win_rate_pct": 26.32
+    },
+    {
+      "train_end_index": 3700,
+      "train_end_time_utc": "2026-08-12T21:44:59.999000+00:00",
+      "reference_price": 63535.27,
+      "levels_evaluated": 6,
+      "tests": 18,
+      "bounces": 5,
+      "breakthroughs": 13,
+      "win_rate_pct": 27.78
+    },
+    {
+      "train_end_index": 3750,
+      "train_end_time_utc": "2026-08-13T10:14:59.999000+00:00",
+      "reference_price": 63621.06,
+      "levels_evaluated": 6,
+      "tests": 21,
+      "bounces": 9,
+      "breakthroughs": 12,
+      "win_rate_pct": 42.86
+    },
+    {
+      "train_end_index": 3800,
+      "train_end_time_utc": "2026-08-13T22:44:59.999000+00:00",
+      "reference_price": 63554.97,
+      "levels_evaluated": 6,
+      "tests": 9,
+      "bounces": 0,
+      "breakthroughs": 9,
+      "win_rate_pct": 0.0
+    },
+    {
+      "train_end_index": 3850,
+      "train_end_time_utc": "2026-08-14T11:14:59.999000+00:00",
+      "reference_price": 62859.8,
+      "levels_evaluated": 7,
+      "tests": 12,
+      "bounces": 3,
+      "breakthroughs": 9,
+      "win_rate_pct": 25.0
+    },
+    {
+      "train_end_index": 3900,
+      "train_end_time_utc": "2026-08-14T23:44:59.999000+00:00",
+      "reference_price": 63008.89,
+      "levels_evaluated": 7,
+      "tests": 3,
+      "bounces": 3,
+      "breakthroughs": 0,
+      "win_rate_pct": 100.0
+    },
+    {
+      "train_end_index": 3950,
+      "train_end_time_utc": "2026-08-15T12:14:59.999000+00:00",
+      "reference_price": 62986.37,
+      "levels_evaluated": 6,
+      "tests": 3,
+      "bounces": 1,
+      "breakthroughs": 2,
+      "win_rate_pct": 33.33
+    },
+    {
+      "train_end_index": 4000,
+      "train_end_time_utc": "2026-08-16T00:44:59.999000+00:00",
+      "reference_price": 63070.0,
+      "levels_evaluated": 5,
+      "tests": 13,
+      "bounces": 1,
+      "breakthroughs": 12,
+      "win_rate_pct": 7.69
+    },
+    {
+      "train_end_index": 4050,
+      "train_end_time_utc": "2026-08-16T13:14:59.999000+00:00",
+      "reference_price": 63063.34,
+      "levels_evaluated": 5,
+      "tests": 17,
+      "bounces": 2,
+      "breakthroughs": 15,
+      "win_rate_pct": 11.76
+    },
+    {
+      "train_end_index": 4100,
+      "train_end_time_utc": "2026-08-17T01:44:59.999000+00:00",
+      "reference_price": 63214.0,
+      "levels_evaluated": 4,
+      "tests": 23,
+      "bounces": 4,
+      "breakthroughs": 19,
+      "win_rate_pct": 17.39
+    },
+    {
+      "train_end_index": 4150,
+      "train_end_time_utc": "2026-08-17T14:14:59.999000+00:00",
+      "reference_price": 63699.42,
+      "levels_evaluated": 4,
+      "tests": 7,
+      "bounces": 2,
+      "breakthroughs": 5,
+      "win_rate_pct": 28.57
+    },
+    {
+      "train_end_index": 4200,
+      "train_end_time_utc": "2026-08-18T02:44:59.999000+00:00",
+      "reference_price": 64128.57,
+      "levels_evaluated": 5,
+      "tests": 12,
+      "bounces": 6,
+      "breakthroughs": 6,
+      "win_rate_pct": 50.0
+    },
+    {
+      "train_end_index": 4250,
+      "train_end_time_utc": "2026-08-18T15:14:59.999000+00:00",
+      "reference_price": 64743.78,
+      "levels_evaluated": 5,
+      "tests": 13,
+      "bounces": 2,
+      "breakthroughs": 11,
+      "win_rate_pct": 15.38
+    },
+    {
+      "train_end_index": 4300,
+      "train_end_time_utc": "2026-08-19T03:44:59.999000+00:00",
+      "reference_price": 64339.19,
+      "levels_evaluated": 7,
+      "tests": 15,
+      "bounces": 2,
+      "breakthroughs": 13,
+      "win_rate_pct": 13.33
+    },
+    {
+      "train_end_index": 4350,
+      "train_end_time_utc": "2026-08-19T16:14:59.999000+00:00",
+      "reference_price": 68565.53,
+      "levels_evaluated": 7,
+      "tests": 0,
+      "bounces": 0,
+      "breakthroughs": 0,
+      "win_rate_pct": 0.0
+    },
+    {
+      "train_end_index": 4400,
+      "train_end_time_utc": "2026-08-20T04:44:59.999000+00:00",
+      "reference_price": 69346.0,
+      "levels_evaluated": 9,
+      "tests": 5,
+      "bounces": 1,
+      "breakthroughs": 4,
+      "win_rate_pct": 20.0
+    },
+    {
+      "train_end_index": 4450,
+      "train_end_time_utc": "2026-08-20T17:14:59.999000+00:00",
+      "reference_price": 72692.0,
+      "levels_evaluated": 12,
+      "tests": 6,
+      "bounces": 4,
+      "breakthroughs": 2,
+      "win_rate_pct": 66.67
+    },
+    {
+      "train_end_index": 4500,
+      "train_end_time_utc": "2026-08-21T05:44:59.999000+00:00",
+      "reference_price": 75277.51,
+      "levels_evaluated": 13,
+      "tests": 0,
+      "bounces": 0,
+      "breakthroughs": 0,
+      "win_rate_pct": 0.0
+    },
+    {
+      "train_end_index": 4550,
+      "train_end_time_utc": "2026-08-21T18:14:59.999000+00:00",
+      "reference_price": 77326.0,
+      "levels_evaluated": 15,
+      "tests": 7,
+      "bounces": 2,
+      "breakthroughs": 5,
+      "win_rate_pct": 28.57
+    },
+    {
+      "train_end_index": 4600,
+      "train_end_time_utc": "2026-08-22T06:44:59.999000+00:00",
+      "reference_price": 77394.6,
+      "levels_evaluated": 17,
+      "tests": 5,
+      "bounces": 5,
+      "breakthroughs": 0,
+      "win_rate_pct": 100.0
+    },
+    {
+      "train_end_index": 4650,
+      "train_end_time_utc": "2026-08-22T19:14:59.999000+00:00",
+      "reference_price": 77329.77,
+      "levels_evaluated": 16,
+      "tests": 23,
+      "bounces": 8,
+      "breakthroughs": 15,
+      "win_rate_pct": 34.78
+    },
+    {
+      "train_end_index": 4700,
+      "train_end_time_utc": "2026-08-23T07:44:59.999000+00:00",
+      "reference_price": 76058.72,
+      "levels_evaluated": 16,
+      "tests": 21,
+      "bounces": 6,
+      "breakthroughs": 15,
+      "win_rate_pct": 28.57
+    },
+    {
+      "train_end_index": 4750,
+      "train_end_time_utc": "2026-08-23T20:14:59.999000+00:00",
+      "reference_price": 77272.0,
+      "levels_evaluated": 14,
+      "tests": 23,
+      "bounces": 15,
+      "breakthroughs": 8,
+      "win_rate_pct": 65.22
+    },
+    {
+      "train_end_index": 4800,
+      "train_end_time_utc": "2026-08-24T08:44:59.999000+00:00",
+      "reference_price": 77129.97,
+      "levels_evaluated": 12,
+      "tests": 17,
+      "bounces": 5,
+      "breakthroughs": 12,
+      "win_rate_pct": 29.41
+    },
+    {
+      "train_end_index": 4850,
+      "train_end_time_utc": "2026-08-24T21:14:59.999000+00:00",
+      "reference_price": 79027.19,
+      "levels_evaluated": 14,
+      "tests": 15,
+      "bounces": 4,
+      "breakthroughs": 11,
+      "win_rate_pct": 26.67
+    },
+    {
+      "train_end_index": 4900,
+      "train_end_time_utc": "2026-08-25T09:44:59.999000+00:00",
+      "reference_price": 79748.0,
+      "levels_evaluated": 12,
+      "tests": 19,
+      "bounces": 8,
+      "breakthroughs": 11,
+      "win_rate_pct": 42.11
+    },
+    {
+      "train_end_index": 4950,
+      "train_end_time_utc": "2026-08-25T22:14:59.999000+00:00",
+      "reference_price": 78932.43,
+      "levels_evaluated": 10,
+      "tests": 13,
+      "bounces": 7,
+      "breakthroughs": 6,
+      "win_rate_pct": 53.85
     }
-  ]
+  ],
+  "avg_levels_per_fold": 7.82
 }

@@ -1,356 +1,381 @@
 {
-  "timestamp": "2026-08-20T01:10:42.356474+00:00",
+  "timestamp": "2026-08-26T10:40:18.574655+00:00",
   "symbol": "BTCUSDT",
-  "current_price": 69324.4,
-  "high_24h": 70000.0,
-  "low_24h": 64166.0,
-  "volume_24h": 30212.34,
+  "current_price": 78732.0,
+  "high_24h": 79563.71,
+  "low_24h": 77851.0,
+  "volume_24h": 17069.44,
   "sr_levels": [
     {
-      "price": 69500.0,
-      "type": "RESISTANCE",
-      "touch_count": 19,
-      "conviction": "HIGH",
-      "distance_pct": 0.25,
-      "volume_confluence": false
-    },
-    {
-      "price": 70000.0,
-      "type": "RESISTANCE",
-      "touch_count": 6,
-      "conviction": "HIGH",
-      "distance_pct": 0.97,
-      "volume_confluence": false
-    },
-    {
-      "price": 65058.81,
+      "price": 78604.93,
       "type": "SUPPORT",
+      "touch_count": 21,
+      "conviction": "HIGH",
+      "distance_pct": -0.16,
+      "volume_confluence": true
+    },
+    {
+      "price": 79152.53,
+      "type": "RESISTANCE",
       "touch_count": 16,
       "conviction": "HIGH",
-      "distance_pct": -6.15,
+      "distance_pct": 0.53,
+      "volume_confluence": true
+    },
+    {
+      "price": 77973.98,
+      "type": "SUPPORT",
+      "touch_count": 18,
+      "conviction": "HIGH",
+      "distance_pct": -0.96,
+      "volume_confluence": true
+    },
+    {
+      "price": 79531.86,
+      "type": "RESISTANCE",
+      "touch_count": 8,
+      "conviction": "MEDIUM",
+      "distance_pct": 1.02,
       "volume_confluence": false
     },
     {
-      "price": 64780.0,
+      "price": 77577.85,
       "type": "SUPPORT",
-      "touch_count": 53,
+      "touch_count": 24,
       "conviction": "HIGH",
-      "distance_pct": -6.56,
+      "distance_pct": -1.47,
       "volume_confluence": true
     },
     {
-      "price": 64544.67,
+      "price": 80000.0,
+      "type": "RESISTANCE",
+      "touch_count": 5,
+      "conviction": "MEDIUM",
+      "distance_pct": 1.61,
+      "volume_confluence": false
+    },
+    {
+      "price": 77116.0,
       "type": "SUPPORT",
-      "touch_count": 127,
+      "touch_count": 15,
       "conviction": "HIGH",
-      "distance_pct": -6.89,
+      "distance_pct": -2.05,
       "volume_confluence": true
     },
     {
-      "price": 64121.51,
+      "price": 76676.62,
       "type": "SUPPORT",
-      "touch_count": 105,
+      "touch_count": 23,
       "conviction": "HIGH",
-      "distance_pct": -7.51,
+      "distance_pct": -2.61,
       "volume_confluence": true
     },
     {
-      "price": 63717.17,
-      "type": "SUPPORT",
-      "touch_count": 39,
-      "conviction": "HIGH",
-      "distance_pct": -8.09,
-      "volume_confluence": true
+      "price": 80923.69,
+      "type": "RESISTANCE",
+      "touch_count": 3,
+      "conviction": "MEDIUM",
+      "distance_pct": 2.78,
+      "volume_confluence": false
     },
     {
-      "price": 63376.39,
-      "type": "SUPPORT",
-      "touch_count": 74,
-      "conviction": "HIGH",
-      "distance_pct": -8.58,
-      "volume_confluence": true
+      "price": 81272.62,
+      "type": "RESISTANCE",
+      "touch_count": 1,
+      "conviction": "LOW",
+      "distance_pct": 3.23,
+      "volume_confluence": false
     },
     {
-      "price": 63026.74,
+      "price": 75545.67,
       "type": "SUPPORT",
-      "touch_count": 217,
-      "conviction": "HIGH",
-      "distance_pct": -9.08,
-      "volume_confluence": true
+      "touch_count": 2,
+      "conviction": "MEDIUM",
+      "distance_pct": -4.05,
+      "volume_confluence": false
     }
   ],
   "volume_profile": {
-    "vpoc": 64244.19,
+    "vpoc": 77079.82,
     "hvn_zones": [
-      62850.31,
-      62989.7,
-      63129.08,
-      63547.25,
-      64104.8,
-      64383.57,
-      64662.35,
-      68007.65,
-      68286.43
+      76965.49,
+      77194.16,
+      77308.49,
+      77422.82,
+      77537.16,
+      78337.49,
+      78566.15,
+      78909.15,
+      79023.48
     ],
-    "lvn_zones": [],
+    "lvn_zones": [
+      75479.16,
+      75593.5,
+      75822.16,
+      76050.83,
+      80052.48,
+      80281.15,
+      80852.81,
+      80967.14
+    ],
     "bins": [
       {
-        "price": 62850.31,
-        "volume": 2105.85,
-        "tag": "HVN"
-      },
-      {
-        "price": 62989.7,
-        "volume": 4241.95,
-        "tag": "HVN"
-      },
-      {
-        "price": 63129.08,
-        "volume": 5450.56,
-        "tag": "HVN"
-      },
-      {
-        "price": 63268.47,
-        "volume": 671.31,
+        "price": 75364.83,
+        "volume": 903.94,
         "tag": "NORMAL"
       },
       {
-        "price": 63407.86,
-        "volume": 1694.63,
+        "price": 75479.16,
+        "volume": 261.91,
+        "tag": "LVN"
+      },
+      {
+        "price": 75593.5,
+        "volume": 500.75,
+        "tag": "LVN"
+      },
+      {
+        "price": 75707.83,
+        "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 63547.25,
-        "volume": 3088.94,
+        "price": 75822.16,
+        "volume": 538.07,
+        "tag": "LVN"
+      },
+      {
+        "price": 75936.5,
+        "volume": 798.08,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 76050.83,
+        "volume": 431.55,
+        "tag": "LVN"
+      },
+      {
+        "price": 76165.16,
+        "volume": 1440.98,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 76279.49,
+        "volume": 1128.44,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 76393.83,
+        "volume": 2457.79,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 76508.16,
+        "volume": 1309.0,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 76622.49,
+        "volume": 698.07,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 76736.83,
+        "volume": 3975.46,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 76851.16,
+        "volume": 2803.81,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 76965.49,
+        "volume": 4699.19,
         "tag": "HVN"
       },
       {
-        "price": 63686.64,
-        "volume": 1780.99,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 63826.02,
-        "volume": 191.88,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 63965.41,
-        "volume": 776.32,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 64104.8,
-        "volume": 3882.25,
-        "tag": "HVN"
-      },
-      {
-        "price": 64244.19,
-        "volume": 6268.05,
+        "price": 77079.82,
+        "volume": 8765.79,
         "tag": "VPOC"
       },
       {
-        "price": 64383.57,
-        "volume": 5379.48,
+        "price": 77194.16,
+        "volume": 8251.74,
         "tag": "HVN"
       },
       {
-        "price": 64522.96,
-        "volume": 1745.48,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 64662.35,
-        "volume": 2572.23,
+        "price": 77308.49,
+        "volume": 8595.44,
         "tag": "HVN"
       },
       {
-        "price": 64801.74,
-        "volume": 1606.54,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 64941.12,
-        "volume": 1217.06,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 65080.51,
-        "volume": 1170.62,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 65219.9,
-        "volume": 628.21,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 65359.29,
-        "volume": 831.12,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 65498.68,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 65638.06,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 65777.45,
-        "volume": 906.25,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 65916.84,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 66056.23,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 66195.61,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 66335.0,
-        "volume": 1528.05,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 66474.39,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 66613.78,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 66753.16,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 66892.55,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 67031.94,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 67171.33,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 67310.72,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 67450.1,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 67589.49,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 67728.88,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 67868.27,
-        "volume": 0.0,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 68007.65,
-        "volume": 4854.5,
+        "price": 77422.82,
+        "volume": 6583.39,
         "tag": "HVN"
       },
       {
-        "price": 68147.04,
-        "volume": 514.02,
-        "tag": "NORMAL"
-      },
-      {
-        "price": 68286.43,
-        "volume": 3449.41,
+        "price": 77537.16,
+        "volume": 4996.63,
         "tag": "HVN"
       },
       {
-        "price": 68425.82,
-        "volume": 1981.89,
+        "price": 77651.49,
+        "volume": 3563.66,
         "tag": "NORMAL"
       },
       {
-        "price": 68565.2,
-        "volume": 758.86,
+        "price": 77765.82,
+        "volume": 1427.98,
         "tag": "NORMAL"
       },
       {
-        "price": 68704.59,
-        "volume": 1788.78,
+        "price": 77880.16,
+        "volume": 2661.7,
         "tag": "NORMAL"
       },
       {
-        "price": 68843.98,
+        "price": 77994.49,
+        "volume": 2291.53,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 78108.82,
+        "volume": 1100.9,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 78223.15,
+        "volume": 2472.65,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 78337.49,
+        "volume": 4866.25,
+        "tag": "HVN"
+      },
+      {
+        "price": 78451.82,
+        "volume": 2269.86,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 78566.15,
+        "volume": 4402.87,
+        "tag": "HVN"
+      },
+      {
+        "price": 78680.49,
+        "volume": 3487.12,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 78794.82,
+        "volume": 4278.6,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 78909.15,
+        "volume": 6165.23,
+        "tag": "HVN"
+      },
+      {
+        "price": 79023.48,
+        "volume": 5141.75,
+        "tag": "HVN"
+      },
+      {
+        "price": 79137.82,
+        "volume": 3886.67,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 79252.15,
+        "volume": 3519.52,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 79366.48,
+        "volume": 2603.77,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 79480.82,
+        "volume": 2012.79,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 79595.15,
+        "volume": 1983.87,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 79709.48,
+        "volume": 1582.71,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 79823.81,
+        "volume": 1934.23,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 79938.15,
+        "volume": 1004.45,
+        "tag": "NORMAL"
+      },
+      {
+        "price": 80052.48,
+        "volume": 402.44,
+        "tag": "LVN"
+      },
+      {
+        "price": 80166.81,
         "volume": 0.0,
         "tag": "NORMAL"
       },
       {
-        "price": 68983.37,
-        "volume": 0.0,
+        "price": 80281.15,
+        "volume": 405.33,
+        "tag": "LVN"
+      },
+      {
+        "price": 80395.48,
+        "volume": 697.43,
         "tag": "NORMAL"
       },
       {
-        "price": 69122.76,
-        "volume": 885.19,
+        "price": 80509.81,
+        "volume": 2308.97,
         "tag": "NORMAL"
       },
       {
-        "price": 69262.14,
-        "volume": 1420.24,
+        "price": 80624.14,
+        "volume": 1742.67,
         "tag": "NORMAL"
       },
       {
-        "price": 69401.53,
-        "volume": 1273.59,
+        "price": 80738.48,
+        "volume": 1463.87,
         "tag": "NORMAL"
       },
       {
-        "price": 69540.92,
-        "volume": 1862.46,
-        "tag": "NORMAL"
+        "price": 80852.81,
+        "volume": 176.1,
+        "tag": "LVN"
       },
       {
-        "price": 69680.31,
-        "volume": 1153.43,
-        "tag": "NORMAL"
+        "price": 80967.14,
+        "volume": 629.45,
+        "tag": "LVN"
       }
     ]
   },
   "market_summary": {
     "total_candles_analyzed": 500,
-    "pine_pivots_found": 27,
-    "support_levels_count": 7,
-    "resistance_levels_count": 2,
-    "high_conviction_count": 9
+    "pine_pivots_found": 37,
+    "support_levels_count": 6,
+    "resistance_levels_count": 5,
+    "high_conviction_count": 6
   }
 }
