@@ -1,7 +1,7 @@
 {
   "symbol": "BTCUSDT",
   "interval": "15m",
-  "backtest_time_utc": "2026-08-26T11:01:59.743162+00:00",
+  "backtest_time_utc": "2026-08-26T11:18:55.297732+00:00",
   "method": "walk_forward_first_touch",
   "total_candles": 5000,
   "params": {
@@ -16,22 +16,22 @@
   },
   "folds": 90,
   "totals": {
-    "HOLD": 311,
+    "HOLD": 301,
     "BREAK": 53,
-    "UNRESOLVED": 131
+    "UNRESOLVED": 133
   },
   "conviction_stats": {
     "HIGH": {
-      "HOLD": 247,
-      "BREAK": 41,
-      "UNRESOLVED": 107,
-      "hold_rate_pct": 85.76
+      "HOLD": 237,
+      "BREAK": 40,
+      "UNRESOLVED": 106,
+      "hold_rate_pct": 85.56
     },
     "MEDIUM": {
       "HOLD": 64,
-      "BREAK": 12,
-      "UNRESOLVED": 24,
-      "hold_rate_pct": 84.21
+      "BREAK": 13,
+      "UNRESOLVED": 27,
+      "hold_rate_pct": 83.12
     },
     "LOW": {
       "HOLD": 0,
@@ -44,8 +44,8 @@
     {
       "fold_index": 0,
       "train_end_index": 500,
-      "train_end_time_utc": "2026-07-10T14:14:59.999000+00:00",
-      "reference_price": 64210.0,
+      "train_end_time_utc": "2026-07-10T14:29:59.999000+00:00",
+      "reference_price": 64135.77,
       "levels_evaluated": 8,
       "HOLD": 4,
       "BREAK": 0,
@@ -54,8 +54,8 @@
     {
       "fold_index": 1,
       "train_end_index": 550,
-      "train_end_time_utc": "2026-07-11T02:44:59.999000+00:00",
-      "reference_price": 64145.57,
+      "train_end_time_utc": "2026-07-11T02:59:59.999000+00:00",
+      "reference_price": 64158.04,
       "levels_evaluated": 8,
       "HOLD": 1,
       "BREAK": 0,
@@ -64,18 +64,18 @@
     {
       "fold_index": 2,
       "train_end_index": 600,
-      "train_end_time_utc": "2026-07-11T15:14:59.999000+00:00",
-      "reference_price": 64463.99,
+      "train_end_time_utc": "2026-07-11T15:29:59.999000+00:00",
+      "reference_price": 64429.83,
       "levels_evaluated": 8,
-      "HOLD": 5,
+      "HOLD": 4,
       "BREAK": 0,
       "UNRESOLVED": 2
     },
     {
       "fold_index": 3,
       "train_end_index": 650,
-      "train_end_time_utc": "2026-07-12T03:44:59.999000+00:00",
-      "reference_price": 64174.29,
+      "train_end_time_utc": "2026-07-12T03:59:59.999000+00:00",
+      "reference_price": 64223.73,
       "levels_evaluated": 8,
       "HOLD": 3,
       "BREAK": 0,
@@ -84,8 +84,8 @@
     {
       "fold_index": 4,
       "train_end_index": 700,
-      "train_end_time_utc": "2026-07-12T16:14:59.999000+00:00",
-      "reference_price": 64061.23,
+      "train_end_time_utc": "2026-07-12T16:29:59.999000+00:00",
+      "reference_price": 64176.77,
       "levels_evaluated": 8,
       "HOLD": 5,
       "BREAK": 2,
@@ -94,8 +94,8 @@
     {
       "fold_index": 5,
       "train_end_index": 750,
-      "train_end_time_utc": "2026-07-13T04:44:59.999000+00:00",
-      "reference_price": 62718.0,
+      "train_end_time_utc": "2026-07-13T04:59:59.999000+00:00",
+      "reference_price": 62672.0,
       "levels_evaluated": 9,
       "HOLD": 6,
       "BREAK": 2,
@@ -104,18 +104,18 @@
     {
       "fold_index": 6,
       "train_end_index": 800,
-      "train_end_time_utc": "2026-07-13T17:14:59.999000+00:00",
-      "reference_price": 62318.85,
+      "train_end_time_utc": "2026-07-13T17:29:59.999000+00:00",
+      "reference_price": 62182.0,
       "levels_evaluated": 9,
       "HOLD": 2,
       "BREAK": 0,
-      "UNRESOLVED": 2
+      "UNRESOLVED": 3
     },
     {
       "fold_index": 7,
       "train_end_index": 850,
-      "train_end_time_utc": "2026-07-14T05:44:59.999000+00:00",
-      "reference_price": 62753.96,
+      "train_end_time_utc": "2026-07-14T05:59:59.999000+00:00",
+      "reference_price": 62737.0,
       "levels_evaluated": 9,
       "HOLD": 4,
       "BREAK": 5,
@@ -124,18 +124,18 @@
     {
       "fold_index": 8,
       "train_end_index": 900,
-      "train_end_time_utc": "2026-07-14T18:14:59.999000+00:00",
-      "reference_price": 64489.67,
+      "train_end_time_utc": "2026-07-14T18:29:59.999000+00:00",
+      "reference_price": 64518.14,
       "levels_evaluated": 9,
       "HOLD": 1,
       "BREAK": 0,
-      "UNRESOLVED": 2
+      "UNRESOLVED": 3
     },
     {
       "fold_index": 9,
       "train_end_index": 950,
-      "train_end_time_utc": "2026-07-15T06:44:59.999000+00:00",
-      "reference_price": 65038.0,
+      "train_end_time_utc": "2026-07-15T06:59:59.999000+00:00",
+      "reference_price": 64814.0,
       "levels_evaluated": 10,
       "HOLD": 7,
       "BREAK": 2,
@@ -144,8 +144,8 @@
     {
       "fold_index": 10,
       "train_end_index": 1000,
-      "train_end_time_utc": "2026-07-15T19:14:59.999000+00:00",
-      "reference_price": 64936.42,
+      "train_end_time_utc": "2026-07-15T19:29:59.999000+00:00",
+      "reference_price": 64858.0,
       "levels_evaluated": 11,
       "HOLD": 5,
       "BREAK": 1,
@@ -154,8 +154,8 @@
     {
       "fold_index": 11,
       "train_end_index": 1050,
-      "train_end_time_utc": "2026-07-16T07:44:59.999000+00:00",
-      "reference_price": 64234.24,
+      "train_end_time_utc": "2026-07-16T07:59:59.999000+00:00",
+      "reference_price": 64238.0,
       "levels_evaluated": 11,
       "HOLD": 13,
       "BREAK": 0,
@@ -164,28 +164,28 @@
     {
       "fold_index": 12,
       "train_end_index": 1100,
-      "train_end_time_utc": "2026-07-16T20:14:59.999000+00:00",
-      "reference_price": 64186.0,
-      "levels_evaluated": 11,
+      "train_end_time_utc": "2026-07-16T20:29:59.999000+00:00",
+      "reference_price": 64182.01,
+      "levels_evaluated": 10,
       "HOLD": 3,
       "BREAK": 1,
-      "UNRESOLVED": 2
+      "UNRESOLVED": 1
     },
     {
       "fold_index": 13,
       "train_end_index": 1150,
-      "train_end_time_utc": "2026-07-17T08:44:59.999000+00:00",
-      "reference_price": 62788.0,
+      "train_end_time_utc": "2026-07-17T08:59:59.999000+00:00",
+      "reference_price": 62888.0,
       "levels_evaluated": 10,
-      "HOLD": 8,
+      "HOLD": 5,
       "BREAK": 2,
-      "UNRESOLVED": 3
+      "UNRESOLVED": 2
     },
     {
       "fold_index": 14,
       "train_end_index": 1200,
-      "train_end_time_utc": "2026-07-17T21:14:59.999000+00:00",
-      "reference_price": 64164.01,
+      "train_end_time_utc": "2026-07-17T21:29:59.999000+00:00",
+      "reference_price": 64142.59,
       "levels_evaluated": 10,
       "HOLD": 0,
       "BREAK": 0,
@@ -194,28 +194,28 @@
     {
       "fold_index": 15,
       "train_end_index": 1250,
-      "train_end_time_utc": "2026-07-18T09:44:59.999000+00:00",
-      "reference_price": 63970.0,
+      "train_end_time_utc": "2026-07-18T09:59:59.999000+00:00",
+      "reference_price": 63987.76,
       "levels_evaluated": 10,
-      "HOLD": 4,
+      "HOLD": 3,
       "BREAK": 0,
       "UNRESOLVED": 3
     },
     {
       "fold_index": 16,
       "train_end_index": 1300,
-      "train_end_time_utc": "2026-07-18T22:14:59.999000+00:00",
-      "reference_price": 64800.26,
+      "train_end_time_utc": "2026-07-18T22:29:59.999000+00:00",
+      "reference_price": 64738.01,
       "levels_evaluated": 8,
       "HOLD": 2,
       "BREAK": 0,
-      "UNRESOLVED": 1
+      "UNRESOLVED": 2
     },
     {
       "fold_index": 17,
       "train_end_index": 1350,
-      "train_end_time_utc": "2026-07-19T10:44:59.999000+00:00",
-      "reference_price": 64671.74,
+      "train_end_time_utc": "2026-07-19T10:59:59.999000+00:00",
+      "reference_price": 64595.0,
       "levels_evaluated": 6,
       "HOLD": 2,
       "BREAK": 0,
@@ -224,28 +224,28 @@
     {
       "fold_index": 18,
       "train_end_index": 1400,
-      "train_end_time_utc": "2026-07-19T23:14:59.999000+00:00",
-      "reference_price": 64696.01,
+      "train_end_time_utc": "2026-07-19T23:29:59.999000+00:00",
+      "reference_price": 64674.0,
       "levels_evaluated": 6,
       "HOLD": 11,
       "BREAK": 2,
-      "UNRESOLVED": 1
+      "UNRESOLVED": 2
     },
     {
       "fold_index": 19,
       "train_end_index": 1450,
-      "train_end_time_utc": "2026-07-20T11:44:59.999000+00:00",
-      "reference_price": 64834.98,
+      "train_end_time_utc": "2026-07-20T11:59:59.999000+00:00",
+      "reference_price": 65002.01,
       "levels_evaluated": 7,
       "HOLD": 6,
       "BREAK": 1,
-      "UNRESOLVED": 2
+      "UNRESOLVED": 3
     },
     {
       "fold_index": 20,
       "train_end_index": 1500,
-      "train_end_time_utc": "2026-07-21T00:14:59.999000+00:00",
-      "reference_price": 65186.01,
+      "train_end_time_utc": "2026-07-21T00:29:59.999000+00:00",
+      "reference_price": 65354.01,
       "levels_evaluated": 7,
       "HOLD": 1,
       "BREAK": 0,
@@ -254,8 +254,8 @@
     {
       "fold_index": 21,
       "train_end_index": 1550,
-      "train_end_time_utc": "2026-07-21T12:44:59.999000+00:00",
-      "reference_price": 66516.17,
+      "train_end_time_utc": "2026-07-21T12:59:59.999000+00:00",
+      "reference_price": 66558.82,
       "levels_evaluated": 8,
       "HOLD": 0,
       "BREAK": 0,
@@ -264,8 +264,8 @@
     {
       "fold_index": 22,
       "train_end_index": 1600,
-      "train_end_time_utc": "2026-07-22T01:14:59.999000+00:00",
-      "reference_price": 66493.99,
+      "train_end_time_utc": "2026-07-22T01:29:59.999000+00:00",
+      "reference_price": 66350.0,
       "levels_evaluated": 10,
       "HOLD": 2,
       "BREAK": 0,
@@ -274,8 +274,8 @@
     {
       "fold_index": 23,
       "train_end_index": 1650,
-      "train_end_time_utc": "2026-07-22T13:44:59.999000+00:00",
-      "reference_price": 65888.01,
+      "train_end_time_utc": "2026-07-22T13:59:59.999000+00:00",
+      "reference_price": 65951.39,
       "levels_evaluated": 8,
       "HOLD": 4,
       "BREAK": 1,
@@ -284,18 +284,18 @@
     {
       "fold_index": 24,
       "train_end_index": 1700,
-      "train_end_time_utc": "2026-07-23T02:14:59.999000+00:00",
-      "reference_price": 65736.01,
+      "train_end_time_utc": "2026-07-23T02:29:59.999000+00:00",
+      "reference_price": 65746.01,
       "levels_evaluated": 8,
       "HOLD": 1,
       "BREAK": 0,
-      "UNRESOLVED": 1
+      "UNRESOLVED": 2
     },
     {
       "fold_index": 25,
       "train_end_index": 1750,
-      "train_end_time_utc": "2026-07-23T14:44:59.999000+00:00",
-      "reference_price": 65029.94,
+      "train_end_time_utc": "2026-07-23T14:59:59.999000+00:00",
+      "reference_price": 64909.99,
       "levels_evaluated": 7,
       "HOLD": 2,
       "BREAK": 0,
@@ -304,8 +304,8 @@
     {
       "fold_index": 26,
       "train_end_index": 1800,
-      "train_end_time_utc": "2026-07-24T03:14:59.999000+00:00",
-      "reference_price": 65316.86,
+      "train_end_time_utc": "2026-07-24T03:29:59.999000+00:00",
+      "reference_price": 65324.21,
       "levels_evaluated": 6,
       "HOLD": 6,
       "BREAK": 2,
@@ -314,8 +314,8 @@
     {
       "fold_index": 27,
       "train_end_index": 1850,
-      "train_end_time_utc": "2026-07-24T15:44:59.999000+00:00",
-      "reference_price": 64170.09,
+      "train_end_time_utc": "2026-07-24T15:59:59.999000+00:00",
+      "reference_price": 64093.85,
       "levels_evaluated": 6,
       "HOLD": 0,
       "BREAK": 0,
@@ -324,8 +324,8 @@
     {
       "fold_index": 28,
       "train_end_index": 1900,
-      "train_end_time_utc": "2026-07-25T04:14:59.999000+00:00",
-      "reference_price": 64129.61,
+      "train_end_time_utc": "2026-07-25T04:29:59.999000+00:00",
+      "reference_price": 64104.98,
       "levels_evaluated": 8,
       "HOLD": 0,
       "BREAK": 0,
@@ -334,18 +334,18 @@
     {
       "fold_index": 29,
       "train_end_index": 1950,
-      "train_end_time_utc": "2026-07-25T16:44:59.999000+00:00",
-      "reference_price": 64202.99,
+      "train_end_time_utc": "2026-07-25T16:59:59.999000+00:00",
+      "reference_price": 64206.6,
       "levels_evaluated": 7,
-      "HOLD": 2,
+      "HOLD": 1,
       "BREAK": 0,
       "UNRESOLVED": 3
     },
     {
       "fold_index": 30,
       "train_end_index": 2000,
-      "train_end_time_utc": "2026-07-26T05:14:59.999000+00:00",
-      "reference_price": 64520.0,
+      "train_end_time_utc": "2026-07-26T05:29:59.999000+00:00",
+      "reference_price": 64493.0,
       "levels_evaluated": 7,
       "HOLD": 0,
       "BREAK": 0,
@@ -354,8 +354,8 @@
     {
       "fold_index": 31,
       "train_end_index": 2050,
-      "train_end_time_utc": "2026-07-26T17:44:59.999000+00:00",
-      "reference_price": 64681.99,
+      "train_end_time_utc": "2026-07-26T17:59:59.999000+00:00",
+      "reference_price": 64697.2,
       "levels_evaluated": 7,
       "HOLD": 2,
       "BREAK": 1,
@@ -364,8 +364,8 @@
     {
       "fold_index": 32,
       "train_end_index": 2100,
-      "train_end_time_utc": "2026-07-27T06:14:59.999000+00:00",
-      "reference_price": 65597.41,
+      "train_end_time_utc": "2026-07-27T06:29:59.999000+00:00",
+      "reference_price": 65492.54,
       "levels_evaluated": 7,
       "HOLD": 10,
       "BREAK": 0,
@@ -374,8 +374,8 @@
     {
       "fold_index": 33,
       "train_end_index": 2150,
-      "train_end_time_utc": "2026-07-27T18:44:59.999000+00:00",
-      "reference_price": 64837.33,
+      "train_end_time_utc": "2026-07-27T18:59:59.999000+00:00",
+      "reference_price": 64878.0,
       "levels_evaluated": 7,
       "HOLD": 2,
       "BREAK": 3,
@@ -384,8 +384,8 @@
     {
       "fold_index": 34,
       "train_end_index": 2200,
-      "train_end_time_utc": "2026-07-28T07:14:59.999000+00:00",
-      "reference_price": 63583.9,
+      "train_end_time_utc": "2026-07-28T07:29:59.999000+00:00",
+      "reference_price": 63575.76,
       "levels_evaluated": 7,
       "HOLD": 6,
       "BREAK": 2,
@@ -394,18 +394,18 @@
     {
       "fold_index": 35,
       "train_end_index": 2250,
-      "train_end_time_utc": "2026-07-28T19:44:59.999000+00:00",
-      "reference_price": 63697.99,
+      "train_end_time_utc": "2026-07-28T19:59:59.999000+00:00",
+      "reference_price": 63904.0,
       "levels_evaluated": 8,
       "HOLD": 8,
       "BREAK": 1,
-      "UNRESOLVED": 4
+      "UNRESOLVED": 3
     },
     {
       "fold_index": 36,
       "train_end_index": 2300,
-      "train_end_time_utc": "2026-07-29T08:14:59.999000+00:00",
-      "reference_price": 64376.0,
+      "train_end_time_utc": "2026-07-29T08:29:59.999000+00:00",
+      "reference_price": 64301.99,
       "levels_evaluated": 7,
       "HOLD": 5,
       "BREAK": 2,
@@ -414,18 +414,18 @@
     {
       "fold_index": 37,
       "train_end_index": 2350,
-      "train_end_time_utc": "2026-07-29T20:44:59.999000+00:00",
-      "reference_price": 63590.9,
+      "train_end_time_utc": "2026-07-29T20:59:59.999000+00:00",
+      "reference_price": 63522.01,
       "levels_evaluated": 7,
-      "HOLD": 3,
+      "HOLD": 2,
       "BREAK": 1,
       "UNRESOLVED": 2
     },
     {
       "fold_index": 38,
       "train_end_index": 2400,
-      "train_end_time_utc": "2026-07-30T09:14:59.999000+00:00",
-      "reference_price": 64410.51,
+      "train_end_time_utc": "2026-07-30T09:29:59.999000+00:00",
+      "reference_price": 64496.01,
       "levels_evaluated": 6,
       "HOLD": 5,
       "BREAK": 0,
@@ -434,28 +434,28 @@
     {
       "fold_index": 39,
       "train_end_index": 2450,
-      "train_end_time_utc": "2026-07-30T21:44:59.999000+00:00",
-      "reference_price": 64763.68,
+      "train_end_time_utc": "2026-07-30T21:59:59.999000+00:00",
+      "reference_price": 64735.53,
       "levels_evaluated": 6,
       "HOLD": 5,
       "BREAK": 1,
-      "UNRESOLVED": 3
+      "UNRESOLVED": 2
     },
     {
       "fold_index": 40,
       "train_end_index": 2500,
-      "train_end_time_utc": "2026-07-31T10:14:59.999000+00:00",
-      "reference_price": 63734.21,
+      "train_end_time_utc": "2026-07-31T10:29:59.999000+00:00",
+      "reference_price": 63824.88,
       "levels_evaluated": 7,
-      "HOLD": 1,
+      "HOLD": 0,
       "BREAK": 2,
       "UNRESOLVED": 1
     },
     {
       "fold_index": 41,
       "train_end_index": 2550,
-      "train_end_time_utc": "2026-07-31T22:44:59.999000+00:00",
-      "reference_price": 62943.64,
+      "train_end_time_utc": "2026-07-31T22:59:59.999000+00:00",
+      "reference_price": 62950.0,
       "levels_evaluated": 8,
       "HOLD": 1,
       "BREAK": 0,
@@ -464,8 +464,8 @@
     {
       "fold_index": 42,
       "train_end_index": 2600,
-      "train_end_time_utc": "2026-08-01T11:14:59.999000+00:00",
-      "reference_price": 63061.59,
+      "train_end_time_utc": "2026-08-01T11:29:59.999000+00:00",
+      "reference_price": 63081.91,
       "levels_evaluated": 8,
       "HOLD": 3,
       "BREAK": 0,
@@ -474,18 +474,18 @@
     {
       "fold_index": 43,
       "train_end_index": 2650,
-      "train_end_time_utc": "2026-08-01T23:44:59.999000+00:00",
-      "reference_price": 62835.15,
+      "train_end_time_utc": "2026-08-01T23:59:59.999000+00:00",
+      "reference_price": 62823.64,
       "levels_evaluated": 7,
-      "HOLD": 2,
+      "HOLD": 3,
       "BREAK": 1,
-      "UNRESOLVED": 3
+      "UNRESOLVED": 2
     },
     {
       "fold_index": 44,
       "train_end_index": 2700,
-      "train_end_time_utc": "2026-08-02T12:14:59.999000+00:00",
-      "reference_price": 63177.9,
+      "train_end_time_utc": "2026-08-02T12:29:59.999000+00:00",
+      "reference_price": 63186.0,
       "levels_evaluated": 7,
       "HOLD": 7,
       "BREAK": 0,
@@ -494,8 +494,8 @@
     {
       "fold_index": 45,
       "train_end_index": 2750,
-      "train_end_time_utc": "2026-08-03T00:44:59.999000+00:00",
-      "reference_price": 63331.81,
+      "train_end_time_utc": "2026-08-03T00:59:59.999000+00:00",
+      "reference_price": 63317.6,
       "levels_evaluated": 7,
       "HOLD": 5,
       "BREAK": 0,
@@ -504,18 +504,18 @@
     {
       "fold_index": 46,
       "train_end_index": 2800,
-      "train_end_time_utc": "2026-08-03T13:14:59.999000+00:00",
-      "reference_price": 62782.46,
+      "train_end_time_utc": "2026-08-03T13:29:59.999000+00:00",
+      "reference_price": 62769.0,
       "levels_evaluated": 7,
-      "HOLD": 7,
+      "HOLD": 6,
       "BREAK": 2,
       "UNRESOLVED": 1
     },
     {
       "fold_index": 47,
       "train_end_index": 2850,
-      "train_end_time_utc": "2026-08-04T01:44:59.999000+00:00",
-      "reference_price": 63810.0,
+      "train_end_time_utc": "2026-08-04T01:59:59.999000+00:00",
+      "reference_price": 63847.93,
       "levels_evaluated": 7,
       "HOLD": 7,
       "BREAK": 0,
@@ -524,18 +524,18 @@
     {
       "fold_index": 48,
       "train_end_index": 2900,
-      "train_end_time_utc": "2026-08-04T14:14:59.999000+00:00",
-      "reference_price": 63803.16,
+      "train_end_time_utc": "2026-08-04T14:29:59.999000+00:00",
+      "reference_price": 63887.51,
       "levels_evaluated": 7,
-      "HOLD": 8,
+      "HOLD": 7,
       "BREAK": 0,
       "UNRESOLVED": 1
     },
     {
       "fold_index": 49,
       "train_end_index": 2950,
-      "train_end_time_utc": "2026-08-05T02:44:59.999000+00:00",
-      "reference_price": 64433.06,
+      "train_end_time_utc": "2026-08-05T02:59:59.999000+00:00",
+      "reference_price": 64368.26,
       "levels_evaluated": 6,
       "HOLD": 4,
       "BREAK": 0,
@@ -544,8 +544,8 @@
     {
       "fold_index": 50,
       "train_end_index": 3000,
-      "train_end_time_utc": "2026-08-05T15:14:59.999000+00:00",
-      "reference_price": 64628.0,
+      "train_end_time_utc": "2026-08-05T15:29:59.999000+00:00",
+      "reference_price": 64505.25,
       "levels_evaluated": 6,
       "HOLD": 2,
       "BREAK": 0,
@@ -554,8 +554,8 @@
     {
       "fold_index": 51,
       "train_end_index": 3050,
-      "train_end_time_utc": "2026-08-06T03:44:59.999000+00:00",
-      "reference_price": 64505.14,
+      "train_end_time_utc": "2026-08-06T03:59:59.999000+00:00",
+      "reference_price": 64531.03,
       "levels_evaluated": 6,
       "HOLD": 4,
       "BREAK": 1,
@@ -564,28 +564,28 @@
     {
       "fold_index": 52,
       "train_end_index": 3100,
-      "train_end_time_utc": "2026-08-06T16:14:59.999000+00:00",
-      "reference_price": 64637.99,
+      "train_end_time_utc": "2026-08-06T16:29:59.999000+00:00",
+      "reference_price": 64654.57,
       "levels_evaluated": 6,
       "HOLD": 2,
       "BREAK": 0,
-      "UNRESOLVED": 1
+      "UNRESOLVED": 2
     },
     {
       "fold_index": 53,
       "train_end_index": 3150,
-      "train_end_time_utc": "2026-08-07T04:44:59.999000+00:00",
-      "reference_price": 64258.0,
+      "train_end_time_utc": "2026-08-07T04:59:59.999000+00:00",
+      "reference_price": 64255.13,
       "levels_evaluated": 6,
       "HOLD": 0,
       "BREAK": 0,
-      "UNRESOLVED": 1
+      "UNRESOLVED": 2
     },
     {
       "fold_index": 54,
       "train_end_index": 3200,
-      "train_end_time_utc": "2026-08-07T17:14:59.999000+00:00",
-      "reference_price": 64700.39,
+      "train_end_time_utc": "2026-08-07T17:29:59.999000+00:00",
+      "reference_price": 64599.99,
       "levels_evaluated": 7,
       "HOLD": 1,
       "BREAK": 0,
@@ -594,8 +594,8 @@
     {
       "fold_index": 55,
       "train_end_index": 3250,
-      "train_end_time_utc": "2026-08-08T05:44:59.999000+00:00",
-      "reference_price": 65017.72,
+      "train_end_time_utc": "2026-08-08T05:59:59.999000+00:00",
+      "reference_price": 64995.39,
       "levels_evaluated": 7,
       "HOLD": 1,
       "BREAK": 0,
@@ -604,8 +604,8 @@
     {
       "fold_index": 56,
       "train_end_index": 3300,
-      "train_end_time_utc": "2026-08-08T18:14:59.999000+00:00",
-      "reference_price": 65101.6,
+      "train_end_time_utc": "2026-08-08T18:29:59.999000+00:00",
+      "reference_price": 65038.2,
       "levels_evaluated": 5,
       "HOLD": 0,
       "BREAK": 0,
@@ -614,8 +614,8 @@
     {
       "fold_index": 57,
       "train_end_index": 3350,
-      "train_end_time_utc": "2026-08-09T06:44:59.999000+00:00",
-      "reference_price": 64867.1,
+      "train_end_time_utc": "2026-08-09T06:59:59.999000+00:00",
+      "reference_price": 64849.99,
       "levels_evaluated": 5,
       "HOLD": 0,
       "BREAK": 0,
@@ -624,8 +624,8 @@
     {
       "fold_index": 58,
       "train_end_index": 3400,
-      "train_end_time_utc": "2026-08-09T19:14:59.999000+00:00",
-      "reference_price": 65199.99,
+      "train_end_time_utc": "2026-08-09T19:29:59.999000+00:00",
+      "reference_price": 65208.28,
       "levels_evaluated": 4,
       "HOLD": 5,
       "BREAK": 0,
@@ -634,8 +634,8 @@
     {
       "fold_index": 59,
       "train_end_index": 3450,
-      "train_end_time_utc": "2026-08-10T07:44:59.999000+00:00",
-      "reference_price": 65326.46,
+      "train_end_time_utc": "2026-08-10T07:59:59.999000+00:00",
+      "reference_price": 65202.73,
       "levels_evaluated": 4,
       "HOLD": 3,
       "BREAK": 2,
@@ -644,8 +644,8 @@
     {
       "fold_index": 60,
       "train_end_index": 3500,
-      "train_end_time_utc": "2026-08-10T20:14:59.999000+00:00",
-      "reference_price": 64051.99,
+      "train_end_time_utc": "2026-08-10T20:29:59.999000+00:00",
+      "reference_price": 64122.75,
       "levels_evaluated": 3,
       "HOLD": 1,
       "BREAK": 0,
@@ -654,8 +654,8 @@
     {
       "fold_index": 61,
       "train_end_index": 3550,
-      "train_end_time_utc": "2026-08-11T08:44:59.999000+00:00",
-      "reference_price": 64117.99,
+      "train_end_time_utc": "2026-08-11T08:59:59.999000+00:00",
+      "reference_price": 64136.41,
       "levels_evaluated": 4,
       "HOLD": 2,
       "BREAK": 1,
@@ -664,18 +664,18 @@
     {
       "fold_index": 62,
       "train_end_index": 3600,
-      "train_end_time_utc": "2026-08-11T21:14:59.999000+00:00",
-      "reference_price": 63735.29,
-      "levels_evaluated": 5,
-      "HOLD": 0,
+      "train_end_time_utc": "2026-08-11T21:29:59.999000+00:00",
+      "reference_price": 63671.6,
+      "levels_evaluated": 6,
+      "HOLD": 2,
       "BREAK": 0,
-      "UNRESOLVED": 3
+      "UNRESOLVED": 4
     },
     {
       "fold_index": 63,
       "train_end_index": 3650,
-      "train_end_time_utc": "2026-08-12T09:44:59.999000+00:00",
-      "reference_price": 64042.55,
+      "train_end_time_utc": "2026-08-12T09:59:59.999000+00:00",
+      "reference_price": 64108.81,
       "levels_evaluated": 6,
       "HOLD": 4,
       "BREAK": 0,
@@ -684,8 +684,8 @@
     {
       "fold_index": 64,
       "train_end_index": 3700,
-      "train_end_time_utc": "2026-08-12T22:14:59.999000+00:00",
-      "reference_price": 63496.82,
+      "train_end_time_utc": "2026-08-12T22:29:59.999000+00:00",
+      "reference_price": 63490.35,
       "levels_evaluated": 6,
       "HOLD": 4,
       "BREAK": 0,
@@ -694,8 +694,8 @@
     {
       "fold_index": 65,
       "train_end_index": 3750,
-      "train_end_time_utc": "2026-08-13T10:44:59.999000+00:00",
-      "reference_price": 63637.37,
+      "train_end_time_utc": "2026-08-13T10:59:59.999000+00:00",
+      "reference_price": 63651.19,
       "levels_evaluated": 6,
       "HOLD": 6,
       "BREAK": 1,
@@ -704,8 +704,8 @@
     {
       "fold_index": 66,
       "train_end_index": 3800,
-      "train_end_time_utc": "2026-08-13T23:14:59.999000+00:00",
-      "reference_price": 63478.01,
+      "train_end_time_utc": "2026-08-13T23:29:59.999000+00:00",
+      "reference_price": 63479.52,
       "levels_evaluated": 6,
       "HOLD": 0,
       "BREAK": 0,
@@ -714,8 +714,8 @@
     {
       "fold_index": 67,
       "train_end_index": 3850,
-      "train_end_time_utc": "2026-08-14T11:44:59.999000+00:00",
-      "reference_price": 62896.3,
+      "train_end_time_utc": "2026-08-14T11:59:59.999000+00:00",
+      "reference_price": 62868.83,
       "levels_evaluated": 7,
       "HOLD": 2,
       "BREAK": 0,
@@ -724,8 +724,8 @@
     {
       "fold_index": 68,
       "train_end_index": 3900,
-      "train_end_time_utc": "2026-08-15T00:14:59.999000+00:00",
-      "reference_price": 63012.37,
+      "train_end_time_utc": "2026-08-15T00:29:59.999000+00:00",
+      "reference_price": 63010.0,
       "levels_evaluated": 7,
       "HOLD": 3,
       "BREAK": 0,
@@ -734,8 +734,8 @@
     {
       "fold_index": 69,
       "train_end_index": 3950,
-      "train_end_time_utc": "2026-08-15T12:44:59.999000+00:00",
-      "reference_price": 62960.47,
+      "train_end_time_utc": "2026-08-15T12:59:59.999000+00:00",
+      "reference_price": 63050.13,
       "levels_evaluated": 5,
       "HOLD": 0,
       "BREAK": 0,
@@ -744,38 +744,38 @@
     {
       "fold_index": 70,
       "train_end_index": 4000,
-      "train_end_time_utc": "2026-08-16T01:14:59.999000+00:00",
-      "reference_price": 63052.25,
+      "train_end_time_utc": "2026-08-16T01:29:59.999000+00:00",
+      "reference_price": 63059.68,
       "levels_evaluated": 5,
-      "HOLD": 1,
+      "HOLD": 0,
       "BREAK": 0,
       "UNRESOLVED": 3
     },
     {
       "fold_index": 71,
       "train_end_index": 4050,
-      "train_end_time_utc": "2026-08-16T13:44:59.999000+00:00",
-      "reference_price": 63067.01,
+      "train_end_time_utc": "2026-08-16T13:59:59.999000+00:00",
+      "reference_price": 63060.01,
       "levels_evaluated": 5,
-      "HOLD": 0,
+      "HOLD": 1,
       "BREAK": 0,
-      "UNRESOLVED": 4
+      "UNRESOLVED": 3
     },
     {
       "fold_index": 72,
       "train_end_index": 4100,
-      "train_end_time_utc": "2026-08-17T02:14:59.999000+00:00",
-      "reference_price": 63082.0,
+      "train_end_time_utc": "2026-08-17T02:29:59.999000+00:00",
+      "reference_price": 63186.01,
       "levels_evaluated": 4,
       "HOLD": 3,
       "BREAK": 0,
-      "UNRESOLVED": 4
+      "UNRESOLVED": 5
     },
     {
       "fold_index": 73,
       "train_end_index": 4150,
-      "train_end_time_utc": "2026-08-17T14:44:59.999000+00:00",
-      "reference_price": 63625.04,
+      "train_end_time_utc": "2026-08-17T14:59:59.999000+00:00",
+      "reference_price": 63902.63,
       "levels_evaluated": 4,
       "HOLD": 0,
       "BREAK": 0,
@@ -784,8 +784,8 @@
     {
       "fold_index": 74,
       "train_end_index": 4200,
-      "train_end_time_utc": "2026-08-18T03:14:59.999000+00:00",
-      "reference_price": 64088.67,
+      "train_end_time_utc": "2026-08-18T03:29:59.999000+00:00",
+      "reference_price": 64112.0,
       "levels_evaluated": 5,
       "HOLD": 5,
       "BREAK": 1,
@@ -794,18 +794,18 @@
     {
       "fold_index": 75,
       "train_end_index": 4250,
-      "train_end_time_utc": "2026-08-18T15:44:59.999000+00:00",
-      "reference_price": 64820.36,
+      "train_end_time_utc": "2026-08-18T15:59:59.999000+00:00",
+      "reference_price": 64855.06,
       "levels_evaluated": 5,
-      "HOLD": 1,
+      "HOLD": 0,
       "BREAK": 0,
       "UNRESOLVED": 1
     },
     {
       "fold_index": 76,
       "train_end_index": 4300,
-      "train_end_time_utc": "2026-08-19T04:14:59.999000+00:00",
-      "reference_price": 64314.55,
+      "train_end_time_utc": "2026-08-19T04:29:59.999000+00:00",
+      "reference_price": 64359.27,
       "levels_evaluated": 7,
       "HOLD": 2,
       "BREAK": 1,
@@ -814,8 +814,8 @@
     {
       "fold_index": 77,
       "train_end_index": 4350,
-      "train_end_time_utc": "2026-08-19T16:44:59.999000+00:00",
-      "reference_price": 68589.64,
+      "train_end_time_utc": "2026-08-19T16:59:59.999000+00:00",
+      "reference_price": 68465.27,
       "levels_evaluated": 7,
       "HOLD": 0,
       "BREAK": 0,
@@ -824,8 +824,8 @@
     {
       "fold_index": 78,
       "train_end_index": 4400,
-      "train_end_time_utc": "2026-08-20T05:14:59.999000+00:00",
-      "reference_price": 69471.24,
+      "train_end_time_utc": "2026-08-20T05:29:59.999000+00:00",
+      "reference_price": 69592.0,
       "levels_evaluated": 9,
       "HOLD": 2,
       "BREAK": 1,
@@ -834,8 +834,8 @@
     {
       "fold_index": 79,
       "train_end_index": 4450,
-      "train_end_time_utc": "2026-08-20T17:44:59.999000+00:00",
-      "reference_price": 72762.0,
+      "train_end_time_utc": "2026-08-20T17:59:59.999000+00:00",
+      "reference_price": 72737.5,
       "levels_evaluated": 12,
       "HOLD": 0,
       "BREAK": 0,
@@ -844,38 +844,38 @@
     {
       "fold_index": 80,
       "train_end_index": 4500,
-      "train_end_time_utc": "2026-08-21T06:14:59.999000+00:00",
-      "reference_price": 75289.6,
+      "train_end_time_utc": "2026-08-21T06:29:59.999000+00:00",
+      "reference_price": 75342.01,
       "levels_evaluated": 14,
-      "HOLD": 1,
+      "HOLD": 0,
       "BREAK": 0,
       "UNRESOLVED": 0
     },
     {
       "fold_index": 81,
       "train_end_index": 4550,
-      "train_end_time_utc": "2026-08-21T18:44:59.999000+00:00",
-      "reference_price": 76945.99,
+      "train_end_time_utc": "2026-08-21T18:59:59.999000+00:00",
+      "reference_price": 77146.0,
       "levels_evaluated": 15,
-      "HOLD": 2,
+      "HOLD": 3,
       "BREAK": 2,
-      "UNRESOLVED": 1
+      "UNRESOLVED": 0
     },
     {
       "fold_index": 82,
       "train_end_index": 4600,
-      "train_end_time_utc": "2026-08-22T07:14:59.999000+00:00",
-      "reference_price": 77375.3,
+      "train_end_time_utc": "2026-08-22T07:29:59.999000+00:00",
+      "reference_price": 77485.44,
       "levels_evaluated": 17,
-      "HOLD": 4,
+      "HOLD": 3,
       "BREAK": 0,
       "UNRESOLVED": 0
     },
     {
       "fold_index": 83,
       "train_end_index": 4650,
-      "train_end_time_utc": "2026-08-22T19:44:59.999000+00:00",
-      "reference_price": 77422.0,
+      "train_end_time_utc": "2026-08-22T19:59:59.999000+00:00",
+      "reference_price": 77418.25,
       "levels_evaluated": 16,
       "HOLD": 7,
       "BREAK": 1,
@@ -884,28 +884,28 @@
     {
       "fold_index": 84,
       "train_end_index": 4700,
-      "train_end_time_utc": "2026-08-23T08:14:59.999000+00:00",
-      "reference_price": 76206.13,
+      "train_end_time_utc": "2026-08-23T08:29:59.999000+00:00",
+      "reference_price": 76236.35,
       "levels_evaluated": 16,
       "HOLD": 7,
       "BREAK": 0,
-      "UNRESOLVED": 1
+      "UNRESOLVED": 0
     },
     {
       "fold_index": 85,
       "train_end_index": 4750,
-      "train_end_time_utc": "2026-08-23T20:44:59.999000+00:00",
-      "reference_price": 77428.01,
+      "train_end_time_utc": "2026-08-23T20:59:59.999000+00:00",
+      "reference_price": 77401.6,
       "levels_evaluated": 15,
-      "HOLD": 12,
+      "HOLD": 11,
       "BREAK": 1,
       "UNRESOLVED": 2
     },
     {
       "fold_index": 86,
       "train_end_index": 4800,
-      "train_end_time_utc": "2026-08-24T09:14:59.999000+00:00",
-      "reference_price": 77288.25,
+      "train_end_time_utc": "2026-08-24T09:29:59.999000+00:00",
+      "reference_price": 77418.79,
       "levels_evaluated": 12,
       "HOLD": 5,
       "BREAK": 1,
@@ -914,8 +914,8 @@
     {
       "fold_index": 87,
       "train_end_index": 4850,
-      "train_end_time_utc": "2026-08-24T21:44:59.999000+00:00",
-      "reference_price": 78982.0,
+      "train_end_time_utc": "2026-08-24T21:59:59.999000+00:00",
+      "reference_price": 78984.23,
       "levels_evaluated": 14,
       "HOLD": 7,
       "BREAK": 1,
@@ -924,8 +924,8 @@
     {
       "fold_index": 88,
       "train_end_index": 4900,
-      "train_end_time_utc": "2026-08-25T10:14:59.999000+00:00",
-      "reference_price": 79313.99,
+      "train_end_time_utc": "2026-08-25T10:29:59.999000+00:00",
+      "reference_price": 79274.01,
       "levels_evaluated": 12,
       "HOLD": 7,
       "BREAK": 2,
@@ -934,8 +934,8 @@
     {
       "fold_index": 89,
       "train_end_index": 4950,
-      "train_end_time_utc": "2026-08-25T22:44:59.999000+00:00",
-      "reference_price": 78780.01,
+      "train_end_time_utc": "2026-08-25T22:59:59.999000+00:00",
+      "reference_price": 78889.51,
       "levels_evaluated": 10,
       "HOLD": 4,
       "BREAK": 0,
@@ -945,22 +945,22 @@
   "control": {
     "seeds": 5,
     "totals": {
-      "HOLD": 1310,
-      "BREAK": 225,
-      "UNRESOLVED": 594
+      "HOLD": 1270,
+      "BREAK": 226,
+      "UNRESOLVED": 577
     },
     "hold_rate_pct_per_seed": [
-      85.29,
-      84.87,
-      85.05,
-      88.05,
-      83.15
+      84.82,
+      85.44,
+      83.28,
+      88.06,
+      82.46
     ],
-    "hold_rate_pct_mean": 85.28,
-    "hold_rate_pct_sd": 1.58
+    "hold_rate_pct_mean": 84.81,
+    "hold_rate_pct_sd": 1.94
   },
   "avg_levels_per_fold": 7.84,
-  "hold_rate_pct": 85.44,
-  "edge_points": 0.16,
-  "edge_sd": 0.1
+  "hold_rate_pct": 85.03,
+  "edge_points": 0.22,
+  "edge_sd": 0.11
 }

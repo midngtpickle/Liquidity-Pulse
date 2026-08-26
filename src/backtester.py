@@ -54,7 +54,7 @@ class SRBacktester:
 
     @staticmethod
     def resolve_outcome(
-        level_price: float,
+        anchor_price: float,
         direction: str,
         klines: List[Dict[str, float]],
         test_index: int,
@@ -71,13 +71,19 @@ class SRBacktester:
         When one candle straddles both the target and the barrier, the adverse move is
         assumed to have come first. Intrabar sequence is unknowable from OHLC, and
         assuming the favourable leg first would flatter the result.
+
+        `anchor_price` is the level itself under anchor="level", or the entry price under
+        anchor="entry". Level anchoring is biased toward HOLD: a test entering at the far
+        edge of a +/-0.35% zone leaves the target 0.15% away and the barrier 0.70% away.
+        Entry anchoring with equal target and margin has a ~50% random-walk baseline, so
+        it discriminates where level anchoring mostly reports the bias.
         """
         if direction == "SUPPORT":
-            target = level_price * (1.0 + target_pct)
-            barrier = level_price * (1.0 - break_margin_pct)
+            target = anchor_price * (1.0 + target_pct)
+            barrier = anchor_price * (1.0 - break_margin_pct)
         else:
-            target = level_price * (1.0 - target_pct)
-            barrier = level_price * (1.0 + break_margin_pct)
+            target = anchor_price * (1.0 - target_pct)
+            barrier = anchor_price * (1.0 + break_margin_pct)
 
         end = min(test_index + 1 + resolve_bars, len(klines))
         for j in range(test_index + 1, end):
@@ -98,30 +104,21 @@ class SRBacktester:
 
         return "UNRESOLVED"
 
-    def evaluate_fold(
-        self,
+    @staticmethod
+    def find_tests(
         levels: List[SRLevel],
         test_klines: List[Dict[str, float]],
-        zone_tolerance_pct: float,
-        target_pct: float,
-        break_margin_pct: float,
-        resolve_bars: int
-    ) -> List[Dict[str, Any]]:
+        zone_tolerance_pct: float
+    ) -> List[Tuple[int, SRLevel, str]]:
         """
-        Produces one test record per candle that freshly enters a level's zone.
+        Locates every candle that freshly enters a level's zone from a definite side.
 
-        Only the nearest qualifying level is tested on any given candle. Clustered
-        levels would otherwise each emit their own record for the same price action,
-        and those records are not independent observations.
-
-        The support/resistance hypothesis comes from the side price approached from,
-        not from where the level sat when it was derived. A level classified SUPPORT at
-        fold start that price has since fallen below is overhead supply now, and testing
-        it for an upward bounce measures the wrong thing.
+        Separated from outcome scoring so the same touch points can be replayed against
+        many outcome rules without rescanning, which is what the threshold curve needs.
         """
-        records: List[Dict[str, Any]] = []
+        found: List[Tuple[int, SRLevel, str]] = []
         if not levels or len(test_klines) < 2:
-            return records
+            return found
 
         for i in range(1, len(test_klines)):
             candle = test_klines[i]
@@ -148,12 +145,88 @@ class SRBacktester:
                 if best is None or distance < best[0]:
                     best = (distance, level, direction)
 
-            if best is None:
-                continue
+            if best is not None:
+                found.append((i, best[1], best[2]))
 
-            _, level, direction = best
+        return found
+
+    @staticmethod
+    def resolve_thresholds(
+        anchor_price: float,
+        direction: str,
+        klines: List[Dict[str, float]],
+        test_index: int,
+        thresholds: List[float],
+        resolve_bars: int
+    ) -> Dict[float, str]:
+        """
+        One forward walk, every threshold. For each symmetric threshold X, reports which
+        came first: price moving X in the favourable direction, or X against.
+
+        A single pass/fail at one threshold pair bakes the reader's risk preference into
+        the harness. A curve leaves that choice where it belongs, and shows whether any
+        apparent edge survives across scales or only exists at one convenient setting.
+        """
+        outcomes = {x: "UNRESOLVED" for x in thresholds}
+        pending = set(thresholds)
+        end = min(test_index + 1 + resolve_bars, len(klines))
+
+        for j in range(test_index + 1, end):
+            candle = klines[j]
+            if direction == "SUPPORT":
+                favourable = (candle["high"] - anchor_price) / anchor_price
+                adverse = (anchor_price - candle["low"]) / anchor_price
+            else:
+                favourable = (anchor_price - candle["low"]) / anchor_price
+                adverse = (candle["high"] - anchor_price) / anchor_price
+
+            settled = []
+            for x in pending:
+                hit_favourable = favourable >= x
+                hit_adverse = adverse >= x
+                if hit_favourable and hit_adverse:
+                    outcomes[x] = "BREAK"      # same conservative tie-break as resolve_outcome
+                    settled.append(x)
+                elif hit_favourable:
+                    outcomes[x] = "HOLD"
+                    settled.append(x)
+                elif hit_adverse:
+                    outcomes[x] = "BREAK"
+                    settled.append(x)
+            pending.difference_update(settled)
+            if not pending:
+                break
+
+        return outcomes
+
+    def evaluate_fold(
+        self,
+        levels: List[SRLevel],
+        test_klines: List[Dict[str, float]],
+        zone_tolerance_pct: float,
+        target_pct: float,
+        break_margin_pct: float,
+        resolve_bars: int,
+        anchor: str = "level"
+    ) -> List[Dict[str, Any]]:
+        """
+        Produces one test record per candle that freshly enters a level's zone.
+
+        Only the nearest qualifying level is tested on any given candle. Clustered
+        levels would otherwise each emit their own record for the same price action,
+        and those records are not independent observations.
+
+        The support/resistance hypothesis comes from the side price approached from,
+        not from where the level sat when it was derived. A level classified SUPPORT at
+        fold start that price has since fallen below is overhead supply now, and testing
+        it for an upward bounce measures the wrong thing.
+        """
+        records: List[Dict[str, Any]] = []
+        for i, level, direction in self.find_tests(levels, test_klines, zone_tolerance_pct):
+            candle = test_klines[i]
+            anchor_price = level.price if anchor == "level" else candle["close"]
             outcome = self.resolve_outcome(
-                level.price, direction, test_klines, i,
+                anchor_price, direction, test_klines, i,
                 target_pct, break_margin_pct, resolve_bars
             )
             records.append({
