@@ -48,7 +48,7 @@ Liquidity-Pulse/
 ├── README.md                          # Framework documentation
 ├── READ.md                            # Quick summary guide
 ├── start_all.bat                      # One-click Windows launcher script
-├── liquidity_pulse_sr.pine            # Official TradingView Pine Script v5 indicator
+├── liquidity_pulse_sr.pine            # Official TradingView Pine Script v6 indicator
 ├── docs/
 │   ├── USER_GUIDE.md                  # Comprehensive user operational manual & API reference
 │   ├── ORDER_FLOW_MASTERCLASS.md      # Institutional Order Flow & Market Structure Masterclass

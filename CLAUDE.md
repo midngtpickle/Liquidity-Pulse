@@ -93,6 +93,18 @@ python src/telegram_bot.py --dry-run
 
 ---
 
+## 📐 Strategy Definition
+
+See [`docs/STRATEGY.md`](docs/STRATEGY.md) for the strategy specification: the shared
+invariants the Pine indicator and the Python hub must both honour, the alert path, and the
+benchmark results.
+
+> [!IMPORTANT]
+> The conviction tier describes how a level was **constructed**, not how likely it is to
+> hold. Across fourteen level derivations over ~7 months of BTCUSDT 15m, none beats a
+> randomly displaced control by 2 standard deviations. Do not treat `HIGH` as a
+> probability or add logic that assumes it predicts reversals.
+
 ## 🧠 Reasoning Guidelines for AI Agents
 
 When analyzing market structure and generating briefings from telemetry data:
