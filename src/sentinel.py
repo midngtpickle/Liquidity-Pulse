@@ -11,8 +11,9 @@ Integrates the multi-agent pipeline:
 import os
 import sys
 import json
+import time
 import logging
-import concurrent.futures
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -175,6 +176,59 @@ class SentinelOrchestrator:
         logger.info(f"Session briefing successfully written to {self.briefing_path}")
         return briefing_md
 
+    DISPATCH_TIMEOUT_SECONDS = 15.0
+
+    def dispatch_alerts(self, telemetry, session_name) -> None:
+        """
+        Fires the configured briefing alerts concurrently, bounded by a real timeout.
+
+        Daemon threads rather than a ThreadPoolExecutor. Leaving the executor's context
+        manager calls shutdown(wait=True), which blocked until every dispatch returned and
+        so silently defeated the timeout it sat next to -- a hung Telegram call stalled the
+        whole pipeline regardless. Its workers are non-daemon as well, so a wedged request
+        would also hold up interpreter exit for a script that is meant to run and finish.
+
+        Channels are only dispatched when their credentials are present. Constructing a
+        dispatcher with no configuration just fails and logs on every run.
+        """
+        channels = []
+        if os.environ.get("TELEGRAM_BOT_TOKEN") and os.environ.get("TELEGRAM_CHAT_ID"):
+            telegram = TelegramAlertDispatcher()
+            channels.append(("Telegram", lambda: telegram.send_session_briefing_alert(
+                telemetry, session_name)))
+        if os.environ.get("DISCORD_WEBHOOK_URL"):
+            discord = DiscordWebhookDispatcher()
+            channels.append(("Discord", lambda: discord.send_session_briefing_embed(
+                telemetry, session_name)))
+
+        if not channels:
+            logger.info("No alert channels configured; skipping briefing dispatch.")
+            return
+
+        def _run(name, fn):
+            try:
+                fn()
+            except Exception as err:
+                logger.error(f"{name} briefing dispatch failed: {err}")
+
+        threads = [
+            threading.Thread(target=_run, args=(name, fn), daemon=True, name=f"dispatch-{name}")
+            for name, fn in channels
+        ]
+        for thread in threads:
+            thread.start()
+
+        deadline = time.time() + self.DISPATCH_TIMEOUT_SECONDS
+        for thread in threads:
+            thread.join(timeout=max(0.0, deadline - time.time()))
+
+        stalled = [t.name for t in threads if t.is_alive()]
+        if stalled:
+            logger.warning(
+                f"Dispatch timeout after {self.DISPATCH_TIMEOUT_SECONDS}s; "
+                f"still running: {', '.join(stalled)}. Continuing without them."
+            )
+
     def run_pipeline(self):
         """
         Executes full orchestration pipeline.
@@ -184,13 +238,7 @@ class SentinelOrchestrator:
         briefing = self.generate_session_briefing(telemetry)
         session_name = self.detect_active_session()
         
-        # Concurrent alert dispatch in parallel worker threads
-        telegram = TelegramAlertDispatcher()
-        discord = DiscordWebhookDispatcher()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-            fut_tg = executor.submit(telegram.send_session_briefing_alert, telemetry, session_name)
-            fut_dc = executor.submit(discord.send_session_briefing_embed, telemetry, session_name)
-            concurrent.futures.wait([fut_tg, fut_dc], timeout=15.0)
+        self.dispatch_alerts(telemetry, session_name)
         
         logger.info(f"=== Sentinel Pipeline Completed Successfully ===")
         return briefing

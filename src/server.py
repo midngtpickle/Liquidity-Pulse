@@ -231,12 +231,15 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
 
             # Asynchronously broadcast to Discord & Telegram without blocking HTTP response
             def _async_dispatch(sig: dict):
-                try:
-                    discord = DiscordWebhookDispatcher()
-                    discord.send_tradingview_signal_embed(sig)
-                except Exception as d_err:
-                    logger.error(f"Error dispatching TradingView signal to Discord: {d_err}")
+                if os.environ.get("DISCORD_WEBHOOK_URL"):
+                    try:
+                        discord = DiscordWebhookDispatcher()
+                        discord.send_tradingview_signal_embed(sig)
+                    except Exception as d_err:
+                        logger.error(f"Error dispatching TradingView signal to Discord: {d_err}")
 
+                if not (os.environ.get("TELEGRAM_BOT_TOKEN") and os.environ.get("TELEGRAM_CHAT_ID")):
+                    return
                 try:
                     telegram = TelegramAlertDispatcher()
                     msg = (
