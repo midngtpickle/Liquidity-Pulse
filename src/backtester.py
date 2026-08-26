@@ -242,30 +242,41 @@ class SRBacktester:
         return records
 
     @staticmethod
-    def control_levels(active_levels: List[SRLevel], rng: random.Random) -> List[SRLevel]:
+    def control_levels(
+        active_levels: List[SRLevel],
+        rng: random.Random,
+        zone_tolerance_pct: float = 0.0035,
+        max_jitter_pct: float = 0.02
+    ) -> List[SRLevel]:
         """
-        Null-hypothesis levels: the same count, drawn uniformly across the price band the
-        real levels occupy, carrying none of the pivot-cluster derivation.
+        Null-hypothesis levels: each real level displaced to a nearby but arbitrary price.
 
-        Drawing from the real band rather than anywhere on the chart keeps the comparison
-        honest. The question is whether a derived level beats an arbitrary price in the
-        same region, not whether it beats a line somewhere price never went.
+        The offset is at least three zone widths, so the control never lands inside the
+        zone it is standing in for, and at most `max_jitter_pct` away, so it stays in the
+        same neighbourhood of the chart. The question this poses is the sharp one: is
+        *this particular price* special, or would any price near it do as well?
+
+        Displacing each level individually rather than redrawing across the band spanned
+        by all of them matters for derivations that emit only one or two levels. A band
+        drawn from a single level is a point, which would make the control identical to
+        the thing it is meant to test.
         """
-        if not active_levels:
-            return []
-        low = min(l.price for l in active_levels)
-        high = max(l.price for l in active_levels)
-        return [
-            SRLevel(
-                price=rng.uniform(low, high),
-                type="SUPPORT",
-                touch_count=3,
-                conviction="HIGH",
-                distance_pct=0.0,
-                volume_confluence=True
+        floor = zone_tolerance_pct * 3.0
+        ceiling = max(max_jitter_pct, floor * 2.0)
+        control: List[SRLevel] = []
+        for level in active_levels:
+            offset = rng.uniform(floor, ceiling) * (1 if rng.random() < 0.5 else -1)
+            control.append(
+                SRLevel(
+                    price=level.price * (1.0 + offset),
+                    type=level.type,
+                    touch_count=level.touch_count,
+                    conviction=level.conviction,
+                    distance_pct=0.0,
+                    volume_confluence=level.volume_confluence
+                )
             )
-            for _ in active_levels
-        ]
+        return control
 
     def run_backtest(
         self,
@@ -360,7 +371,7 @@ class SRBacktester:
             # Same evaluation, same fold, randomly placed levels. A hold rate quoted
             # without this alongside it is not interpretable.
             for seed_index in range(control_seeds):
-                control = self.control_levels(active_levels, rngs[seed_index])
+                control = self.control_levels(active_levels, rngs[seed_index], cluster_threshold_pct)
                 for record in self.evaluate_fold(
                     control, test_klines, cluster_threshold_pct,
                     target_pct, break_margin_pct, resolve_bars

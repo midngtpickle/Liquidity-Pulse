@@ -113,6 +113,75 @@ def round_numbers(engine, klines, ref_price, tol, step: float = 1000.0):
     return [_level(p, ref_price) for p in prices if low <= p <= high]
 
 
+def untested_pivots(engine, klines, ref_price, tol):
+    """
+    Pivots price has NOT returned to. Inverts the production filter, testing the common
+    claim that a fresh level is stronger than one already worked over.
+    """
+    return [l for l in _pivot_levels(engine, klines, ref_price, tol, min_touches=0)
+            if l.touch_count <= 1]
+
+
+def session_opens(engine, klines, ref_price, tol):
+    """Asia (00:00), London (07:00) and New York (13:30) UTC opens, most recent three."""
+    targets = {(0, 0), (7, 0), (13, 30)}
+    found = []
+    for k in reversed(klines):
+        stamp = datetime.fromtimestamp(k["open_time"] / 1000.0, tz=timezone.utc)
+        if (stamp.hour, stamp.minute) in targets:
+            found.append(_level(k["open"], ref_price))
+            if len(found) >= 3:
+                break
+    return found
+
+
+def prior_week_extremes(engine, klines, ref_price, tol):
+    """High and low of the trailing 672 candles (7 days at 15m)."""
+    week = klines[-672:]
+    return [
+        _level(max(k["high"] for k in week), ref_price),
+        _level(min(k["low"] for k in week), ref_price)
+    ]
+
+
+def fib_retracements(engine, klines, ref_price, tol):
+    """38.2 / 50 / 61.8 retracements of the trailing 200-candle swing."""
+    swing = klines[-200:]
+    high = max(k["high"] for k in swing)
+    low = min(k["low"] for k in swing)
+    span = high - low
+    return [_level(high - span * r, ref_price) for r in (0.382, 0.5, 0.618)]
+
+
+def anchored_vwap(engine, klines, ref_price, tol):
+    """Volume-weighted average price across the whole lookback window."""
+    numerator = sum(((k["high"] + k["low"] + k["close"]) / 3.0) * k["volume"] for k in klines)
+    denominator = sum(k["volume"] for k in klines)
+    return [_level(numerator / denominator, ref_price)] if denominator else []
+
+
+def moving_averages(engine, klines, ref_price, tol):
+    """
+    50 and 200 period EMAs.
+
+    Approximate: an EMA is a dynamic level that moves each candle, but the harness holds
+    levels fixed for the fold, so these are frozen at the value they had when the fold
+    opened. Over a 50-candle test window a 50-EMA drifts, so treat this row as
+    indicative rather than a faithful test of moving-average support.
+    """
+    closes = [k["close"] for k in klines]
+    out = []
+    for period in (50, 200):
+        if len(closes) < period:
+            continue
+        multiplier = 2.0 / (period + 1)
+        ema = sum(closes[:period]) / period
+        for close in closes[period:]:
+            ema = close * multiplier + ema * (1 - multiplier)
+        out.append(_level(ema, ref_price))
+    return out
+
+
 DERIVATIONS: List[Tuple[str, Derivation]] = [
     ("pivot clusters (production)", pivot_clusters),
     ("pivot clusters, 5+ touches", pivot_clusters_strong),
@@ -122,6 +191,12 @@ DERIVATIONS: List[Tuple[str, Derivation]] = [
     ("LVN nodes", lvn_nodes),
     ("prior-day high/low", prior_day_extremes),
     ("round numbers", round_numbers),
+    ("untested pivots (1 touch)", untested_pivots),
+    ("session opens", session_opens),
+    ("prior-week high/low", prior_week_extremes),
+    ("fib retracements", fib_retracements),
+    ("anchored VWAP", anchored_vwap),
+    ("50/200 EMA (static)", moving_averages),
 ]
 
 
@@ -217,7 +292,7 @@ class DerivationStudy:
             for seed in range(seeds):
                 rng = random.Random(seed)
                 control = [
-                    (test, self.backtester.control_levels(levels, rng))
+                    (test, self.backtester.control_levels(levels, rng, tol))
                     for test, levels in fold_levels
                 ]
                 control_rates.append(
@@ -229,7 +304,7 @@ class DerivationStudy:
             for seed in range(seeds):
                 rng = random.Random(seed)
                 control = [
-                    (test, self.backtester.control_levels(levels, rng))
+                    (test, self.backtester.control_levels(levels, rng, tol))
                     for test, levels in fold_levels
                 ]
                 control_curves.append(
