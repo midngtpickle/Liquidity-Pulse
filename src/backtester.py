@@ -1,9 +1,15 @@
 """
 Liquidity-Pulse - Historical S/R Backtesting Engine
 
-Walk-forward benchmark of Pine S/R clusters: levels are re-derived from a trailing
-window at each fold and tested over the candles that immediately follow, then the
-window advances. Reports bounce accuracy %, win rate, and conviction tier precision.
+Walk-forward benchmark of Pine S/R clusters. Levels are re-derived from a trailing
+window at each fold and tested over the candles that immediately follow, mirroring how
+production recomputes levels on every run.
+
+A test is recorded only when price enters a level's zone from outside, approaching from
+a definite side. The outcome is resolved by walking candles in order and taking whichever
+happens first -- the level holding and price reaching the target, or price breaching the
+level by the break margin. Outcomes that reach neither inside the resolution window are
+reported as UNRESOLVED rather than silently counted as failures.
 """
 
 import os
@@ -11,7 +17,7 @@ import sys
 import json
 import logging
 from datetime import datetime, timezone
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Tuple
 import numpy as np
 
 # Add src to sys.path
@@ -26,6 +32,7 @@ logging.basicConfig(
 logger = logging.getLogger("SRBacktester")
 
 CONVICTION_TIERS = ("HIGH", "MEDIUM", "LOW")
+OUTCOMES = ("HOLD", "BREAK", "UNRESOLVED")
 
 
 class SRBacktester:
@@ -34,94 +41,148 @@ class SRBacktester:
         self.interval = interval
         self.total_candles = total_candles
         self.engine = QuantEngine(symbol=symbol, interval=interval, limit=total_candles)
+        self._kline_cache: Optional[List[Dict[str, float]]] = None
 
-    def evaluate_level(
-        self,
-        level: SRLevel,
-        test_klines: List[Dict[str, float]],
-        cluster_threshold_pct: float,
-        bounce_target_pct: float
-    ) -> Dict[str, int]:
+    def history(self) -> List[Dict[str, float]]:
+        """Fetches once and reuses, so a parameter sweep does not re-hit the exchange."""
+        if self._kline_cache is None:
+            logger.info(f"Fetching {self.total_candles} historical candles for backtesting...")
+            self._kline_cache = self.engine.fetch_klines_paginated(self.total_candles)
+        return self._kline_cache
+
+    @staticmethod
+    def resolve_outcome(
+        level_price: float,
+        direction: str,
+        klines: List[Dict[str, float]],
+        test_index: int,
+        target_pct: float,
+        break_margin_pct: float,
+        resolve_bars: int
+    ) -> str:
         """
-        Counts how often price entered one level's zone during the test window and
-        whether it bounced or broke through. Unchanged in substance from the original
-        single-split implementation; only the surrounding windowing differs.
+        Walks forward candle by candle and returns whichever happens first.
+
+        Order matters. Taking max/min across the whole window, as the original did,
+        scores a level that broke and then recovered as a successful hold.
+
+        When one candle straddles both the target and the barrier, the adverse move is
+        assumed to have come first. Intrabar sequence is unknowable from OHLC, and
+        assuming the favourable leg first would flatter the result.
         """
-        lvl_price = level.price
-        tolerance = lvl_price * cluster_threshold_pct
-        lvl_type = level.type
+        if direction == "SUPPORT":
+            target = level_price * (1.0 + target_pct)
+            barrier = level_price * (1.0 - break_margin_pct)
+        else:
+            target = level_price * (1.0 - target_pct)
+            barrier = level_price * (1.0 + break_margin_pct)
 
-        level_tests = 0
-        bounces = 0
-        breakthroughs = 0
-
-        i = 0
-        while i < len(test_klines):
-            candle = test_klines[i]
-            c_low = candle["low"]
-            c_high = candle["high"]
-
-            # Check if candle touches level zone
-            if c_low <= (lvl_price + tolerance) and c_high >= (lvl_price - tolerance):
-                # Look ahead 4 candles to evaluate bounce vs breakthrough. A touch on
-                # the final candle has no future to judge it by, so it is not counted
-                # at all — counting it would leave tests > bounces + breakthroughs.
-                lookahead = test_klines[i + 1: i + 5]
-                if not lookahead:
-                    break
-
-                level_tests += 1
-
-                bounced = False
-                if lvl_type == "SUPPORT":
-                    max_future_high = max(k["high"] for k in lookahead)
-                    min_future_low = min(k["low"] for k in lookahead)
-                    if max_future_high >= (lvl_price * (1.0 + bounce_target_pct)):
-                        bounced = True
-                    elif min_future_low < (lvl_price * (1.0 - cluster_threshold_pct * 2)):
-                        bounced = False
-                else:  # RESISTANCE
-                    min_future_low = min(k["low"] for k in lookahead)
-                    max_future_high = max(k["high"] for k in lookahead)
-                    if min_future_low <= (lvl_price * (1.0 - bounce_target_pct)):
-                        bounced = True
-                    elif max_future_high > (lvl_price * (1.0 + cluster_threshold_pct * 2)):
-                        bounced = False
-
-                if bounced:
-                    bounces += 1
-                else:
-                    breakthroughs += 1
-
-                # Skip lookahead candles to avoid double counting same test
-                i += 4
+        end = min(test_index + 1 + resolve_bars, len(klines))
+        for j in range(test_index + 1, end):
+            candle = klines[j]
+            if direction == "SUPPORT":
+                hit_target = candle["high"] >= target
+                hit_barrier = candle["low"] <= barrier
             else:
-                i += 1
+                hit_target = candle["low"] <= target
+                hit_barrier = candle["high"] >= barrier
 
-        return {"tests": level_tests, "bounces": bounces, "breakthroughs": breakthroughs}
+            if hit_target and hit_barrier:
+                return "BREAK"
+            if hit_target:
+                return "HOLD"
+            if hit_barrier:
+                return "BREAK"
+
+        return "UNRESOLVED"
+
+    def evaluate_fold(
+        self,
+        levels: List[SRLevel],
+        test_klines: List[Dict[str, float]],
+        zone_tolerance_pct: float,
+        target_pct: float,
+        break_margin_pct: float,
+        resolve_bars: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Produces one test record per candle that freshly enters a level's zone.
+
+        Only the nearest qualifying level is tested on any given candle. Clustered
+        levels would otherwise each emit their own record for the same price action,
+        and those records are not independent observations.
+
+        The support/resistance hypothesis comes from the side price approached from,
+        not from where the level sat when it was derived. A level classified SUPPORT at
+        fold start that price has since fallen below is overhead supply now, and testing
+        it for an upward bounce measures the wrong thing.
+        """
+        records: List[Dict[str, Any]] = []
+        if not levels or len(test_klines) < 2:
+            return records
+
+        for i in range(1, len(test_klines)):
+            candle = test_klines[i]
+            prev = test_klines[i - 1]
+
+            best: Optional[Tuple[float, SRLevel, str]] = None
+            for level in levels:
+                price = level.price
+                tol = price * zone_tolerance_pct
+
+                if not (candle["low"] <= price + tol and candle["high"] >= price - tol):
+                    continue
+
+                # Require a fresh entry from a definite side. If the previous candle was
+                # already inside the zone this is continuation, not a new test.
+                if prev["low"] > price + tol:
+                    direction = "SUPPORT"
+                elif prev["high"] < price - tol:
+                    direction = "RESISTANCE"
+                else:
+                    continue
+
+                distance = abs(candle["close"] - price)
+                if best is None or distance < best[0]:
+                    best = (distance, level, direction)
+
+            if best is None:
+                continue
+
+            _, level, direction = best
+            outcome = self.resolve_outcome(
+                level.price, direction, test_klines, i,
+                target_pct, break_margin_pct, resolve_bars
+            )
+            records.append({
+                "candle_index": i,
+                "level_price": round(level.price, 2),
+                "conviction": level.conviction,
+                "touch_count": level.touch_count,
+                "volume_confluence": level.volume_confluence,
+                "direction": direction,
+                "outcome": outcome
+            })
+
+        return records
 
     def run_backtest(
         self,
         cluster_threshold_pct: float = 0.0035,
-        bounce_target_pct: float = 0.005,
+        target_pct: float = 0.005,
+        break_margin_pct: float = 0.0035,
+        resolve_bars: int = 8,
         lookback: int = 500,
-        horizon: int = 50
+        horizon: int = 50,
+        min_touches: int = 2
     ) -> Dict[str, Any]:
         """
         Walk-forward evaluation.
 
         At each fold, S/R levels are derived from the trailing `lookback` candles and
         tested over the next `horizon` candles, then the window advances by `horizon`.
-        This mirrors production, which recomputes levels from the trailing 500 candles
-        on every run.
-
-        The previous single 50/50 chronological split benchmarked something the system
-        never does: it derived levels once from the oldest half and never refreshed
-        them. In any trending market that produces zero tests, because every level sits
-        outside the range price occupied during the second half.
         """
-        logger.info(f"Fetching {self.total_candles} historical candles for backtesting...")
-        klines = self.engine.fetch_klines_paginated(self.total_candles)
+        klines = self.history()
 
         if len(klines) < lookback + horizon:
             raise ValueError(
@@ -129,34 +190,38 @@ class SRBacktester:
                 f"need at least {lookback + horizon} (lookback {lookback} + horizon {horizon})."
             )
 
+        params = {
+            "cluster_threshold_pct": cluster_threshold_pct,
+            "target_pct": target_pct,
+            "break_margin_pct": break_margin_pct,
+            "resolve_bars": resolve_bars,
+            "lookback": lookback,
+            "horizon": horizon,
+            "min_touches": min_touches
+        }
+
         results: Dict[str, Any] = {
             "symbol": self.symbol,
             "interval": self.interval,
             "backtest_time_utc": datetime.now(timezone.utc).isoformat(),
-            "method": "walk_forward",
+            "method": "walk_forward_first_touch",
             "total_candles": len(klines),
-            "lookback_candles": lookback,
-            "horizon_candles": horizon,
+            "params": params,
             "folds": 0,
-            "total_level_tests": 0,
-            "successful_bounces": 0,
-            "breakthroughs": 0,
-            "overall_win_rate_pct": 0.0,
+            "totals": {outcome: 0 for outcome in OUTCOMES},
             "conviction_stats": {
-                tier: {"tests": 0, "bounces": 0, "win_rate_pct": 0.0}
-                for tier in CONVICTION_TIERS
+                tier: {outcome: 0 for outcome in OUTCOMES} for tier in CONVICTION_TIERS
             },
             "fold_details": []
         }
 
         levels_per_fold: List[int] = []
 
-        for start in range(lookback, len(klines) - horizon + 1, horizon):
+        for fold_index, start in enumerate(range(lookback, len(klines) - horizon + 1, horizon)):
             train_klines = klines[start - lookback:start]
             test_klines = klines[start:start + horizon]
             ref_price = train_klines[-1]["close"]
 
-            # Derive levels exactly as production does for this trailing window.
             pivots = self.engine.calculate_pine_pivots(train_klines)
             sr_levels = self.engine.cluster_sr_levels(
                 pivots, train_klines, ref_price, threshold_pct=cluster_threshold_pct
@@ -164,101 +229,114 @@ class SRBacktester:
             volume_prof = self.engine.calculate_volume_profile(train_klines)
             self.engine.apply_volume_confluence(sr_levels, volume_prof, ref_price)
 
-            active_levels = [l for l in sr_levels if l.touch_count >= 2]
+            active_levels = [l for l in sr_levels if l.touch_count >= min_touches]
             levels_per_fold.append(len(active_levels))
 
-            fold_tests = 0
-            fold_bounces = 0
-            fold_breaks = 0
+            fold_records = self.evaluate_fold(
+                active_levels, test_klines, cluster_threshold_pct,
+                target_pct, break_margin_pct, resolve_bars
+            )
 
-            for level in active_levels:
-                stats = self.evaluate_level(
-                    level, test_klines, cluster_threshold_pct, bounce_target_pct
-                )
-                fold_tests += stats["tests"]
-                fold_bounces += stats["bounces"]
-                fold_breaks += stats["breakthroughs"]
-
-                tier = level.conviction if level.conviction in CONVICTION_TIERS else "LOW"
-                results["conviction_stats"][tier]["tests"] += stats["tests"]
-                results["conviction_stats"][tier]["bounces"] += stats["bounces"]
+            fold_counts = {outcome: 0 for outcome in OUTCOMES}
+            for record in fold_records:
+                outcome = record["outcome"]
+                tier = record["conviction"] if record["conviction"] in CONVICTION_TIERS else "LOW"
+                fold_counts[outcome] += 1
+                results["totals"][outcome] += 1
+                results["conviction_stats"][tier][outcome] += 1
 
             results["folds"] += 1
-            results["total_level_tests"] += fold_tests
-            results["successful_bounces"] += fold_bounces
-            results["breakthroughs"] += fold_breaks
-
             results["fold_details"].append({
+                "fold_index": fold_index,
                 "train_end_index": start,
                 "train_end_time_utc": datetime.fromtimestamp(
                     train_klines[-1]["close_time"] / 1000.0, tz=timezone.utc
                 ).isoformat(),
                 "reference_price": round(ref_price, 2),
                 "levels_evaluated": len(active_levels),
-                "tests": fold_tests,
-                "bounces": fold_bounces,
-                "breakthroughs": fold_breaks,
-                "win_rate_pct": round((fold_bounces / fold_tests * 100.0) if fold_tests else 0.0, 2)
+                **fold_counts
             })
 
-        total_t = results["total_level_tests"]
-        results["overall_win_rate_pct"] = round(
-            (results["successful_bounces"] / total_t * 100.0) if total_t > 0 else 0.0, 2
+        results["avg_levels_per_fold"] = (
+            round(float(np.mean(levels_per_fold)), 2) if levels_per_fold else 0.0
         )
+        results["hold_rate_pct"] = self.hold_rate(results["totals"])
         for tier in CONVICTION_TIERS:
-            tier_stats = results["conviction_stats"][tier]
-            tier_stats["win_rate_pct"] = round(
-                (tier_stats["bounces"] / tier_stats["tests"] * 100.0) if tier_stats["tests"] > 0 else 0.0, 2
-            )
-
-        results["avg_levels_per_fold"] = round(float(np.mean(levels_per_fold)), 2) if levels_per_fold else 0.0
+            stats = results["conviction_stats"][tier]
+            stats["hold_rate_pct"] = self.hold_rate(stats)
 
         logger.info(
             f"Walk-forward complete: {results['folds']} folds, "
-            f"{results['total_level_tests']} level tests."
+            f"{sum(results['totals'].values())} tests, "
+            f"hold rate {results['hold_rate_pct']}%."
         )
         return results
 
+    @staticmethod
+    def hold_rate(counts: Dict[str, int]) -> float:
+        """
+        Hold rate over resolved tests only. UNRESOLVED means the horizon expired without
+        the level either holding or breaking, which is not evidence either way.
+        """
+        resolved = counts.get("HOLD", 0) + counts.get("BREAK", 0)
+        return round(counts.get("HOLD", 0) / resolved * 100.0, 2) if resolved else 0.0
+
     def print_summary(self, results: Dict[str, Any]):
-        """
-        Prints formatted backtest summary report to console.
-        """
-        print("\n" + "=" * 70)
+        totals = results["totals"]
+        resolved = totals["HOLD"] + totals["BREAK"]
+        n = sum(totals.values())
+        p = results["params"]
+
+        print("\n" + "=" * 74)
         print("LIQUIDITY-PULSE - S/R WALK-FORWARD BENCHMARK REPORT")
-        print("=" * 70)
-        print(f"Symbol:                {results['symbol']} ({results['interval']})")
-        print(f"History:               {results['total_candles']} candles")
-        print(f"Window:                {results['lookback_candles']} train / {results['horizon_candles']} test per fold")
-        print(f"Folds:                 {results['folds']}")
-        print(f"Avg Levels Per Fold:   {results['avg_levels_per_fold']}")
-        print(f"Total S/R Level Tests: {results['total_level_tests']}")
-        print(f"Successful Bounces:    {results['successful_bounces']}")
-        print(f"Breakthroughs:         {results['breakthroughs']}")
-        print(f"OVERALL WIN RATE:      {results['overall_win_rate_pct']}%")
-        print("-" * 70)
+        print("=" * 74)
+        print(f"Symbol:            {results['symbol']} ({results['interval']})")
+        print(f"History:           {results['total_candles']} candles over {results['folds']} folds")
+        print(f"Level derivation:  {p['lookback']} trailing candles, "
+              f"zone +/-{p['cluster_threshold_pct'] * 100:.2f}%, min {p['min_touches']} touches")
+        print(f"Outcome rule:      target {p['target_pct'] * 100:.2f}% / "
+              f"break {p['break_margin_pct'] * 100:.2f}% within {p['resolve_bars']} candles")
+        print(f"Avg levels/fold:   {results['avg_levels_per_fold']}")
+        print("-" * 74)
+        print(f"Tests recorded:    {n}")
+        print(f"  HOLD             {totals['HOLD']}")
+        print(f"  BREAK            {totals['BREAK']}")
+        print(f"  UNRESOLVED       {totals['UNRESOLVED']}"
+              f"   ({totals['UNRESOLVED'] / n * 100:.1f}% of tests)" if n else "")
+        print(f"HOLD RATE:         {results['hold_rate_pct']}%   (of {resolved} resolved)")
+        print("-" * 74)
+        print(f"{'TIER':<10}{'HOLD':>8}{'BREAK':>8}{'UNRES':>8}{'HOLD RATE':>12}")
         for tier in CONVICTION_TIERS:
-            stats = results["conviction_stats"][tier]
-            print(
-                f"{tier + ' CONVICTION WIN RATE:':<30} {stats['win_rate_pct']:>6}%  "
-                f"({stats['bounces']}/{stats['tests']} tests)"
-            )
-        print("=" * 70 + "\n")
+            s = results["conviction_stats"][tier]
+            print(f"{tier:<10}{s['HOLD']:>8}{s['BREAK']:>8}{s['UNRESOLVED']:>8}"
+                  f"{s['hold_rate_pct']:>11}%")
+        print("=" * 74 + "\n")
 
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Liquidity Pulse S/R Walk-Forward Backtester")
-    parser.add_argument("--candles", type=int, default=5000, help="Total history to fetch (default 5000)")
-    parser.add_argument("--lookback", type=int, default=500, help="Training window per fold (default 500)")
-    parser.add_argument("--horizon", type=int, default=50, help="Test window per fold (default 50)")
+    parser.add_argument("--candles", type=int, default=5000)
+    parser.add_argument("--lookback", type=int, default=500)
+    parser.add_argument("--horizon", type=int, default=50)
+    parser.add_argument("--target", type=float, default=0.005)
+    parser.add_argument("--break-margin", type=float, default=0.0035)
+    parser.add_argument("--resolve-bars", type=int, default=8)
+    parser.add_argument("--min-touches", type=int, default=2)
     args = parser.parse_args()
 
     backtester = SRBacktester(symbol="BTCUSDT", interval="15m", total_candles=args.candles)
-    res = backtester.run_backtest(lookback=args.lookback, horizon=args.horizon)
+    res = backtester.run_backtest(
+        target_pct=args.target,
+        break_margin_pct=args.break_margin,
+        resolve_bars=args.resolve_bars,
+        lookback=args.lookback,
+        horizon=args.horizon,
+        min_touches=args.min_touches
+    )
     backtester.print_summary(res)
 
-    # Output backtest report JSON
     script_dir = os.path.dirname(os.path.abspath(__file__))
     workspace_dir = os.path.abspath(os.path.join(script_dir, "..", "workspace"))
     report_file = os.path.join(workspace_dir, "backtest_results.json")
