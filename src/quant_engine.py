@@ -153,6 +153,71 @@ class QuantEngine:
                 return _KLINE_CACHE[cache_key][1]
             raise RuntimeError(f"Failed to fetch market data from all REST endpoints: {err}")
 
+    @staticmethod
+    def _parse_binance_kline_row(row: List[Any]) -> Dict[str, float]:
+        return {
+            "open_time": float(row[0]),
+            "open": float(row[1]),
+            "high": float(row[2]),
+            "low": float(row[3]),
+            "close": float(row[4]),
+            "volume": float(row[5]),
+            "close_time": float(row[6])
+        }
+
+    def fetch_klines_paginated(self, total: int) -> List[Dict[str, float]]:
+        """
+        Fetches more history than the exchange's 1000-candle per-request cap by
+        walking endTime backwards.
+
+        Production only ever needs the single trailing window fetch_klines() returns.
+        This exists for the backtester, where a thousand candles is far too little
+        history to conclude anything about hit rates. Deliberately no Bybit fallback
+        and no caching: a benchmark should fail loudly rather than quietly splice two
+        exchanges together or reuse a stale window.
+        """
+        headers = {"User-Agent": "LiquidityPulse/1.0"}
+        collected: List[Dict[str, float]] = []
+        end_time: Optional[int] = None
+        page_cap = 1000
+
+        while len(collected) < total:
+            batch_size = min(page_cap, total - len(collected))
+            params: Dict[str, Any] = {
+                "symbol": self.symbol,
+                "interval": self.interval,
+                "limit": batch_size
+            }
+            if end_time is not None:
+                params["endTime"] = end_time
+
+            response = requests.get(
+                self.BINANCE_KLINES_URL, params=params, headers=headers, timeout=15
+            )
+            response.raise_for_status()
+            data = response.json()
+            if not data:
+                logger.warning(
+                    f"No further history available; stopping at {len(collected)} candles."
+                )
+                break
+
+            # Binance returns oldest -> newest, so each page prepends to the front.
+            page = [self._parse_binance_kline_row(row) for row in data]
+            collected = page + collected
+            end_time = int(page[0]["open_time"]) - 1
+
+            if len(data) < batch_size:
+                logger.warning(
+                    f"Exchange history exhausted at {len(collected)} candles."
+                )
+                break
+
+        logger.info(
+            f"Fetched {len(collected)} candles ({self.interval}) across paginated requests."
+        )
+        return collected
+
     def calculate_pine_pivots(
         self, klines: List[Dict[str, float]], left_bars: int = 10, right_bars: int = 10
     ) -> List[float]:
