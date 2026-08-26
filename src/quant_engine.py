@@ -182,6 +182,42 @@ class QuantEngine:
         logger.info(f"Identified {len(pivots)} raw Pine pivots.")
         return pivots
 
+    @staticmethod
+    def grade_conviction(touch_count: int, volume_confluence: bool) -> str:
+        """
+        Conviction tiers per CLAUDE.md: HIGH requires >= 3 distinct touches AND
+        overlap with a High Volume Node or the VPOC. Touch count alone never
+        reaches HIGH — a level price revisits often but that no volume has
+        accepted is not an institutional level.
+        """
+        if touch_count >= 3 and volume_confluence:
+            return "HIGH"
+        if touch_count >= 2:
+            return "MEDIUM"
+        return "LOW"
+
+    def apply_volume_confluence(
+        self,
+        sr_levels: List["SRLevel"],
+        volume_prof: "VolumeProfile",
+        reference_price: float
+    ) -> None:
+        """
+        Tags each level with HVN/VPOC confluence and regrades conviction in place.
+
+        Conviction cannot be finalised inside cluster_sr_levels() because the volume
+        profile does not exist yet, so any caller wanting production-grade tiers must
+        run this. Skipping it leaves every level capped at MEDIUM.
+        """
+        for level in sr_levels:
+            near_vpoc = abs(level.price - volume_prof.vpoc) / reference_price <= 0.005
+            near_hvn = any(
+                abs(level.price - hvn) / reference_price <= 0.005
+                for hvn in volume_prof.hvn_zones
+            )
+            level.volume_confluence = near_vpoc or near_hvn
+            level.conviction = self.grade_conviction(level.touch_count, level.volume_confluence)
+
     def cluster_sr_levels(
         self,
         pivots: List[float],
@@ -190,8 +226,8 @@ class QuantEngine:
         threshold_pct: float = 0.0035
     ) -> List[SRLevel]:
         """
-        Clusters pivot points into density S/R zones, counts touches across full candle set,
-        and assigns conviction tiers.
+        Clusters pivot points into density S/R zones, counts distinct touches across the
+        full candle set, and assigns conviction tiers.
         """
         if not pivots:
             return []
@@ -218,21 +254,25 @@ class QuantEngine:
         for cluster in clusters:
             level_price = round(float(np.mean(cluster)), 2)
             
-            # Vectorized touch count calculation across all klines
+            # Vectorized touch count across all klines. Only rising edges count —
+            # a candle entering the zone from outside. Counting every candle whose
+            # range overlaps the level instead measures how long price loitered
+            # near it, which pushed every level past the HIGH threshold and made
+            # the conviction tiers meaningless. Mirrors the debounce in
+            # liquidity_pulse_sr.pine.
             tolerance = level_price * threshold_pct
-            touch_mask = (lows_arr <= (level_price + tolerance)) & (highs_arr >= (level_price - tolerance))
-            touch_count = int(np.count_nonzero(touch_mask))
+            in_zone = (lows_arr <= (level_price + tolerance)) & (highs_arr >= (level_price - tolerance))
+            entered_from_outside = np.empty_like(in_zone)
+            entered_from_outside[0] = True
+            entered_from_outside[1:] = ~in_zone[:-1]
+            touch_count = int(np.count_nonzero(in_zone & entered_from_outside))
 
             level_type = "SUPPORT" if level_price < current_price else "RESISTANCE"
             distance_pct = round(((level_price - current_price) / current_price) * 100, 2)
 
-            # Determine conviction
-            if touch_count >= 3:
-                conviction = "HIGH"
-            elif touch_count == 2:
-                conviction = "MEDIUM"
-            else:
-                conviction = "LOW"
+            # Provisional grade. Volume confluence is unknown until the volume
+            # profile is built, so run() regrades once it is.
+            conviction = self.grade_conviction(touch_count, volume_confluence=False)
 
             sr_levels.append(SRLevel(
                 price=level_price,
@@ -317,14 +357,7 @@ class QuantEngine:
         sr_levels = self.cluster_sr_levels(pivots, klines, current_price)
         volume_prof = self.calculate_volume_profile(klines)
 
-        # Update volume confluence tag for S/R levels near HVN or VPOC
-        for level in sr_levels:
-            near_vpoc = abs(level.price - volume_prof.vpoc) / current_price <= 0.005
-            near_hvn = any(abs(level.price - hvn) / current_price <= 0.005 for hvn in volume_prof.hvn_zones)
-            if near_vpoc or near_hvn:
-                level.volume_confluence = True
-                if level.touch_count >= 2:
-                    level.conviction = "HIGH"
+        self.apply_volume_confluence(sr_levels, volume_prof, current_price)
 
         telemetry = TelemetryPayload(
             timestamp=datetime.now(timezone.utc).isoformat(),
