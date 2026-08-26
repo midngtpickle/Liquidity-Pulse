@@ -121,7 +121,9 @@ python src/sentinel.py
 > **Output**: `workspace/artifacts/SESSION_BRIEFING.md`
 
 ### Step 4: Run the Real-Time WebSocket Feed (`src/ws_feed.py`)
-Connects to Binance live WebSockets (`@depth20@100ms` and `@forceOrder`), calculates 0.5%, 1%, and 2% depth imbalance deltas, and triggers alerts on liquidation cascades exceeding $5,000,000 over a 3-minute window.
+Connects to Binance live WebSockets (`@depth@100ms` and `@forceOrder`), maintains a full local order book seeded from a REST snapshot, calculates 0.5%, 1%, and 2% depth imbalance deltas, and triggers alerts on liquidation cascades exceeding $5,000,000 over a 3-minute window.
+
+The REST snapshot is capped at 5,000 levels per side, which on $BTC reaches roughly 1.2% from mid. Bands wider than that reach are under-reported until resting liquidity beyond it moves, so every snapshot publishes a `bands_complete` map alongside `book.complete_bid_span_pct` / `complete_ask_span_pct`. Treat a band flagged `false` as a floor, not a measurement.
 ```bash
 # Run for 30 seconds test
 python src/ws_feed.py --duration 30
