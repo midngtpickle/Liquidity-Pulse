@@ -1,5 +1,5 @@
-//@version=5
-indicator("Liquidity-Pulse - S/R Clusters & VPOC", shorttitle="LiquidityPulse", overlay=true, max_lines_count=100, max_labels_count=100)
+//@version=6
+indicator("Liquidity-Pulse - S/R Clusters & VPOC", shorttitle="LiqPulse", overlay=true, max_lines_count=100, max_labels_count=100, max_bars_back=500)
 
 // ============================================================================
 // INPUT PARAMETERS
@@ -7,10 +7,13 @@ indicator("Liquidity-Pulse - S/R Clusters & VPOC", shorttitle="LiquidityPulse", 
 leftBars         = input.int(10, title="Pivot Left Bars", minval=1, group="Pivot Settings")
 rightBars        = input.int(10, title="Pivot Right Bars", minval=1, group="Pivot Settings")
 clusterPct       = input.float(0.35, title="Cluster Density Threshold (%)", minval=0.05, step=0.05, group="Density Settings") / 100.0
+maxLevels        = input.int(60, title="Max Tracked Levels", minval=10, maxval=200, group="Density Settings")
+drawLevels       = input.int(12, title="Levels To Draw (nearest price)", minval=1, maxval=40, group="Display Settings")
 minTouchesHigh   = input.int(3, title="Min Touches for High Conviction", minval=2, group="Conviction Settings")
 showLabels       = input.bool(true, title="Show Conviction Labels", group="Display Settings")
 showVPOC         = input.bool(true, title="Show VPOC Line", group="Display Settings")
-vpocBars         = input.int(300, title="VPOC Lookback Bars", minval=50, maxval=500, group="Display Settings")
+vpocBars         = input.int(500, title="VPOC Lookback Bars", minval=50, maxval=500, group="Display Settings")
+vpocBins         = input.int(50, title="VPOC Histogram Bins", minval=10, maxval=200, group="Display Settings")
 showTable        = input.bool(true, title="Show S/R Telemetry Table", group="Display Settings")
 
 // Colors
@@ -24,59 +27,127 @@ colorVPOC        = input.color(color.new(#ffd700, 0), title="VPOC Color", group=
 pHi = ta.pivothigh(high, leftBars, rightBars)
 pLo = ta.pivotlow(low, leftBars, rightBars)
 
-var float[] pivotPrices = array.new_float(0)
-var int[] pivotTouches = array.new_int(0)
-var line[] levelLines = array.new_line(0)
-var label[] levelLabels = array.new_label(0)
+var array<float> pivotPrices  = array.new_float(0)   // cluster centre price (running mean)
+var array<int>   pivotTouches = array.new_int(0)     // distinct zone entries
+var array<int>   pivotMembers = array.new_int(0)     // pivots merged into this cluster
+var array<bool>  pivotInZone  = array.new_bool(0)    // debounce state: was price inside the zone last bar
+var array<line>  levelLines   = array.new_line(0)
+var array<label> levelLabels  = array.new_label(0)
+var line    vpocLine     = na
+var label   vpocLbl      = na
 
-// Record new pivot highs
-if not na(pHi)
-    array.push(pivotPrices, pHi)
-    array.push(pivotTouches, 1)
+// Merge a new pivot into an existing cluster when it falls inside the density
+// threshold, mirroring cluster_sr_levels() in src/quant_engine.py. Otherwise
+// append a new cluster, evicting the weakest one if the cap is exceeded.
+mergePivot(float px) =>
+    int hit = -1
+    if array.size(pivotPrices) > 0
+        for i = 0 to array.size(pivotPrices) - 1
+            centre = array.get(pivotPrices, i)
+            if hit < 0 and math.abs(px - centre) / centre <= clusterPct
+                hit := i
+    if hit >= 0
+        n      = array.get(pivotMembers, hit)
+        centre = array.get(pivotPrices, hit)
+        array.set(pivotPrices, hit, (centre * n + px) / (n + 1))
+        array.set(pivotMembers, hit, n + 1)
+    else
+        array.push(pivotPrices, px)
+        array.push(pivotTouches, 1)
+        array.push(pivotMembers, 1)
+        array.push(pivotInZone, true)
 
-// Record new pivot lows
-if not na(pLo)
-    array.push(pivotPrices, pLo)
-    array.push(pivotTouches, 1)
+    // Evict the weakest level once the cap is exceeded. Kept out of the else
+    // branch above so both branches end on a void call, and closed with an
+    // explicit `true` so the function has one unambiguous return type
+    // (array.remove returns the removed element, not void).
+    if array.size(pivotPrices) > maxLevels
+        int weakest = 0
+        for i = 1 to array.size(pivotTouches) - 1
+            if array.get(pivotTouches, i) < array.get(pivotTouches, weakest)
+                weakest := i
+        array.remove(pivotPrices, weakest)
+        array.remove(pivotTouches, weakest)
+        array.remove(pivotMembers, weakest)
+        array.remove(pivotInZone, weakest)
+    true
 
-// Count touches across candles
-if array.size(pivotPrices) > 0
-    for i = 0 to array.size(pivotPrices) - 1
-        pPrice = array.get(pivotPrices, i)
-        tol = pPrice * clusterPct
-        if low <= (pPrice + tol) and high >= (pPrice - tol)
-            array.set(pivotTouches, i, array.get(pivotTouches, i) + 1)
+// var arrays are NOT rolled back on realtime ticks, so every mutation is gated
+// on a confirmed bar to stop duplicate pivots and runaway touch counts.
+if barstate.isconfirmed
+    if not na(pHi)
+        mergePivot(pHi)
+    if not na(pLo)
+        mergePivot(pLo)
+
+    // Count a touch only when price re-enters the zone from outside, so a level
+    // price is simply sitting on does not gain a touch on every single bar.
+    if array.size(pivotPrices) > 0
+        for i = 0 to array.size(pivotPrices) - 1
+            pPrice = array.get(pivotPrices, i)
+            tol    = pPrice * clusterPct
+            inNow  = low <= (pPrice + tol) and high >= (pPrice - tol)
+            if inNow and not array.get(pivotInZone, i)
+                array.set(pivotTouches, i, array.get(pivotTouches, i) + 1)
+            array.set(pivotInZone, i, inNow)
 
 // ============================================================================
 // DRAW S/R OVERLAYS ON LAST BAR
 // ============================================================================
+var array<int> drawOrder = array.new_int(0)
+
 if barstate.islast
     // Clear old lines and labels
     if array.size(levelLines) > 0
         for i = 0 to array.size(levelLines) - 1
             line.delete(array.get(levelLines, i))
         array.clear(levelLines)
-        
+
     if array.size(levelLabels) > 0
         for i = 0 to array.size(levelLabels) - 1
             label.delete(array.get(levelLabels, i))
         array.clear(levelLabels)
 
-    // Render active S/R cluster lines
+    line.delete(vpocLine)
+    label.delete(vpocLbl)
+
+    int xLeft = math.max(0, bar_index - 100)
     int pSize = array.size(pivotPrices)
+
+    // Rank levels by proximity to price (the ordering the backend telemetry
+    // uses) rather than by insertion order.
+    array.clear(drawOrder)
     if pSize > 0
-        int limitDraw = math.min(pSize, 12)
-        for i = 0 to limitDraw - 1
-            float levelPrice = array.get(pivotPrices, pSize - 1 - i)
-            int touches = array.get(pivotTouches, pSize - 1 - i)
-            bool isSupport = levelPrice < close
-            color lineColor = isSupport ? colorSupport : colorResistance
-            int lineStyle = touches >= minTouchesHigh ? line.style_solid : line.style_dashed
-            int lineWidth = touches >= minTouchesHigh ? 2 : 1
+        array<float> dist = array.new_float(0)
+        for i = 0 to pSize - 1
+            array.push(dist, math.abs(array.get(pivotPrices, i) - close))
+        int take = math.min(pSize, drawLevels)
+        for n = 0 to take - 1
+            int   best    = -1
+            float bestVal = -1.0
+            for i = 0 to pSize - 1
+                d = array.get(dist, i)
+                if d >= 0 and (best < 0 or d < bestVal)
+                    best    := i
+                    bestVal := d
+            if best >= 0
+                array.push(drawOrder, best)
+                array.set(dist, best, -1.0)
+
+    // Render active S/R cluster lines
+    if array.size(drawOrder) > 0
+        for n = 0 to array.size(drawOrder) - 1
+            int    idx        = array.get(drawOrder, n)
+            float  levelPrice = array.get(pivotPrices, idx)
+            int    touches    = array.get(pivotTouches, idx)
+            bool   isSupport  = levelPrice < close
+            color  lineColor  = isSupport ? colorSupport : colorResistance
+            string lineStyle  = touches >= minTouchesHigh ? line.style_solid : line.style_dashed
+            int    lineWidth  = touches >= minTouchesHigh ? 2 : 1
 
             // Draw line
             line l = line.new(
-                 x1=bar_index - 100, y1=levelPrice,
+                 x1=xLeft, y1=levelPrice,
                  x2=bar_index + 20, y2=levelPrice,
                  color=lineColor, style=lineStyle, width=lineWidth
                  )
@@ -84,7 +155,7 @@ if barstate.islast
 
             // Draw Label
             if showLabels
-                string convText = touches >= minTouchesHigh ? "🔥 HIGH" : "⚡ MED"
+                string convText = touches >= minTouchesHigh ? "HIGH" : touches >= 2 ? "MED" : "LOW"
                 string labelText = (isSupport ? "SUP: $" : "RES: $") + str.tostring(levelPrice, "#.2f") + " (" + convText + " - " + str.tostring(touches) + "t)"
                 label lbl = label.new(
                      x=bar_index + 22, y=levelPrice,
@@ -93,50 +164,101 @@ if barstate.islast
                      )
                 array.push(levelLabels, lbl)
 
-    // ============================================================================
+    // ========================================================================
     // DRAW VPOC LINE
-    // ============================================================================
+    // ========================================================================
     if showVPOC
-        // NOTE: Pine Script uses a configurable rolling peak-volume bar proxy (default 300 bars) for real-time chart rendering,
-        // while the Python QuantEngine backend calculates a 50-bin weighted histogram across 500 bars.
-        float maxVol = 0.0
-        float vpocPrice = close
-        int scanBars = math.min(bar_index, vpocBars)
-        for j = 0 to scanBars - 1
-            if volume[j] > maxVol
-                maxVol := volume[j]
-                vpocPrice := (high[j] + low[j]) / 2.0
-        
-        line vpocLine = line.new(
-             x1=bar_index - 100, y1=vpocPrice,
-             x2=bar_index + 30, y2=vpocPrice,
-             color=colorVPOC, style=line.style_solid, width=3
-             )
-        label vpocLbl = label.new(
-             x=bar_index + 32, y=vpocPrice,
-             text="⭐ VPOC (Fair Value): $" + str.tostring(vpocPrice, "#.2f"),
-             color=color.new(colorVPOC, 20), textcolor=color.black,
-             style=label.style_label_left, size=size.small
-             )
+        // Volume-weighted histogram over candle mid-prices, matching
+        // calculate_volume_profile() in src/quant_engine.py (50 bins / 500 bars)
+        // so the charted VPOC agrees with workspace/telemetry_latest.json.
+        int scanBars = math.min(bar_index + 1, vpocBars)
+        if scanBars > 0
+            float loMid = na
+            float hiMid = na
+            for j = 0 to scanBars - 1
+                m = (high[j] + low[j]) / 2.0
+                loMid := na(loMid) ? m : math.min(loMid, m)
+                hiMid := na(hiMid) ? m : math.max(hiMid, m)
+
+            float binW = (hiMid - loMid) / vpocBins
+            float vpocPrice = close
+            if binW > 0
+                array<float> bins = array.new_float(vpocBins, 0.0)
+                for j = 0 to scanBars - 1
+                    m   = (high[j] + low[j]) / 2.0
+                    idx = math.min(vpocBins - 1, int(math.floor((m - loMid) / binW)))
+                    array.set(bins, idx, array.get(bins, idx) + volume[j])
+                int maxIdx = array.indexof(bins, array.max(bins))
+                vpocPrice := loMid + (maxIdx + 0.5) * binW
+
+            vpocLine := line.new(
+                 x1=xLeft, y1=vpocPrice,
+                 x2=bar_index + 30, y2=vpocPrice,
+                 color=colorVPOC, style=line.style_solid, width=3
+                 )
+            vpocLbl := label.new(
+                 x=bar_index + 32, y=vpocPrice,
+                 text="VPOC (Fair Value): $" + str.tostring(vpocPrice, "#.2f"),
+                 color=color.new(colorVPOC, 20), textcolor=color.black,
+                 style=label.style_label_left, size=size.small
+                 )
+
+    // ========================================================================
+    // S/R TELEMETRY TABLE
+    // ========================================================================
+    if showTable
+        var table srTable = table.new(position.top_right, 4, 11, border_width=1)
+        table.clear(srTable, 0, 0, 3, 10)
+        table.cell(srTable, 0, 0, "LEVEL",  text_color=color.white, bgcolor=color.new(color.black, 20), text_size=size.tiny)
+        table.cell(srTable, 1, 0, "TYPE",   text_color=color.white, bgcolor=color.new(color.black, 20), text_size=size.tiny)
+        table.cell(srTable, 2, 0, "TOUCH",  text_color=color.white, bgcolor=color.new(color.black, 20), text_size=size.tiny)
+        table.cell(srTable, 3, 0, "DIST %", text_color=color.white, bgcolor=color.new(color.black, 20), text_size=size.tiny)
+        if array.size(drawOrder) > 0
+            int rows = math.min(array.size(drawOrder), 10)
+            for n = 0 to rows - 1
+                int   idx     = array.get(drawOrder, n)
+                float lvl     = array.get(pivotPrices, idx)
+                int   touches = array.get(pivotTouches, idx)
+                bool  isSup   = lvl < close
+                color rowCol  = touches >= minTouchesHigh ? (isSup ? colorSupport : colorResistance) : color.new(color.gray, 60)
+                table.cell(srTable, 0, n + 1, str.tostring(lvl, "#.2f"),                           text_color=color.white, bgcolor=color.new(rowCol, 70), text_size=size.tiny)
+                table.cell(srTable, 1, n + 1, isSup ? "SUP" : "RES",                               text_color=color.white, bgcolor=color.new(rowCol, 70), text_size=size.tiny)
+                table.cell(srTable, 2, n + 1, str.tostring(touches),                               text_color=color.white, bgcolor=color.new(rowCol, 70), text_size=size.tiny)
+                table.cell(srTable, 3, n + 1, str.tostring((lvl - close) / close * 100.0, "#.2f"), text_color=color.white, bgcolor=color.new(rowCol, 70), text_size=size.tiny)
 
 // ============================================================================
 // TRADINGVIEW WEBHOOK ALERT CONDITIONS
 // ============================================================================
-// Detect when price crosses any high conviction level or VPOC
-bool alertSupportTouch = false
-bool alertResistanceTouch = false
+// Read-only pass over every tracked level (the draw pass only shows the nearest
+// few, but a level does not stop being tradeable because it is off-screen).
+bool  alertSupportTouch    = false
+bool  alertResistanceTouch = false
+float alertLevel           = 0.0
+int   alertTouches         = 0
 
 if array.size(pivotPrices) > 0
-    for k = 0 to math.min(array.size(pivotPrices) - 1, 10)
+    for k = 0 to array.size(pivotPrices) - 1
         lvlP = array.get(pivotPrices, k)
         lvlT = array.get(pivotTouches, k)
         tolP = lvlP * clusterPct
         if lvlT >= minTouchesHigh
             if lvlP < close and low <= (lvlP + tolP) and low[1] > (lvlP + tolP)
                 alertSupportTouch := true
+                alertLevel        := lvlP
+                alertTouches      := lvlT
             if lvlP > close and high >= (lvlP - tolP) and high[1] < (lvlP - tolP)
                 alertResistanceTouch := true
+                alertLevel           := lvlP
+                alertTouches         := lvlT
+
+// Dynamic payloads (fire these via the "Any alert() function call" condition)
+// carry the actual level price and touch count, which the const-string
+// alertcondition() message below cannot express.
+if alertSupportTouch
+    alert('{"symbol":"' + syminfo.ticker + '","event":"SUPPORT_TOUCH","level_type":"SUPPORT","price":' + str.tostring(close) + ',"level":' + str.tostring(alertLevel, "#.2f") + ',"touch_count":' + str.tostring(alertTouches) + ',"conviction":"HIGH","message":"Price tested High Conviction Support level"}', alert.freq_once_per_bar_close)
+
+if alertResistanceTouch
+    alert('{"symbol":"' + syminfo.ticker + '","event":"RESISTANCE_TOUCH","level_type":"RESISTANCE","price":' + str.tostring(close) + ',"level":' + str.tostring(alertLevel, "#.2f") + ',"touch_count":' + str.tostring(alertTouches) + ',"conviction":"HIGH","message":"Price tested High Conviction Resistance level"}', alert.freq_once_per_bar_close)
 
 alertcondition(alertSupportTouch, title="Liquidity-Pulse: Support Touch", message='{"symbol":"{{ticker}}","event":"SUPPORT_TOUCH","level_type":"SUPPORT","price":{{close}},"conviction":"HIGH","message":"Price tested High Conviction Support level"}')
 alertcondition(alertResistanceTouch, title="Liquidity-Pulse: Resistance Touch", message='{"symbol":"{{ticker}}","event":"RESISTANCE_TOUCH","level_type":"RESISTANCE","price":{{close}},"conviction":"HIGH","message":"Price tested High Conviction Resistance level"}')
-
