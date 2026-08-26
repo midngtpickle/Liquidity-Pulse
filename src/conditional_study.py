@@ -56,8 +56,13 @@ CONDITIONS: List[Tuple[str, Callable[[Dict[str, Any]], bool]]] = [
     ("no trend", lambda c: c["trend_agrees"] is None),
     ("above VPOC", lambda c: c["above_vpoc"]),
     ("below VPOC", lambda c: not c["above_vpoc"]),
-    ("sweep (pierced, closed back)", lambda c: c["sweep"]),
+    ("sweep (pierced + reclaimed)", lambda c: c["sweep"]),
+    ("deep sweep (cleared zone)", lambda c: c["deep_sweep"]),
+    ("shallow sweep", lambda c: c["sweep"] and not c["deep_sweep"]),
     ("no sweep", lambda c: not c["sweep"]),
+    ("sweep, with trend", lambda c: c["sweep"] and c["trend_agrees"] is True),
+    ("sweep, against trend", lambda c: c["sweep"] and c["trend_agrees"] is False),
+    ("sweep on heavy volume", lambda c: c["sweep"] and c["volume_ratio"] >= 1.5),
     ("heavy volume touch (>1.5x)", lambda c: c["volume_ratio"] >= 1.5),
     ("light volume touch (<0.7x)", lambda c: c["volume_ratio"] <= 0.7),
     ("fast approach", lambda c: c["approach_ratio"] >= 1.5),
@@ -112,13 +117,25 @@ class ConditionalStudy:
             # Testing support in an uptrend, or resistance in a downtrend, is "with trend".
             trend_agrees = (direction == "SUPPORT") == trending_up
 
-        # Sweep: price pierced clean through the far edge of the zone and closed back
-        # inside it. The classic stop-run, and the reason a wick is not a break.
+        # Sweep: price traded through the level itself and closed back on the side it
+        # approached from. A pierce of the far edge of the zone was the first definition
+        # tried and fired on 2% of touches -- the zone is 0.35% wide, so clearing it
+        # demands an implausible wick. Piercing the level is the conventional stop-run and
+        # the event a scalper is actually watching for.
         tol = level_price * zone_tolerance_pct
         if direction == "SUPPORT":
-            sweep = candle["low"] < level_price - tol and close >= level_price - tol
+            pierced = candle["low"] < level_price
+            reclaimed = close > level_price
+            depth_pct = (level_price - candle["low"]) / level_price * 100.0
         else:
-            sweep = candle["high"] > level_price + tol and close <= level_price + tol
+            pierced = candle["high"] > level_price
+            reclaimed = close < level_price
+            depth_pct = (candle["high"] - level_price) / level_price * 100.0
+        sweep = pierced and reclaimed
+
+        # A deep sweep clears the whole zone before reclaiming; a shallow one only nicks
+        # the level. Separating them tests whether the size of the run matters.
+        deep_sweep = sweep and depth_pct >= zone_tolerance_pct * 100.0
 
         vol_start = max(0, index - VOLUME_BARS)
         recent_volume = [k["volume"] for k in klines[vol_start:index]]
@@ -144,6 +161,8 @@ class ConditionalStudy:
             "trend_agrees": trend_agrees,
             "above_vpoc": close > vpoc,
             "sweep": sweep,
+            "deep_sweep": deep_sweep,
+            "sweep_depth_pct": depth_pct if sweep else 0.0,
             "volume_ratio": volume_ratio,
             "approach_ratio": approach_ratio,
             "volatility_ratio": volatility_ratio,

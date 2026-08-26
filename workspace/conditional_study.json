@@ -1,7 +1,7 @@
 {
   "symbol": "BTCUSDT",
   "interval": "15m",
-  "run_time_utc": "2026-08-26T12:05:17.557342+00:00",
+  "run_time_utc": "2026-08-26T12:06:37.496632+00:00",
   "params": {
     "lookback": 500,
     "horizon": 50,
@@ -13,7 +13,7 @@
     "control_seeds": 30,
     "min_resolved": 100
   },
-  "conditions_tested": 17,
+  "conditions_tested": 22,
   "results": [
     {
       "condition": "all touches (baseline)",
@@ -76,23 +76,73 @@
       "underpowered": false
     },
     {
-      "condition": "sweep (pierced, closed back)",
-      "resolved": 52,
-      "hold_rate_pct": 32.69,
-      "control_mean_pct": 37.73,
-      "control_sd": 6.07,
-      "edge_points": -5.03,
-      "edge_sd": 0.83,
+      "condition": "sweep (pierced + reclaimed)",
+      "resolved": 187,
+      "hold_rate_pct": 42.78,
+      "control_mean_pct": 40.79,
+      "control_sd": 3.84,
+      "edge_points": 1.99,
+      "edge_sd": 0.52,
+      "underpowered": false
+    },
+    {
+      "condition": "deep sweep (cleared zone)",
+      "resolved": 16,
+      "hold_rate_pct": 37.5,
+      "control_mean_pct": 43.56,
+      "control_sd": 10.62,
+      "edge_points": -6.06,
+      "edge_sd": 0.57,
       "underpowered": true
     },
     {
+      "condition": "shallow sweep",
+      "resolved": 171,
+      "hold_rate_pct": 43.27,
+      "control_mean_pct": 40.54,
+      "control_sd": 4.12,
+      "edge_points": 2.73,
+      "edge_sd": 0.66,
+      "underpowered": false
+    },
+    {
       "condition": "no sweep",
-      "resolved": 2292,
-      "hold_rate_pct": 38.7,
-      "control_mean_pct": 40.2,
-      "control_sd": 1.24,
-      "edge_points": -1.5,
-      "edge_sd": 1.21,
+      "resolved": 2157,
+      "hold_rate_pct": 38.2,
+      "control_mean_pct": 40.08,
+      "control_sd": 1.41,
+      "edge_points": -1.88,
+      "edge_sd": 1.33,
+      "underpowered": false
+    },
+    {
+      "condition": "sweep, with trend",
+      "resolved": 51,
+      "hold_rate_pct": 35.29,
+      "control_mean_pct": 38.28,
+      "control_sd": 4.7,
+      "edge_points": -2.98,
+      "edge_sd": 0.64,
+      "underpowered": true
+    },
+    {
+      "condition": "sweep, against trend",
+      "resolved": 117,
+      "hold_rate_pct": 43.59,
+      "control_mean_pct": 42.5,
+      "control_sd": 4.77,
+      "edge_points": 1.09,
+      "edge_sd": 0.23,
+      "underpowered": false
+    },
+    {
+      "condition": "sweep on heavy volume",
+      "resolved": 135,
+      "hold_rate_pct": 42.22,
+      "control_mean_pct": 42.11,
+      "control_sd": 4.5,
+      "edge_points": 0.12,
+      "edge_sd": 0.03,
       "underpowered": false
     },
     {
