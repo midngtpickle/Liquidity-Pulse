@@ -15,11 +15,17 @@ showVPOC         = input.bool(true, title="Show VPOC Line", group="Display Setti
 vpocBars         = input.int(500, title="VPOC Lookback Bars", minval=50, maxval=500, group="Display Settings")
 vpocBins         = input.int(50, title="VPOC Histogram Bins", minval=10, maxval=200, group="Display Settings")
 showTable        = input.bool(true, title="Show S/R Telemetry Table", group="Display Settings")
+levelExtend      = input.string("Both", title="Level Line Extension", options=["Both", "Right", "Segment"], group="Display Settings", tooltip="Both/Right extend the level across the whole chart so it tracks any zoom or resize. Segment draws a fixed 120-bar stub.")
 
 // Colors
 colorSupport     = input.color(color.new(#00e676, 20), title="Support Color", group="Color Settings")
 colorResistance  = input.color(color.new(#ff1744, 20), title="Resistance Color", group="Color Settings")
 colorVPOC        = input.color(color.new(#ffd700, 0), title="VPOC Color", group="Color Settings")
+
+// A level is a horizontal price, not a bar range. Extending it means the line
+// spans the whole viewport at any zoom instead of stopping at a fixed bar
+// offset near the right edge.
+extendMode = levelExtend == "Both" ? extend.both : levelExtend == "Right" ? extend.right : extend.none
 
 // ============================================================================
 // PINE PIVOT DETECTION
@@ -149,6 +155,7 @@ if barstate.islast
             line l = line.new(
                  x1=xLeft, y1=levelPrice,
                  x2=bar_index + 20, y2=levelPrice,
+                 extend=extendMode,
                  color=lineColor, style=lineStyle, width=lineWidth
                  )
             array.push(levelLines, l)
@@ -194,6 +201,7 @@ if barstate.islast
             vpocLine := line.new(
                  x1=xLeft, y1=vpocPrice,
                  x2=bar_index + 30, y2=vpocPrice,
+                 extend=extendMode,
                  color=colorVPOC, style=line.style_solid, width=3
                  )
             vpocLbl := label.new(
