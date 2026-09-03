@@ -86,6 +86,7 @@ class SentinelOrchestrator:
         now_utc_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         session_name = self.detect_active_session()
 
+        market = telemetry.get("market", "BINANCE:BTCUSDT.P")
         current_price = telemetry.get("current_price", 0.0)
         high_24h = telemetry.get("high_24h", 0.0)
         low_24h = telemetry.get("low_24h", 0.0)
@@ -121,7 +122,7 @@ class SentinelOrchestrator:
 
 **Generated At**: `{now_utc_str}`  
 **Active Session**: `{session_name}`  
-**Symbol**: `$BTCUSDT`  
+**Instrument**: `{market}`  
 
 ---
 

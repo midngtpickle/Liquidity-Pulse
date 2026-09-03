@@ -57,15 +57,20 @@ class LocalOrderBook:
     reseeded rather than silently drifting.
     """
 
-    SNAPSHOT_URL = "https://api.binance.com/api/v3/depth"
+    SNAPSHOT_URL = "https://fapi.binance.com/fapi/v1/depth"
 
-    def __init__(self, symbol: str = "BTCUSDT", limit: int = 5000):
+    # USD-M futures caps the depth snapshot at 1000 levels (spot allowed 5000), so
+    # the contiguous span the book can vouch for is correspondingly narrower.
+    def __init__(self, symbol: str = "BTCUSDT", limit: int = 1000):
         self.symbol = symbol
         self.limit = limit
         self.bids: Dict[float, float] = {}
         self.asks: Dict[float, float] = {}
         self.last_update_id: int = 0
         self.synced: bool = False
+        # The event that straddles the snapshot is validated differently from the
+        # steady-state chain, so it needs its own flag.
+        self.awaiting_first_event: bool = True
         # How far from mid the book is known to be *complete*. The REST snapshot is
         # capped at `limit` levels, and the diff stream only reports levels that
         # change, so resting liquidity beyond the snapshot's outermost level stays
@@ -78,6 +83,7 @@ class LocalOrderBook:
         self.asks.clear()
         self.last_update_id = 0
         self.synced = False
+        self.awaiting_first_event = True
         self.complete_bid_span_pct = 0.0
         self.complete_ask_span_pct = 0.0
 
@@ -107,6 +113,7 @@ class LocalOrderBook:
         self._apply_levels(self.bids, snapshot.get("bids", []))
         self._apply_levels(self.asks, snapshot.get("asks", []))
         self.last_update_id = int(snapshot["lastUpdateId"])
+        self.awaiting_first_event = True
 
         # Record the contiguous reach at seed time, before diff events scatter
         # isolated far-out levels into the book and make the raw min/max look
@@ -126,14 +133,29 @@ class LocalOrderBook:
         """
         first_id = int(event["U"])
         final_id = int(event["u"])
+        # USD-M futures stamps every diff with `pu`, the previous event's final id,
+        # and chains on that instead of on U == last + 1: consecutive futures
+        # events may overlap, so the spot rule would report phantom gaps.
+        prev_id = event.get("pu")
 
-        # Already covered by the snapshot or an earlier event.
-        if final_id <= self.last_update_id:
-            return True
-
-        # Events must chain onto the current state with no missing updates.
-        if first_id > self.last_update_id + 1:
-            return False
+        if self.awaiting_first_event:
+            # Events wholly behind the snapshot are pre-seed noise, not a gap.
+            if final_id < self.last_update_id:
+                return True
+            # The seeding event has to straddle the snapshot id.
+            if first_id > self.last_update_id + 1:
+                return False
+            self.awaiting_first_event = False
+        else:
+            # Already covered by the snapshot or an earlier event.
+            if final_id <= self.last_update_id:
+                return True
+            # Events must chain onto the current state with no missing updates.
+            if prev_id is not None:
+                if int(prev_id) != self.last_update_id:
+                    return False
+            elif first_id > self.last_update_id + 1:
+                return False
 
         self._apply_levels(self.bids, event.get("b", []))
         self._apply_levels(self.asks, event.get("a", []))
@@ -147,7 +169,7 @@ class LocalOrderBook:
 
 
 class LiquidityPulseWS:
-    STREAM_URL = "wss://stream.binance.com:9443/stream?streams=btcusdt@depth@100ms/btcusdt@forceOrder"
+    STREAM_URL = "wss://fstream.binance.com/stream?streams=btcusdt@depth@100ms/btcusdt@forceOrder"
     CASCADE_THRESHOLD_USD = 5_000_000.0  # $5M
     CASCADE_WINDOW_SECONDS = 180  # 3 minutes
     CASCADE_COOLDOWN_SECONDS = 180  # Cooldown between Telegram cascade alerts

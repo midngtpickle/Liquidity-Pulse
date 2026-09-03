@@ -55,6 +55,7 @@ class VolumeProfile(BaseModel):
 class TelemetryPayload(BaseModel):
     timestamp: str
     symbol: str
+    market: str
     current_price: float
     high_24h: float
     low_24h: float
@@ -65,13 +66,22 @@ class TelemetryPayload(BaseModel):
 
 
 class QuantEngine:
-    BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
+    BINANCE_KLINES_URL = "https://fapi.binance.com/fapi/v1/klines"
     BYBIT_KLINES_URL = "https://api.bybit.com/v5/market/kline"
 
-    def __init__(self, symbol: str = "BTCUSDT", interval: str = "15m", limit: int = 500):
+    def __init__(
+        self,
+        symbol: str = "BTCUSDT",
+        interval: str = "15m",
+        limit: int = 500,
+        market: str = "BINANCE:BTCUSDT.P"
+    ):
         self.symbol = symbol
         self.interval = interval
         self.limit = limit
+        # Venue-qualified contract name, for display and for matching the chart.
+        # `symbol` stays the bare exchange API parameter.
+        self.market = market
 
     def fetch_klines(self, use_cache: bool = True) -> List[Dict[str, float]]:
         """
@@ -122,7 +132,7 @@ class QuantEngine:
             interval_bybit = "15" if self.interval == "15m" else "60"
             response = requests.get(
                 self.BYBIT_KLINES_URL,
-                params={"category": "spot", "symbol": self.symbol, "interval": interval_bybit, "limit": self.limit},
+                params={"category": "linear", "symbol": self.symbol, "interval": interval_bybit, "limit": self.limit},
                 headers=headers,
                 timeout=10
             )
@@ -427,6 +437,7 @@ class QuantEngine:
         telemetry = TelemetryPayload(
             timestamp=datetime.now(timezone.utc).isoformat(),
             symbol=self.symbol,
+            market=self.market,
             current_price=current_price,
             high_24h=high_24h,
             low_24h=low_24h,

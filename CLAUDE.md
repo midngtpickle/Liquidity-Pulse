@@ -8,6 +8,11 @@ This document provides system instructions, command shortcuts, architecture refe
 
 Liquidity-Pulse is an autonomous $BTC market liquidity monitoring and session intelligence system organized under the **Sentinel & Subagent Pattern**:
 
+> [!IMPORTANT]
+> The tracked instrument is the **Binance USD-M perpetual, `BINANCE:BTCUSDT.P`**, on every
+> surface: the Pine indicator's chart, `quant_engine.py` klines, and the `ws_feed.py` order
+> book. Spot and perp are different books with different levels — do not mix them.
+
 ```
                          ┌─────────────────────────────┐
                          │ Sentinel Agent (src/sentinel.py)│
@@ -87,8 +92,8 @@ python src/telegram_bot.py --dry-run
 
 | File Path | Description | Input / Output Contract |
 | :--- | :--- | :--- |
-| `src/quant_engine.py` | Fetches OHLCV, calculates Pine pivots & VPOC | Reads Binance/Bybit REST $\rightarrow$ Writes `workspace/telemetry_latest.json` |
-| `src/ws_feed.py` | Async WebSocket listener for depth & force orders | Connects to `@depth@100ms` & `@forceOrder`, maintaining a full local order book seeded from a REST snapshot $\rightarrow$ Writes `workspace/depth_latest.json` |
+| `src/quant_engine.py` | Fetches OHLCV, calculates Pine pivots & VPOC | Reads Binance USD-M futures REST (`fapi`), Bybit `linear` fallback $\rightarrow$ Writes `workspace/telemetry_latest.json` |
+| `src/ws_feed.py` | Async WebSocket listener for depth & force orders | Connects to `fstream` `@depth@100ms` & `@forceOrder`, maintaining a full local order book seeded from a REST snapshot (futures caps that snapshot at 1000 levels) $\rightarrow$ Writes `workspace/depth_latest.json` |
 | `src/sentinel.py` | Session intelligence generator & dispatch runner | Ingests `telemetry_latest.json` $\rightarrow$ Writes `workspace/artifacts/SESSION_BRIEFING.md` |
 | `src/server.py` | Concurrent HTTP server & TradingView webhook relay | Serves `web/`, handles `/api/telemetry`, `/api/depth`, `/api/webhook/tradingview` |
 | `src/discord_webhook.py` | Visual rich embed cards for Discord | Dispatches formatted embeds using `DISCORD_WEBHOOK_URL` |

@@ -140,6 +140,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (fingerprint === _lastHeaderFingerprint) return;
     _lastHeaderFingerprint = fingerprint;
 
+    // Name the instrument the numbers actually describe, rather than assuming it.
+    const symbolEl = document.getElementById("header-symbol");
+    if (symbolEl && telemetryData.market) symbolEl.innerText = telemetryData.market;
+
     document.getElementById("header-price").innerText = `$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
     document.getElementById("stat-24h-range").innerText = `$${low24h.toLocaleString()} - $${high24h.toLocaleString()}`;
     document.getElementById("stat-24h-vol").innerText = `24h Vol: ${vol24h.toLocaleString(undefined, {maximumFractionDigits: 1})} BTC`;

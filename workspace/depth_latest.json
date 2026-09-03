@@ -1,33 +1,33 @@
 {
-  "timestamp": 1787744081.5336628,
-  "mid_price": 78579.57,
+  "timestamp": 1788432327.3503313,
+  "mid_price": 77493.95,
   "bands": {
     "0.5%": {
-      "bid_depth_usd": 13632506.33,
-      "ask_depth_usd": 11774733.49,
-      "imbalance_delta_pct": 7.31
+      "bid_depth_usd": 100948728.14,
+      "ask_depth_usd": 90538325.52,
+      "imbalance_delta_pct": 5.44
     },
     "1.0%": {
-      "bid_depth_usd": 25848198.08,
-      "ask_depth_usd": 16997647.12,
-      "imbalance_delta_pct": 20.66
+      "bid_depth_usd": 159354452.93,
+      "ask_depth_usd": 156796639.63,
+      "imbalance_delta_pct": 0.81
     },
     "2.0%": {
-      "bid_depth_usd": 27253050.38,
-      "ask_depth_usd": 24961392.1,
-      "imbalance_delta_pct": 4.39
+      "bid_depth_usd": 334852330.95,
+      "ask_depth_usd": 315235802.42,
+      "imbalance_delta_pct": 3.02
     }
   },
   "book": {
-    "bid_levels": 5057,
-    "ask_levels": 5047,
-    "last_update_id": 99191575399,
-    "complete_bid_span_pct": 1.119,
-    "complete_ask_span_pct": 1.285
+    "bid_levels": 5539,
+    "ask_levels": 4600,
+    "last_update_id": 11463389477243,
+    "complete_bid_span_pct": 0.164,
+    "complete_ask_span_pct": 0.174
   },
   "bands_complete": {
-    "0.5%": true,
-    "1.0%": true,
+    "0.5%": false,
+    "1.0%": false,
     "2.0%": false
   }
 }

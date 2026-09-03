@@ -111,6 +111,10 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
+  /* The venue-qualified contract name (BINANCE:BTCUSDT.P) is far wider than a
+     bare ticker. Without wrapping, the pills collide and the session pill is
+     pushed off-screen on narrow viewports. */
+  flex-wrap: wrap;
 }
 
 .metric-pill {
