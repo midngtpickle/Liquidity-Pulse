@@ -46,7 +46,6 @@ Liquidity-Pulse/
 ├── LICENSE                            # Open-source MIT License
 ├── requirements.txt                   # Production Python dependencies
 ├── README.md                          # Framework documentation
-├── READ.md                            # Quick summary guide
 ├── start_all.bat                      # One-click Windows launcher script
 ├── liquidity_pulse_sr.pine            # Official TradingView Pine Script v6 indicator
 ├── docs/
