@@ -16,6 +16,7 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime, timezone
+from typing import Any
 
 # Add src to sys.path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -46,6 +47,21 @@ ALLOWED_HOSTS = {"localhost", "127.0.0.1"}
 
 # Security configurations
 TRADINGVIEW_WEBHOOK_SECRET = os.environ.get("TRADINGVIEW_WEBHOOK_SECRET", "")
+
+# Credential-bearing fields are accepted for authentication but must never be
+# persisted. tradingview_signals.json is served verbatim by the unauthenticated
+# /api/tradingview/signals endpoint, so anything retained here becomes public to
+# every client that can reach the dashboard.
+CREDENTIAL_FIELDS = frozenset({
+    "secret", "passphrase", "password", "token", "api_key", "apikey", "auth"
+})
+
+
+def strip_credentials(payload: Any) -> Any:
+    """Drop credential-bearing keys from a webhook payload before it is stored."""
+    if not isinstance(payload, dict):
+        return payload
+    return {k: v for k, v in payload.items() if k.lower() not in CREDENTIAL_FIELDS}
 MAX_PAYLOAD_BYTES = 64 * 1024  # 64 KB maximum payload limit
 
 
@@ -208,6 +224,11 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
                     return
             else:
                 logger.debug("TRADINGVIEW_WEBHOOK_SECRET not set; processing unauthenticated webhook request.")
+
+            # Drop the secret before the payload goes anywhere else. It has already
+            # served its purpose above, and everything downstream of this point
+            # either writes it to disk or ships it to a chat channel.
+            signal_data = strip_credentials(signal_data)
 
             # Stamp receive timestamp
             signal_data["received_at"] = datetime.now(timezone.utc).isoformat()
