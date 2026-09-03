@@ -11,6 +11,7 @@ import sys
 import json
 import logging
 import threading
+import hmac
 import hashlib
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
@@ -47,6 +48,14 @@ ALLOWED_HOSTS = {"localhost", "127.0.0.1"}
 
 # Security configurations
 TRADINGVIEW_WEBHOOK_SECRET = os.environ.get("TRADINGVIEW_WEBHOOK_SECRET", "")
+
+# Whether the listening socket is reachable from off-box. Set by run_server().
+# An unauthenticated webhook is a reasonable convenience on loopback, where only
+# this machine can post; on any other interface it is an open write endpoint that
+# feeds the signal store and the alert dispatchers, so it is refused instead.
+BOUND_OFF_BOX = False
+
+LOOPBACK_HOSTS = {"127.0.0.1", "::1", "localhost"}
 
 # Credential-bearing fields are accepted for authentication but must never be
 # persisted. tradingview_signals.json is served verbatim by the unauthenticated
@@ -207,6 +216,20 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
                     "conviction": "MEDIUM"
                 }
 
+            # Fail closed: no secret configured while listening off-box means
+            # anyone who can route here can inject alerts. Refuse rather than
+            # accept, and say why.
+            if not TRADINGVIEW_WEBHOOK_SECRET and BOUND_OFF_BOX:
+                logger.error(
+                    "Refusing TradingView webhook: server is bound off-box with no "
+                    "TRADINGVIEW_WEBHOOK_SECRET set. Set one, or bind to 127.0.0.1."
+                )
+                self.send_json_response(
+                    {"error": "Webhook disabled: server is reachable off-box but no secret is configured."},
+                    status=503
+                )
+                return
+
             # Authenticate Webhook Secret if configured
             if TRADINGVIEW_WEBHOOK_SECRET:
                 parsed_url = urlparse(self.path)
@@ -218,12 +241,14 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
                 body_secret = signal_data.get("secret", "") if isinstance(signal_data, dict) else ""
 
                 provided_secret = header_secret or query_secret or bearer_secret or body_secret
-                if provided_secret != TRADINGVIEW_WEBHOOK_SECRET:
+                # Constant time: a plain != leaks the shared secret one character
+                # at a time to anyone who can measure the response.
+                if not hmac.compare_digest(str(provided_secret), TRADINGVIEW_WEBHOOK_SECRET):
                     logger.warning("Unauthorized TradingView webhook access attempt (mismatched secret).")
                     self.send_json_response({"error": "Unauthorized: Invalid or missing webhook secret."}, status=401)
                     return
             else:
-                logger.debug("TRADINGVIEW_WEBHOOK_SECRET not set; processing unauthenticated webhook request.")
+                logger.warning("TRADINGVIEW_WEBHOOK_SECRET not set; accepting an unauthenticated webhook on loopback.")
 
             # Drop the secret before the payload goes anywhere else. It has already
             # served its purpose above, and everything downstream of this point
@@ -332,9 +357,25 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8080):
+    global BOUND_OFF_BOX
+    BOUND_OFF_BOX = host not in LOOPBACK_HOSTS
+
     server_address = (host, port)
     httpd = ThreadingHTTPServer(server_address, DashboardHTTPRequestHandler)
     logger.info(f"⚡ Liquidity-Pulse Concurrent Dashboard Server running on http://{host}:{port}")
+
+    # Say the security posture out loud at startup, so an exposed-and-open
+    # configuration is never something you have to go looking for.
+    if BOUND_OFF_BOX and not TRADINGVIEW_WEBHOOK_SECRET:
+        logger.warning(
+            "Bound to %s with no TRADINGVIEW_WEBHOOK_SECRET set: the TradingView "
+            "webhook will refuse every request. Set the secret to enable it.", host
+        )
+    elif not TRADINGVIEW_WEBHOOK_SECRET:
+        logger.warning(
+            "No TRADINGVIEW_WEBHOOK_SECRET set: the TradingView webhook accepts "
+            "unauthenticated posts from this machine."
+        )
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
