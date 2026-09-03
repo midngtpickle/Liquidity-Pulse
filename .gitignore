@@ -31,3 +31,7 @@ workspace/depth_latest.json
 # Deliberately NOT ignored: workspace/telemetry_latest.json. It changes only
 # when the pipeline runs, and docs/AGENT_INTEGRATION_GUIDE.md points other
 # tools at it as the worked example of the documented schema. Kept on purpose.
+
+# Accumulating output of tools/liquidation_probe.py. Runtime observation log,
+# appended across runs and days; regenerate by running the probe.
+workspace/liquidation_probe.jsonl
