@@ -69,6 +69,9 @@ class QuantEngine:
     BINANCE_KLINES_URL = "https://fapi.binance.com/fapi/v1/klines"
     BYBIT_KLINES_URL = "https://api.bybit.com/v5/market/kline"
 
+    PIVOT_LEFT_BARS = 10
+    PIVOT_RIGHT_BARS = 10
+
     def __init__(
         self,
         symbol: str = "BTCUSDT",
@@ -78,7 +81,13 @@ class QuantEngine:
     ):
         self.symbol = symbol
         self.interval = interval
-        self.limit = limit
+        # The analysis window: the candles levels and the volume profile describe.
+        self.analysis_limit = limit
+        # Detecting a pivot at the very start of that window still needs
+        # PIVOT_LEFT_BARS candles before it. The chart has unlimited history, so
+        # without the same lead-in the backend cannot see the oldest pivots the
+        # indicator merges and its levels drift from the drawn ones.
+        self.limit = limit + self.PIVOT_LEFT_BARS
         # Venue-qualified contract name, for display and for matching the chart.
         # `symbol` stays the bare exchange API parameter.
         self.market = market
@@ -307,27 +316,44 @@ class QuantEngine:
         if not pivots:
             return []
 
-        sorted_pivots = sorted(pivots)
-        clusters: List[List[float]] = []
+        # Mirror mergePivot() in liquidity_pulse_sr.pine: walk the pivots in the
+        # order they occurred and test each against the running centre of every
+        # existing cluster, taking the first that matches.
+        #
+        # Sorting by price and chaining only against the most recent cluster is a
+        # different algorithm, not an optimisation of this one. Sorted order
+        # maximises mean drift: every merge pulls the centre toward the incoming
+        # pivot, so a long run of gradually rising pivots chains into a single
+        # cluster spanning far more than threshold_pct. That is why the backend
+        # collapsed its pivots into a handful of wide levels while the indicator,
+        # on the same data, kept noticeably more distinct ones.
+        #
+        # The running update is the arithmetic mean of the cluster's members, so
+        # the centre here and the centre on the chart are the same number.
+        centres: List[float] = []
+        members: List[int] = []
 
-        for price in sorted_pivots:
-            if not clusters:
-                clusters.append([price])
+        for price in pivots:
+            hit = -1
+            for i, centre in enumerate(centres):
+                if abs(price - centre) / centre <= threshold_pct:
+                    hit = i
+                    break
+            if hit >= 0:
+                n = members[hit]
+                centres[hit] = (centres[hit] * n + price) / (n + 1)
+                members[hit] = n + 1
             else:
-                last_cluster = clusters[-1]
-                cluster_mean = np.mean(last_cluster)
-                if abs(price - cluster_mean) / cluster_mean <= threshold_pct:
-                    last_cluster.append(price)
-                else:
-                    clusters.append([price])
+                centres.append(price)
+                members.append(1)
 
         # Pre-compute numpy arrays for vectorized touch counting
         lows_arr = np.array([k["low"] for k in klines], dtype=np.float64)
         highs_arr = np.array([k["high"] for k in klines], dtype=np.float64)
 
         sr_levels: List[SRLevel] = []
-        for cluster in clusters:
-            level_price = round(float(np.mean(cluster)), 2)
+        for centre in centres:
+            level_price = round(float(centre), 2)
             
             # Vectorized touch count across all klines. Only rising edges count —
             # a candle entering the zone from outside. Counting every candle whose
@@ -423,14 +449,17 @@ class QuantEngine:
         Main execution workflow.
         """
         klines = self.fetch_klines(use_cache=use_cache)
-        current_price = round(klines[-1]["close"], 2)
-        high_24h = round(max(k["high"] for k in klines[-96:]), 2)
-        low_24h = round(min(k["low"] for k in klines[-96:]), 2)
-        volume_24h = round(sum(k["volume"] for k in klines[-96:]), 2)
+        # Pivot detection reads the full fetch (window + lead-in); everything
+        # else describes the analysis window alone.
+        window = klines[-self.analysis_limit:]
+        current_price = round(window[-1]["close"], 2)
+        high_24h = round(max(k["high"] for k in window[-96:]), 2)
+        low_24h = round(min(k["low"] for k in window[-96:]), 2)
+        volume_24h = round(sum(k["volume"] for k in window[-96:]), 2)
 
-        pivots = self.calculate_pine_pivots(klines)
-        sr_levels = self.cluster_sr_levels(pivots, klines, current_price)
-        volume_prof = self.calculate_volume_profile(klines)
+        pivots = self.calculate_pine_pivots(klines, self.PIVOT_LEFT_BARS, self.PIVOT_RIGHT_BARS)
+        sr_levels = self.cluster_sr_levels(pivots, window, current_price)
+        volume_prof = self.calculate_volume_profile(window)
 
         self.apply_volume_confluence(sr_levels, volume_prof, current_price)
 
@@ -445,7 +474,7 @@ class QuantEngine:
             sr_levels=sr_levels[:12],  # Top 12 closest S/R levels
             volume_profile=volume_prof,
             market_summary={
-                "total_candles_analyzed": len(klines),
+                "total_candles_analyzed": len(window),
                 "pine_pivots_found": len(pivots),
                 "support_levels_count": len([l for l in sr_levels if l.type == "SUPPORT"]),
                 "resistance_levels_count": len([l for l in sr_levels if l.type == "RESISTANCE"]),

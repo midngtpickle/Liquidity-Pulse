@@ -1,18 +1,34 @@
 {
-  "timestamp": "2026-09-03T10:44:52.944268+00:00",
+  "timestamp": "2026-09-03T11:05:41.800517+00:00",
   "symbol": "BTCUSDT",
   "market": "BINANCE:BTCUSDT.P",
-  "current_price": 77466.9,
+  "current_price": 77746.4,
   "high_24h": 78144.7,
-  "low_24h": 76151.9,
-  "volume_24h": 142345.2,
+  "low_24h": 76325.0,
+  "volume_24h": 137035.22,
   "sr_levels": [
     {
-      "price": 77562.49,
+      "price": 77839.97,
       "type": "RESISTANCE",
-      "touch_count": 24,
+      "touch_count": 19,
       "conviction": "HIGH",
       "distance_pct": 0.12,
+      "volume_confluence": true
+    },
+    {
+      "price": 77448.85,
+      "type": "SUPPORT",
+      "touch_count": 22,
+      "conviction": "HIGH",
+      "distance_pct": -0.38,
+      "volume_confluence": true
+    },
+    {
+      "price": 78242.4,
+      "type": "RESISTANCE",
+      "touch_count": 22,
+      "conviction": "HIGH",
+      "distance_pct": 0.64,
       "volume_confluence": true
     },
     {
@@ -20,23 +36,15 @@
       "type": "SUPPORT",
       "touch_count": 13,
       "conviction": "HIGH",
-      "distance_pct": -0.73,
+      "distance_pct": -1.09,
       "volume_confluence": true
     },
     {
-      "price": 78114.75,
+      "price": 78774.0,
       "type": "RESISTANCE",
-      "touch_count": 16,
+      "touch_count": 8,
       "conviction": "HIGH",
-      "distance_pct": 0.84,
-      "volume_confluence": true
-    },
-    {
-      "price": 78396.9,
-      "type": "RESISTANCE",
-      "touch_count": 28,
-      "conviction": "HIGH",
-      "distance_pct": 1.2,
+      "distance_pct": 1.32,
       "volume_confluence": true
     },
     {
@@ -44,23 +52,15 @@
       "type": "SUPPORT",
       "touch_count": 3,
       "conviction": "MEDIUM",
-      "distance_pct": -1.56,
+      "distance_pct": -1.91,
       "volume_confluence": false
-    },
-    {
-      "price": 78774.0,
-      "type": "RESISTANCE",
-      "touch_count": 8,
-      "conviction": "HIGH",
-      "distance_pct": 1.69,
-      "volume_confluence": true
     },
     {
       "price": 79269.63,
       "type": "RESISTANCE",
       "touch_count": 7,
       "conviction": "MEDIUM",
-      "distance_pct": 2.33,
+      "distance_pct": 1.96,
       "volume_confluence": false
     }
   ],
@@ -186,7 +186,7 @@
       },
       {
         "price": 77510.29,
-        "volume": 14697.68,
+        "volume": 14105.84,
         "tag": "NORMAL"
       },
       {
@@ -196,7 +196,7 @@
       },
       {
         "price": 77623.86,
-        "volume": 12863.95,
+        "volume": 13981.2,
         "tag": "NORMAL"
       },
       {
@@ -206,7 +206,7 @@
       },
       {
         "price": 77737.44,
-        "volume": 15918.81,
+        "volume": 16372.69,
         "tag": "NORMAL"
       },
       {
@@ -343,9 +343,9 @@
   },
   "market_summary": {
     "total_candles_analyzed": 500,
-    "pine_pivots_found": 30,
-    "support_levels_count": 2,
-    "resistance_levels_count": 5,
+    "pine_pivots_found": 31,
+    "support_levels_count": 3,
+    "resistance_levels_count": 4,
     "high_conviction_count": 5
   }
 }
