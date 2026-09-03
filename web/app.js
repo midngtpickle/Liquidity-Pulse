@@ -292,7 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
       container.innerHTML = bandKeys.map(key => `
         <div class="depth-band-item" data-band="${key}">
           <div class="band-header">
-            <span>${key} Depth Band</span>
+            <span>${key} Depth Band<span class="band-partial" hidden>partial</span></span>
             <span class="band-delta text-muted">Connecting...</span>
           </div>
           <div class="progress-bar">
@@ -325,10 +325,24 @@ document.addEventListener("DOMContentLoaded", () => {
       const deltaText = delta > 0 ? `+${delta.toFixed(1)}% (Bid Heavy)` : `${delta.toFixed(1)}% (Ask Heavy)`;
       const deltaClass = delta > 0 ? "text-green" : (delta < 0 ? "text-red" : "text-muted");
 
+      // The REST snapshot only reaches so far from mid, and the diff stream
+      // reports a resting level only once it changes. A band wider than that
+      // reach is under-reported, so its delta is a floor rather than a
+      // measurement — say so instead of rendering it like a solid number.
+      const complete = depthData?.bands_complete?.[key];
+      const isPartial = complete === false;
+
+      const partialEl = itemEl.querySelector(".band-partial");
+      if (partialEl) partialEl.hidden = !isPartial;
+      itemEl.classList.toggle("band-incomplete", isPartial);
+
       const deltaEl = itemEl.querySelector(".band-delta");
       if (deltaEl) {
-        deltaEl.textContent = deltaText;
+        deltaEl.textContent = isPartial ? `${deltaText} — floor` : deltaText;
         deltaEl.className = `band-delta ${deltaClass}`;
+        deltaEl.title = isPartial
+          ? "Order book is not known to be complete across this band; true depth is at least this much."
+          : "";
       }
 
       const bidFill = itemEl.querySelector(".bid-fill");
@@ -343,6 +357,28 @@ document.addEventListener("DOMContentLoaded", () => {
       const askInfo = itemEl.querySelector(".band-ask-info");
       if (askInfo) askInfo.innerHTML = `Asks: $${askUSD}M (${askPct}%) <i class="fa-solid fa-arrow-down"></i>`;
     });
+
+    renderDepthBookNote();
+  }
+
+  // One line stating how far the book is actually vouched for, shown only while
+  // some band exceeds that reach.
+  function renderDepthBookNote() {
+    const noteEl = document.getElementById("depth-book-note");
+    if (!noteEl) return;
+
+    const book = depthData?.book;
+    const complete = depthData?.bands_complete;
+    const anyPartial = complete && Object.values(complete).some(v => v === false);
+
+    if (!book || !anyPartial) {
+      noteEl.hidden = true;
+      return;
+    }
+
+    const reach = Math.min(book.complete_bid_span_pct ?? 0, book.complete_ask_span_pct ?? 0);
+    noteEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Snapshot vouches for the book to ±${reach.toFixed(2)}% of mid. Bands marked <span class="band-partial">partial</span> extend past that, so their depth is under-reported and the delta is a floor.`;
+    noteEl.hidden = false;
   }
 
   function showToast(msg, type = "success") {

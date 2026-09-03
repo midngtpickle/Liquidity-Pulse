@@ -558,3 +558,39 @@ body {
   .stats-grid { grid-template-columns: 1fr; }
   .navbar { flex-direction: column; gap: 14px; align-items: flex-start; }
 }
+
+/* ---- Order book completeness ----------------------------------------- */
+/* A band wider than the snapshot's contiguous reach under-reports depth, so it
+   is marked rather than rendered as an equal-confidence number. */
+.band-partial {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffb74d;
+  background: rgba(255, 183, 77, 0.14);
+  border: 1px solid rgba(255, 183, 77, 0.35);
+  vertical-align: middle;
+}
+
+.depth-band-item.band-incomplete .progress-bar {
+  opacity: 0.55;
+}
+
+.depth-book-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #ffb74d;
+  background: rgba(255, 183, 77, 0.08);
+  border: 1px solid rgba(255, 183, 77, 0.22);
+}
