@@ -58,11 +58,41 @@ A 50-bin histogram over candle mid-prices `(high + low) / 2`, weighted by volume
 maintained by the `@depth@100ms` diff stream.
 
 > [!IMPORTANT]
-> The REST snapshot caps at 5,000 levels, roughly 1.2% from mid on BTC. Bands wider than
-> that reach are **under-reported** — the diff stream only reports levels that change, so
-> static liquidity beyond the cap is invisible. Every snapshot publishes a
+> On the USD-M perpetual the REST snapshot caps at **1,000 levels**, which reaches only
+> about **0.16%** from mid. All three bands are wider than that, so all three are
+> **under-reported** — the diff stream reports a level only when it changes, so resting
+> liquidity beyond the seed reach is invisible. Every snapshot publishes a
 > `bands_complete` map alongside `book.complete_bid_span_pct`. A band flagged `false` is a
-> floor, not a measurement.
+> floor, not a measurement, and the dashboard marks it `PARTIAL`.
+
+#### Book reach: spot vs perpetual
+
+Recorded 2026-09-03, when the system moved from Binance spot to `BINANCE:BTCUSDT.P` so
+that the chart and the backend would describe the same instrument. The move cost snapshot
+reach, and the numbers are kept here because the loss is not obvious from the code.
+
+| | Spot (before) | USD-M perpetual (now) |
+| :--- | :--- | :--- |
+| Endpoint | `api.binance.com/api/v3/depth` | `fapi.binance.com/fapi/v1/depth` |
+| Snapshot cap | 5,000 levels | **1,000 levels** (exchange maximum) |
+| Contiguous reach from mid | ~1.11% bid / ~1.15% ask | ~0.16% bid / ~0.17% ask |
+| `bands_complete` | 0.5% ✅ 1.0% ✅ 2.0% ❌ | 0.5% ❌ 1.0% ❌ 2.0% ❌ |
+| Depth inside the 0.5% band | ~$16M bid / ~$18M ask | ~$74-103M bid / ~$53-80M ask |
+
+The last row is the part worth remembering: **the perpetual book is far deeper in dollar
+terms, not shallower.** What was lost is reach, not liquidity. The perp book packs much
+more size into a tighter price range, so a 1,000-level snapshot covers less ground than
+5,000 levels did on the thinner spot book.
+
+This is not fixable in code. 1,000 is Binance's hard cap for `fapi/v1/depth`, and while
+the diff stream does extend real coverage as levels change, `complete_bid_span_pct` is
+deliberately frozen at seed time: a resting level that has not moved since the snapshot
+is still invisible, so a reach that grew with the stream would overstate what is known.
+
+If this is ever worth reopening, the options are a paid market-data feed with full-book
+snapshots, aggregating several venues, or publishing an observed-reach figure alongside
+the seed-time guarantee and treating the two differently. Until then the 0.5% band is the
+most trustworthy of the three, and all three are floors.
 
 ---
 
