@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![AI Harness Ready](https://img.shields.io/badge/AI%20Harness-Claude%20%7C%20Cursor%20%7C%20ChatGPT%20%7C%20OpenClaw-purple.svg)](#-multi-agent-harness--llm-integration)
-[![TradingView](https://img.shields.io/badge/TradingView-Pine%20Script%20v5-orange.svg)](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/liquidity_pulse_sr.pine)
+[![TradingView](https://img.shields.io/badge/TradingView-Pine%20Script%20v5-orange.svg)](liquidity_pulse_sr.pine)
 
 **Liquidity-Pulse** is an institutional-grade, multi-agent market structure and liquidity monitoring system built for algorithmic traders and autonomous AI agent harnesses.
 
@@ -86,7 +86,7 @@ Liquidity-Pulse/
 ## 🚀 Quick Start & Usage
 
 ### Windows Users (One-Click Launch)
-Double-click **[`start_all.bat`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/liquidity-pulse/start_all.bat)** in File Explorer or run `.\start_all.bat` in PowerShell. It automatically creates a virtual environment, installs requirements, compiles telemetry, starts the WebSocket daemon and Web UI server, and opens **`http://localhost:8080`** in your browser.
+Double-click **[`start_all.bat`](start_all.bat)** in File Explorer or run `.\start_all.bat` in PowerShell. It automatically creates a virtual environment, installs requirements, compiles telemetry, starts the WebSocket daemon and Web UI server, and opens **`http://localhost:8080`** in your browser.
 
 ---
 
@@ -136,11 +136,11 @@ Liquidity-Pulse is built from the ground up for seamless operation with modern A
 
 | Agent / Harness | Configuration File | How to Use |
 | :--- | :--- | :--- |
-| **Claude / Claude Code** | [`CLAUDE.md`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/CLAUDE.md) | Claude automatically reads `CLAUDE.md` to execute scripts, format briefings, and reason over telemetry. |
-| **Cursor / Windsurf** | [`.cursorrules`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/.cursorrules) | Cursor IDE loads `.cursorrules` to guide code modifications and terminal executions. |
-| **ChatGPT / OpenAI GPTs** | [`docs/AGENT_INTEGRATION_GUIDE.md`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/docs/AGENT_INTEGRATION_GUIDE.md) | Import the provided OpenAPI 3.1.0 schema into Custom GPT Actions to query `/api/telemetry` & `/api/depth`. |
-| **OpenClaw / LangChain / CrewAI** | [`docs/AGENT_INTEGRATION_GUIDE.md`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/docs/AGENT_INTEGRATION_GUIDE.md) | Use the Python `@tool` wrapper classes to query live market intelligence from your multi-agent pipelines. |
-| **Google Antigravity** | [`AGENTS.md`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/AGENTS.md) & [`skills/`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/skills/pine_sr_calculator/SKILL.md) | Native multi-agent Sentinel orchestrator with subagent delegation. |
+| **Claude / Claude Code** | [`CLAUDE.md`](CLAUDE.md) | Claude automatically reads `CLAUDE.md` to execute scripts, format briefings, and reason over telemetry. |
+| **Cursor / Windsurf** | [`.cursorrules`](.cursorrules) | Cursor IDE loads `.cursorrules` to guide code modifications and terminal executions. |
+| **ChatGPT / OpenAI GPTs** | [`docs/AGENT_INTEGRATION_GUIDE.md`](docs/AGENT_INTEGRATION_GUIDE.md) | Import the provided OpenAPI 3.1.0 schema into Custom GPT Actions to query `/api/telemetry` & `/api/depth`. |
+| **OpenClaw / LangChain / CrewAI** | [`docs/AGENT_INTEGRATION_GUIDE.md`](docs/AGENT_INTEGRATION_GUIDE.md) | Use the Python `@tool` wrapper classes to query live market intelligence from your multi-agent pipelines. |
+| **Google Antigravity** | [`AGENTS.md`](AGENTS.md) & [`skills/`](skills/pine_sr_calculator/SKILL.md) | Native multi-agent Sentinel orchestrator with subagent delegation. |
 
 ---
 
@@ -156,5 +156,5 @@ We welcome community contributions! To contribute:
 
 ## 📄 License
 
-This project is licensed under the **[MIT License](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/LICENSE)**. Free for personal, educational, and commercial algorithmic trading applications.
+This project is licensed under the **[MIT License](LICENSE)**. Free for personal, educational, and commercial algorithmic trading applications.
 

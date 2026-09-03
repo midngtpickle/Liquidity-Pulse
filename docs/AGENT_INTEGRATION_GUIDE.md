@@ -91,7 +91,7 @@ Always query `getMarketTelemetry` and `getDepthDelta` before answering questions
 ## 3. Claude & Claude Code Integration
 
 For **Claude Code** and Anthropic API harnesses:
-- **Project Configuration**: The root directory contains **[`CLAUDE.md`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/CLAUDE.md)** with build instructions, command shortcuts, reasoning rules, and error handling conventions.
+- **Project Configuration**: The root directory contains **[`CLAUDE.md`](../CLAUDE.md)** with build instructions, command shortcuts, reasoning rules, and error handling conventions.
 - **Anthropic Tool Definition Example**:
 ```python
 liquidity_pulse_tool = {
@@ -111,7 +111,7 @@ liquidity_pulse_tool = {
 ## 4. Cursor & Windsurf IDE Agents
 
 For **Cursor IDE** and **Windsurf**:
-- The project includes **[`.cursorrules`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/.cursorrules)** in the root directory.
+- The project includes **[`.cursorrules`](../.cursorrules)** in the root directory.
 - Cursor AI automatically detects the multi-agent architecture and respects file contracts for `quant_engine.py`, `sentinel.py`, and `server.py`.
 
 ---
@@ -171,6 +171,7 @@ All agents consuming `workspace/telemetry_latest.json` can rely on this validate
 {
   "timestamp": "2026-08-14T10:40:20.094318+00:00",
   "symbol": "BTCUSDT",
+  "market": "BINANCE:BTCUSDT.P",
   "current_price": 62894.00,
   "high_24h": 63999.00,
   "low_24h": 62700.00,

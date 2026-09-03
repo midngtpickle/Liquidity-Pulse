@@ -41,7 +41,7 @@ If you are running Liquidity-Pulse natively on a Windows computer outside of the
 ### Option A: One-Click Automatic Startup (`start_all.bat`)
 The project includes a pre-configured Windows launcher batch script that automates virtual environment creation, dependency installation, pipeline execution, web server startup, and browser launch.
 
-1. Double-click **[`start_all.bat`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/liquidity-pulse/start_all.bat)** in File Explorer (or run `.\start_all.bat` from Command Prompt/PowerShell).
+1. Double-click **[`start_all.bat`](../start_all.bat)** in File Explorer (or run `.\start_all.bat` from Command Prompt/PowerShell).
 2. The script will:
    - Check your Python installation (`Python 3.10+`).
    - Create a virtual environment `venv/` if not present.
@@ -107,7 +107,7 @@ pip install -r requirements.txt
 ```
 
 ### Step 2: Run the Quantitative Engine (`src/quant_engine.py`)
-Fetches 500 candles of 15m $BTC data from Binance/Bybit REST endpoints, clusters horizontal S/R zones using Pine Script pivot math, calculates Volume Profile (VPOC, HVNs, LVNs), and writes output to `workspace/telemetry_latest.json`.
+Fetches 500 candles of 15m `BINANCE:BTCUSDT.P` data from Binance USD-M futures REST (Bybit `linear` fallback), clusters horizontal S/R zones using Pine Script pivot math, calculates Volume Profile (VPOC, HVNs, LVNs), and writes output to `workspace/telemetry_latest.json`.
 ```bash
 python src/quant_engine.py
 ```
@@ -123,7 +123,7 @@ python src/sentinel.py
 ### Step 4: Run the Real-Time WebSocket Feed (`src/ws_feed.py`)
 Connects to Binance live WebSockets (`@depth@100ms` and `@forceOrder`), maintains a full local order book seeded from a REST snapshot, calculates 0.5%, 1%, and 2% depth imbalance deltas, and triggers alerts on liquidation cascades exceeding $5,000,000 over a 3-minute window.
 
-The REST snapshot is capped at 5,000 levels per side, which on $BTC reaches roughly 1.2% from mid. Bands wider than that reach are under-reported until resting liquidity beyond it moves, so every snapshot publishes a `bands_complete` map alongside `book.complete_bid_span_pct` / `complete_ask_span_pct`. Treat a band flagged `false` as a floor, not a measurement.
+The REST snapshot is capped at 1,000 levels per side on the USD-M perpetual, which reaches roughly 0.16% from mid, so all three bands sit outside it. Bands wider than that reach are under-reported until resting liquidity beyond it moves, so every snapshot publishes a `bands_complete` map alongside `book.complete_bid_span_pct` / `complete_ask_span_pct`. Treat a band flagged `false` as a floor, not a measurement.
 ```bash
 # Run for 30 seconds test
 python src/ws_feed.py --duration 30
@@ -211,7 +211,7 @@ The dashboard web server exposes REST API endpoints for integration:
 
 Connect your TradingView charts directly into the Liquidity-Pulse server:
 
-1. In TradingView, add the **[`liquidity_pulse_sr.pine`](file:///c:/Users/HP%20FURY/GitHub/New%20folder/Liquidity-Pulse/liquidity_pulse_sr.pine)** indicator script.
+1. In TradingView, add the **[`liquidity_pulse_sr.pine`](../liquidity_pulse_sr.pine)** indicator script.
 2. Click **Create Alert** on the indicator.
 3. In the alert settings:
    - **Condition**: Select `Liquidity-Pulse: Support Touch` or `Liquidity-Pulse: Resistance Touch`.

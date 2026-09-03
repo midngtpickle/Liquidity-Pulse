@@ -81,7 +81,7 @@ Liquidity-Pulse/
 ## 🚀 Quick Start & Usage
 
 ### Windows Users (One-Click Launch)
-Double-click **[`start_all.bat`](file:///start_all.bat)** in File Explorer or run `.\start_all.bat` in PowerShell. It automatically creates a virtual environment, installs requirements, compiles telemetry, starts the WebSocket daemon and Web UI server, and opens **`http://localhost:8080`** in your browser.
+Double-click **[`start_all.bat`](start_all.bat)** in File Explorer or run `.\start_all.bat` in PowerShell. It automatically creates a virtual environment, installs requirements, compiles telemetry, starts the WebSocket daemon and Web UI server, and opens **`http://localhost:8080`** in your browser.
 
 ---
 

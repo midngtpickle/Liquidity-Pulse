@@ -141,6 +141,8 @@ briefings will quietly disagree.
 | Pivot left/right bars | `10` / `10` | `leftBars`, `rightBars` inputs | `calculate_pine_pivots(left_bars, right_bars)` |
 | Cluster threshold | `0.35%` | `clusterPct` input | `cluster_sr_levels(threshold_pct)` |
 | Touch counting | rising edge only | `pivotInZone` debounce | `entered_from_outside` mask |
+| Cluster merge order | time order, first matching centre | `mergePivot()` | `cluster_sr_levels()` |
+| S/R lookback | `500` candles | `srLookback` input | `QuantEngine(limit=500)` + pivot lead-in |
 | Conviction: HIGH | ≥3 touches **AND** HVN/VPOC overlap | `minTouchesHigh` + confluence | `grade_conviction()` |
 | Conviction: MEDIUM | ≥2 touches | same | same |
 | Conviction: LOW | isolated pivot | same | same |

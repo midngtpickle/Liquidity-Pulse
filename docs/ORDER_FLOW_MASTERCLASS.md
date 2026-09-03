@@ -148,9 +148,14 @@ Raw pivots are clustered using spatial density grouping:
 
 | Touch Count | Volume Confluence | Conviction Tier | Actionable Strategy |
 | :--- | :--- | :--- | :--- |
-| $\ge 3$ touches | Yes (VPOC / HVN) | 🔥 **HIGH CONVICTION** | High probability reversal / bounce zone |
+| $\ge 3$ touches | Yes (VPOC / HVN) | 🔥 **HIGH CONVICTION** | Most heavily constructed level — see the caveat below |
 | $2$ touches | Optional | ⚡ **MEDIUM CONVICTION** | Secondary key level |
 | $1$ touch | No | ▫️ **MINOR PIVOT** | Informational swing level |
+
+> [!IMPORTANT]
+> The tier describes how a level was **constructed**, not how likely it is to hold.
+> Across fourteen level derivations, none beat a randomly displaced control by 2
+> standard deviations. See [STRATEGY.md](STRATEGY.md#5-what-the-benchmark-says).
 
 ---
 

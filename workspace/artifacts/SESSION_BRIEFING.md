@@ -1,6 +1,6 @@
 # 🟢 Liquidity-Pulse — Session Briefing Report
 
-**Generated At**: `2026-09-03 11:15:15 UTC`  
+**Generated At**: `2026-09-03 12:14:08 UTC`  
 **Active Session**: `LONDON_SESSION (07:00 UTC Open)`  
 **Instrument**: `BINANCE:BTCUSDT.P`  
 
@@ -9,11 +9,11 @@
 ## 1. Executive Market Structure Summary
 
 > [!IMPORTANT]
-> **Mid-Price**: **$77,806.00** | **24h Range**: `$76,444.40` — `$78,144.70` | **VPOC**: `$78,021.39`
+> **Mid-Price**: **$78,039.50** | **24h Range**: `$76,573.20` — `$78,144.70` | **VPOC**: `$78,021.39`
 
 - **Volume Point of Control (VPOC)**: High-density fair value anchor located at **$78,021.39**.
-- **24h Volume Aggregate**: `135,375.27 BTC`.
-- **Market Bias**: Current price relative to VPOC is **BEARISH DISTRIBUTION**.
+- **24h Volume Aggregate**: `134,711.34 BTC`.
+- **Market Bias**: Current price relative to VPOC is **BULLISH ACCUMULATION**.
 
 ---
 
@@ -22,18 +22,18 @@
 ### 🛡️ Primary Support Clusters (Bulls Defense Line)
 | Price Level | Conviction | Touch Count | Distance | Volume Confluence |
 | :--- | :--- | :--- | :--- | :--- |
-| **$77,562.49** | 🔥 HIGH | 24 | -0.31% | ✅ VPOC/HVN |
-| **$76,902.65** | 🔥 HIGH | 13 | -1.16% | ✅ VPOC/HVN |
-| **$76,259.95** | ⚡ MED | 3 | -1.99% | --- |
+| **$77,538.71** | 🔥 HIGH | 26 | -0.64% | ✅ VPOC/HVN |
+| **$76,902.65** | 🔥 HIGH | 13 | -1.46% | ✅ VPOC/HVN |
+| **$76,259.95** | ⚡ MED | 3 | -2.28% | --- |
 
 
 ### ⚔️ Primary Resistance Clusters (Bears Overhead Supply)
 | Price Level | Conviction | Touch Count | Distance | Volume Confluence |
 | :--- | :--- | :--- | :--- | :--- |
-| **$78,114.75** | 🔥 HIGH | 16 | 0.40% | ✅ VPOC/HVN |
-| **$78,396.90** | 🔥 HIGH | 28 | 0.76% | ✅ VPOC/HVN |
-| **$78,774.00** | 🔥 HIGH | 8 | 1.24% | ✅ VPOC/HVN |
-| **$79,269.63** | ⚡ MED | 7 | 1.88% | --- |
+| **$78,114.75** | 🔥 HIGH | 17 | 0.10% | ✅ VPOC/HVN |
+| **$78,396.90** | 🔥 HIGH | 28 | 0.46% | ✅ VPOC/HVN |
+| **$78,774.00** | 🔥 HIGH | 8 | 0.94% | ✅ VPOC/HVN |
+| **$79,269.63** | ⚡ MED | 7 | 1.58% | --- |
 
 
 ---

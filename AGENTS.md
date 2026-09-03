@@ -46,7 +46,7 @@ System Architecture for **Liquidity-Pulse**: Autonomous $BTC market liquidity mo
 - **Role**: Data Extraction, Math Engine & Telemetry Compiler.
 - **Capabilities**:
   - Restricts operations to deterministic code execution and localized sandboxed data transformations.
-  - Fetches 500 candles of 15-minute $BTCUSDT OHLCV data from Binance/Bybit REST endpoints with automatic retry logic.
+  - Fetches 500 candles of 15-minute `BINANCE:BTCUSDT.P` OHLCV data from Binance USD-M futures REST (Bybit `linear` fallback) with automatic retry logic.
   - Executes Pine Script-style horizontal S/R pivot detection (`ta.pivothigh` / `ta.pivotlow`, left/right=10).
   - Performs density-based spatial clustering (0.35% band tolerance) and ranks levels by touch frequency.
   - Computes Volume Profile (VPOC, High/Low Volume Nodes) and liquidity depth imbalances.
