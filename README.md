@@ -40,7 +40,7 @@ Liquidity-Pulse uses a **Sentinel & Subagent Pattern**:
 
 ```
 Liquidity-Pulse/
-├── AGENTS.md                          # Multi-agent roles & permissions manifest
+├── AGENTS.md                          # Pointer to CLAUDE.md for agent working instructions
 ├── CLAUDE.md                          # Claude Code & Anthropic harness instructions
 ├── .cursorrules                       # Cursor IDE & Windsurf AI rules
 ├── LICENSE                            # Open-source MIT License
@@ -49,6 +49,7 @@ Liquidity-Pulse/
 ├── start_all.bat                      # One-click Windows launcher script
 ├── liquidity_pulse_sr.pine            # Official TradingView Pine Script v6 indicator
 ├── docs/
+│   ├── AGENT_ARCHITECTURE.md          # Runtime Sentinel/subagent cluster manifest
 │   ├── USER_GUIDE.md                  # Comprehensive user operational manual & API reference
 │   ├── ORDER_FLOW_MASTERCLASS.md      # Institutional Order Flow & Market Structure Masterclass
 │   ├── AGENT_INTEGRATION_GUIDE.md     # Multi-Agent & LLM Harness Integration Guide
@@ -139,7 +140,7 @@ Liquidity-Pulse is built from the ground up for seamless operation with modern A
 | **Cursor / Windsurf** | [`.cursorrules`](.cursorrules) | Cursor IDE loads `.cursorrules` to guide code modifications and terminal executions. |
 | **ChatGPT / OpenAI GPTs** | [`docs/AGENT_INTEGRATION_GUIDE.md`](docs/AGENT_INTEGRATION_GUIDE.md) | Import the provided OpenAPI 3.1.0 schema into Custom GPT Actions to query `/api/telemetry` & `/api/depth`. |
 | **OpenClaw / LangChain / CrewAI** | [`docs/AGENT_INTEGRATION_GUIDE.md`](docs/AGENT_INTEGRATION_GUIDE.md) | Use the Python `@tool` wrapper classes to query live market intelligence from your multi-agent pipelines. |
-| **Google Antigravity** | [`AGENTS.md`](AGENTS.md) & [`skills/`](skills/pine_sr_calculator/SKILL.md) | Native multi-agent Sentinel orchestrator with subagent delegation. |
+| **Google Antigravity** | [`docs/AGENT_ARCHITECTURE.md`](docs/AGENT_ARCHITECTURE.md) & [`skills/`](skills/pine_sr_calculator/SKILL.md) | Native multi-agent Sentinel orchestrator with subagent delegation. |
 
 ---
 
