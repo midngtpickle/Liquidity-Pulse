@@ -1,5 +1,7 @@
 //@version=6
-indicator("Liquidity-Pulse - S/R Clusters & VPOC", shorttitle="LiqPulse", overlay=true, max_lines_count=100, max_labels_count=100, max_bars_back=500)
+// max_bars_back covers the deepest historical reference the rebuild makes:
+// srLookback - 1 + leftBars. At the 1000-bar input ceiling that is 1009.
+indicator("Liquidity-Pulse - S/R Clusters & VPOC", shorttitle="LiqPulse", overlay=true, max_lines_count=100, max_labels_count=100, max_bars_back=1100)
 
 // ============================================================================
 // INPUT PARAMETERS
@@ -7,10 +9,9 @@ indicator("Liquidity-Pulse - S/R Clusters & VPOC", shorttitle="LiqPulse", overla
 leftBars         = input.int(10, title="Pivot Left Bars", minval=1, group="Pivot Settings")
 rightBars        = input.int(10, title="Pivot Right Bars", minval=1, group="Pivot Settings")
 clusterPct       = input.float(0.35, title="Cluster Density Threshold (%)", minval=0.05, step=0.05, group="Density Settings") / 100.0
-maxLevels        = input.int(60, title="Max Tracked Levels", minval=10, maxval=200, group="Density Settings")
 drawLevels       = input.int(12, title="Levels To Draw (nearest price)", minval=1, maxval=40, group="Display Settings")
 minTouchesHigh   = input.int(3, title="Min Touches for High Conviction", minval=2, group="Conviction Settings")
-srLookback       = input.int(500, title="S/R Lookback Bars", minval=50, maxval=5000, group="Pivot Settings", tooltip="Trailing window the pivot and touch counters run over. Matches the limit=500 candle window quant_engine.py analyses, so chart touch counts stay comparable to the backend telemetry.")
+srLookback       = input.int(500, title="S/R Lookback Bars", minval=50, maxval=1000, group="Pivot Settings", tooltip="Trailing window the pivots, clusters and touch counts are rebuilt over on every bar. Matches the limit=500 candle window quant_engine.py analyses, so chart levels and touch counts agree with the backend telemetry.")
 showLabels       = input.bool(true, title="Show Conviction Labels", group="Display Settings")
 showVPOC         = input.bool(true, title="Show VPOC Line", group="Display Settings")
 vpocBars         = input.int(500, title="VPOC Lookback Bars", minval=50, maxval=500, group="Display Settings")
@@ -55,13 +56,15 @@ volumeConfluence(float px, float ref, float vpocPx, array<float> volBins, float 
 // ============================================================================
 // PINE PIVOT DETECTION
 // ============================================================================
-pHi = ta.pivothigh(high, leftBars, rightBars)
-pLo = ta.pivotlow(low, leftBars, rightBars)
+// Pivots are found inside rebuildLevels() by scanning the window directly rather
+// than by ta.pivothigh/ta.pivotlow. The built-ins report a pivot once, on the bar
+// it confirms, which only suits an accumulator; a rebuild needs every pivot in the
+// window on every pass, and needs the same strict-older / inclusive-newer
+// comparison calculate_pine_pivots() uses.
 
-var array<float> pivotPrices  = array.new_float(0)   // cluster centre price (running mean)
-var array<int>   pivotTouches = array.new_int(0)     // distinct zone entries
+var array<float> pivotPrices  = array.new_float(0)   // cluster centre price (mean of members)
+var array<int>   pivotTouches = array.new_int(0)     // distinct zone entries over the window
 var array<int>   pivotMembers = array.new_int(0)     // pivots merged into this cluster
-var array<bool>  pivotInZone  = array.new_bool(0)    // debounce state: was price inside the zone last bar
 var array<line>  levelLines   = array.new_line(0)
 var array<label> levelLabels  = array.new_label(0)
 var line    vpocLine     = na
@@ -76,68 +79,108 @@ var float        profLoMid = na
 var float        profBinW  = na
 var array<float> volBins   = array.new_float(0)
 
-// Merge a new pivot into an existing cluster when it falls inside the density
-// threshold, mirroring cluster_sr_levels() in src/quant_engine.py. Otherwise
-// append a new cluster, evicting the weakest one if the cap is exceeded.
-mergePivot(float px) =>
+// Merge one pivot into the cluster list, mirroring cluster_sr_levels() in
+// src/quant_engine.py: walk the clusters in creation order and take the first
+// whose running centre is within the density threshold, otherwise start a new
+// one. The centre is the arithmetic mean of the cluster's members, so the number
+// here and the number in the telemetry are the same number.
+mergePivot(array<float> centres, array<int> members, float px) =>
     int hit = -1
-    if array.size(pivotPrices) > 0
-        for i = 0 to array.size(pivotPrices) - 1
-            centre = array.get(pivotPrices, i)
+    if array.size(centres) > 0
+        for i = 0 to array.size(centres) - 1
+            centre = array.get(centres, i)
             if hit < 0 and math.abs(px - centre) / centre <= clusterPct
                 hit := i
     if hit >= 0
-        n      = array.get(pivotMembers, hit)
-        centre = array.get(pivotPrices, hit)
-        array.set(pivotPrices, hit, (centre * n + px) / (n + 1))
-        array.set(pivotMembers, hit, n + 1)
+        n      = array.get(members, hit)
+        centre = array.get(centres, hit)
+        array.set(centres, hit, (centre * n + px) / (n + 1))
+        array.set(members, hit, n + 1)
     else
-        array.push(pivotPrices, px)
-        array.push(pivotTouches, 1)
-        array.push(pivotMembers, 1)
-        array.push(pivotInZone, true)
-
-    // Evict the weakest level once the cap is exceeded. Kept out of the else
-    // branch above so both branches end on a void call, and closed with an
-    // explicit `true` so the function has one unambiguous return type
-    // (array.remove returns the removed element, not void).
-    if array.size(pivotPrices) > maxLevels
-        int weakest = 0
-        for i = 1 to array.size(pivotTouches) - 1
-            if array.get(pivotTouches, i) < array.get(pivotTouches, weakest)
-                weakest := i
-        array.remove(pivotPrices, weakest)
-        array.remove(pivotTouches, weakest)
-        array.remove(pivotMembers, weakest)
-        array.remove(pivotInZone, weakest)
+        array.push(centres, px)
+        array.push(members, 1)
     true
 
-// var arrays are NOT rolled back on realtime ticks, so every mutation is gated
-// on a confirmed bar to stop duplicate pivots and runaway touch counts.
+// Rebuild every cluster and touch count from scratch over the trailing window.
 //
-// Accumulation is also confined to the same trailing window quant_engine.py
-// analyses.
-// Without this the counters run over the chart's entire loaded history —
-// max_bars_back caps historical *referencing*, not accumulation — so every
-// level cleared minTouchesHigh and the conviction tier carried no information.
-inWindow = bar_index > last_bar_index - srLookback
+// This replaces an incremental accumulator, and the reason is worth keeping. That
+// version created a cluster with touches = 1 on the bar its first pivot confirmed
+// and counted re-entries only from that bar onward, against a centre that kept
+// moving as later pivots merged in. Nothing aged a cluster out either — the old
+// `inWindow` gate limited accumulation, not retention — so the level set silently
+// widened the longer a chart stayed open.
+//
+// Both made the chart path-dependent: identical candles produced different touch
+// counts depending on when the indicator was loaded, and neither number matched
+// the backend, which re-derives from a fixed window on every run. Measured against
+// a live chart, all twelve drawn levels disagreed with the dashboard — one by five
+// touches, one tier outright (LOW on the chart, MEDIUM in the briefing) — and one
+// pair of backend levels had merged into a single drawn line.
+//
+// Rebuilding is what the backend does. Cost is O(window x (leftBars + rightBars))
+// for the pivot scan plus O(window x clusters) for the touches, on the last bar
+// only, which is a few tens of thousands of iterations.
+//
+// There is deliberately no maximum-levels cap any more. The old eviction of the
+// weakest cluster had no counterpart in quant_engine.py, and a full rebuild over a
+// bounded window cannot run away the way forever-accumulating state could.
+rebuildLevels(array<float> centres, array<int> touches, array<int> members) =>
+    array.clear(centres)
+    array.clear(touches)
+    array.clear(members)
 
-if barstate.isconfirmed and inWindow
-    if not na(pHi)
-        mergePivot(pHi)
-    if not na(pLo)
-        mergePivot(pLo)
+    // Deepest reference below is high[lookback - 1 + leftBars], so the window has
+    // to leave room for the lead-in the oldest pivot needs.
+    int lookback = math.min(srLookback, bar_index + 1 - leftBars)
 
-    // Count a touch only when price re-enters the zone from outside, so a level
-    // price is simply sitting on does not gain a touch on every single bar.
-    if array.size(pivotPrices) > 0
-        for i = 0 to array.size(pivotPrices) - 1
-            pPrice = array.get(pivotPrices, i)
-            tol    = pPrice * clusterPct
-            inNow  = low <= (pPrice + tol) and high >= (pPrice - tol)
-            if inNow and not array.get(pivotInZone, i)
-                array.set(pivotTouches, i, array.get(pivotTouches, i) + 1)
-            array.set(pivotInZone, i, inNow)
+    if lookback > leftBars + rightBars
+        // Offset p counts bars back from the current bar, so descending p walks
+        // forward in time. A pivot at p is compared against leftBars older bars
+        // (p + k) and rightBars newer ones (p - k). Strict on the older side,
+        // inclusive on the newer, matching calculate_pine_pivots().
+        for p = lookback - 1 to rightBars
+            float hv = high[p]
+            bool isHigh = true
+            for k = 1 to leftBars
+                if hv <= high[p + k]
+                    isHigh := false
+            for k = 1 to rightBars
+                if hv < high[p - k]
+                    isHigh := false
+            if isHigh
+                mergePivot(centres, members, hv)
+
+            float lv = low[p]
+            bool isLow = true
+            for k = 1 to leftBars
+                if lv >= low[p + k]
+                    isLow := false
+            for k = 1 to rightBars
+                if lv > low[p - k]
+                    isLow := false
+            if isLow
+                mergePivot(centres, members, lv)
+
+        // Touches, counted against the finished centres over the same window. A
+        // touch is a bar entering the zone from outside; bars that merely sit
+        // inside it add nothing. The first bar of the window counts if it is
+        // already inside, matching the backend's entered_from_outside mask.
+        int n = array.size(centres)
+        if n > 0
+            array<bool> inZone = array.new_bool(n, false)
+            for i = 0 to n - 1
+                array.push(touches, 0)
+            bool firstBar = true
+            for b = lookback - 1 to 0
+                for i = 0 to n - 1
+                    float c   = array.get(centres, i)
+                    float tol = c * clusterPct
+                    bool  now = low[b] <= (c + tol) and high[b] >= (c - tol)
+                    if now and (firstBar or not array.get(inZone, i))
+                        array.set(touches, i, array.get(touches, i) + 1)
+                    array.set(inZone, i, now)
+                firstBar := false
+    true
 
 // ============================================================================
 // DRAW S/R OVERLAYS ON LAST BAR
@@ -145,6 +188,10 @@ if barstate.isconfirmed and inWindow
 var array<int> drawOrder = array.new_int(0)
 
 if barstate.islast
+    // Levels are rebuilt here, not accumulated bar by bar, so this is the only
+    // place they exist. The alert pass below reads what this leaves behind.
+    rebuildLevels(pivotPrices, pivotTouches, pivotMembers)
+
     // Clear old lines and labels
     if array.size(levelLines) > 0
         for i = 0 to array.size(levelLines) - 1
