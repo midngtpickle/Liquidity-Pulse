@@ -52,6 +52,52 @@ class VolumeProfile(BaseModel):
     bins: List[VolumeProfileBin] = Field(default_factory=list, description="All histogram price bins")
 
 
+class OrderFlow(BaseModel):
+    """
+    Taker flow over the analysis window, from Binance's per-kline taker-buy volume.
+
+    `available` is false on the Bybit fallback, which carries no equivalent field.
+    Everything else is then zero and must not be read as a balanced market.
+    """
+    available: bool = Field(..., description="False when the venue supplied no taker data")
+    cvd: float = Field(0.0, description="Cumulative taker delta across the window, base units")
+    cvd_24h: float = Field(0.0, description="Cumulative taker delta over the last 96 candles")
+    last_bar_delta_ratio: float = Field(0.0, description="Latest bar's delta as a share of its volume")
+    divergence: float = Field(0.0, description="Signed CVD-vs-price disagreement over the last 12 bars")
+
+
+class Positioning(BaseModel):
+    """
+    What the market is holding, from Binance's open interest, funding and crowd-ratio
+    endpoints.
+
+    `oi_history_days` is the exchange's hard cap on open interest and the long/short
+    ratios, not a fetch setting. Thirty days is too little to benchmark, so these
+    figures describe the market without being backed by a walk-forward result the way
+    the level derivations are. Funding is the exception and is tested in
+    conditional_study.py.
+    """
+    available: bool = Field(..., description="False when no positioning endpoint answered")
+    funding_rate: float = Field(0.0, description="Rate in force for the current 8h period")
+    funding_annualised_pct: float = Field(0.0, description="funding_rate x 3 x 365, as a percent")
+    seconds_to_funding: int = Field(0, description="Until the next settlement")
+    open_interest: float = Field(0.0, description="Contracts outstanding, base units")
+    open_interest_value_usd: float = Field(0.0)
+    oi_change_24h_pct: float = Field(0.0)
+    top_long_short_ratio: float = Field(0.0, description="Top traders by position size")
+    oi_price_quadrant: Optional[str] = Field(
+        None, description="NEW_LONGS, SHORT_COVERING, NEW_SHORTS or LONG_UNWIND over 24h")
+    oi_history_days: int = Field(30, description="Exchange cap on OI / ratio history")
+
+
+class LiquidityPoolOut(BaseModel):
+    price: float
+    kind: str = Field(..., description="UNTESTED_SWING, EQUAL_HIGHS, EQUAL_LOWS, or SESSION")
+    side: str = Field(..., description="ABOVE (sell-side stops) or BELOW (buy-side stops)")
+    strength: int = Field(..., description="Swings stacked at this price")
+    distance_pct: float
+
+
 class TelemetryPayload(BaseModel):
     timestamp: str
     symbol: str
@@ -62,6 +108,15 @@ class TelemetryPayload(BaseModel):
     volume_24h: float
     sr_levels: List[SRLevel]
     volume_profile: VolumeProfile
+    # Higher-resolution volume-at-price, alongside rather than instead of
+    # volume_profile. The 50-bin mid-price histogram above is the number the Pine
+    # indicator reproduces bar for bar; swapping it here would silently desync the
+    # chart from the dashboard again, which is the exact failure docs/STRATEGY.md
+    # section 2 is about. This is the better measurement; that one is the shared one.
+    tape_profile: Optional[Dict[str, Any]] = None
+    order_flow: Optional[OrderFlow] = None
+    positioning: Optional[Positioning] = None
+    liquidity_pools: List[LiquidityPoolOut] = Field(default_factory=list)
     market_summary: Dict[str, Any]
 
 
@@ -118,17 +173,7 @@ class QuantEngine:
             response.raise_for_status()
             data = response.json()
             
-            klines = []
-            for row in data:
-                klines.append({
-                    "open_time": float(row[0]),
-                    "open": float(row[1]),
-                    "high": float(row[2]),
-                    "low": float(row[3]),
-                    "close": float(row[4]),
-                    "volume": float(row[5]),
-                    "close_time": float(row[6])
-                })
+            klines = [self._parse_binance_kline_row(row) for row in data]
             logger.info(f"Successfully fetched {len(klines)} klines from Binance.")
             _KLINE_CACHE[cache_key] = (now, klines)
             return klines
@@ -159,7 +204,13 @@ class QuantEngine:
                     "low": float(row[3]),
                     "close": float(row[4]),
                     "volume": float(row[5]),
-                    "close_time": float(row[0]) + 900000.0
+                    "close_time": float(row[0]) + 900000.0,
+                    "quote_volume": float(row[6]) if len(row) > 6 else 0.0,
+                    "trades": 0,
+                    # Bybit's kline does not carry taker-buy volume. None rather than a
+                    # neutral fill, so order-flow features can tell "no data" from
+                    # "balanced". See _parse_binance_kline_row.
+                    "taker_buy_base": None
                 })
             logger.info(f"Successfully fetched {len(klines)} klines from Bybit.")
             _KLINE_CACHE[cache_key] = (now, klines)
@@ -173,7 +224,18 @@ class QuantEngine:
             raise RuntimeError(f"Failed to fetch market data from all REST endpoints: {err}")
 
     @staticmethod
-    def _parse_binance_kline_row(row: List[Any]) -> Dict[str, float]:
+    def _parse_binance_kline_row(row: List[Any]) -> Dict[str, Any]:
+        """
+        Binance ships taker-buy base volume in field 9 of every kline. It is the only
+        free, historical order-flow figure the REST API carries -- aggregate trades
+        would have to be paged a million rows at a time to reconstruct it -- so it is
+        kept rather than dropped. `taker_buy_base` minus the rest of the volume is the
+        bar's signed taker delta, which src/tape_profile.py turns into CVD.
+
+        It is None on the Bybit fallback, which has no equivalent field. Consumers must
+        treat None as "unavailable" rather than substituting a neutral value: a fake
+        zero delta is indistinguishable from a genuinely balanced bar.
+        """
         return {
             "open_time": float(row[0]),
             "open": float(row[1]),
@@ -181,7 +243,10 @@ class QuantEngine:
             "low": float(row[3]),
             "close": float(row[4]),
             "volume": float(row[5]),
-            "close_time": float(row[6])
+            "close_time": float(row[6]),
+            "quote_volume": float(row[7]),
+            "trades": int(row[8]),
+            "taker_buy_base": float(row[9])
         }
 
     def fetch_klines_paginated(self, total: int) -> List[Dict[str, float]]:
@@ -463,6 +528,95 @@ class QuantEngine:
 
         self.apply_volume_confluence(sr_levels, volume_prof, current_price)
 
+        # Imported here rather than at module scope: these are additive signals, and a
+        # failure to compute one should degrade the telemetry, not stop the pipeline
+        # that feeds the dashboard and the briefings.
+        tape: Optional[Dict[str, Any]] = None
+        flow: Optional[OrderFlow] = None
+        pools_out: List[LiquidityPoolOut] = []
+        try:
+            import tape_profile
+            import liquidity_pools
+
+            prof = tape_profile.build_profile(window)
+            tape = {
+                "vpoc": prof.vpoc,
+                "value_area_high": prof.value_area_high,
+                "value_area_low": prof.value_area_low,
+                "bin_width": prof.bin_width,
+                "hvn_zones": prof.hvn_zones,
+                "lvn_zones": prof.lvn_zones,
+                "bins": [b.model_dump() for b in prof.bins]
+            }
+
+            series = tape_profile.cvd(window)
+            if series is None:
+                flow = OrderFlow(available=False)
+            else:
+                divergence = tape_profile.cvd_divergence(window, len(window) - 1)
+                ratio = tape_profile.delta_ratio(window[-1])
+                flow = OrderFlow(
+                    available=True,
+                    cvd=round(series[-1], 3),
+                    cvd_24h=round(series[-1] - series[-96], 3) if len(series) > 96 else round(series[-1], 3),
+                    last_bar_delta_ratio=round(ratio or 0.0, 4),
+                    divergence=round(divergence or 0.0, 4)
+                )
+
+            for p in liquidity_pools.all_pools(window):
+                pools_out.append(LiquidityPoolOut(
+                    price=round(p.price, 2),
+                    kind=p.kind,
+                    side=p.side,
+                    strength=p.strength,
+                    distance_pct=round((p.price - current_price) / current_price * 100.0, 2)
+                ))
+            pools_out.sort(key=lambda p: abs(p.distance_pct))
+            pools_out = pools_out[:12]
+        except Exception as err:
+            logger.warning(f"Extended signals unavailable this run: {err}")
+
+        # Positioning is a separate try: it is the only extended signal that makes
+        # network calls, so it is also the only one that can fail for reasons having
+        # nothing to do with this machine. A dead endpoint should not cost the
+        # locally-computed pools and profile.
+        pos: Optional[Positioning] = None
+        try:
+            import positioning as positioning_mod
+
+            snap = positioning_mod.snapshot(self.symbol, self.interval)
+            if snap.get("available"):
+                # Pair the 24h OI change with the 24h price change to get the quadrant.
+                # A 0.1% deadband on both legs keeps a flat tape out of a quadrant it
+                # does not belong in.
+                price_24h = None
+                if len(window) > 96 and window[-97]["close"]:
+                    price_24h = (window[-1]["close"] - window[-97]["close"]) / window[-97]["close"]
+                quadrant = positioning_mod.oi_price_quadrant(
+                    snap.get("oi_change_24h_pct", 0.0) / 100.0, price_24h, deadband=0.001)
+
+                pos = Positioning(
+                    available=True,
+                    funding_rate=round(snap.get("funding_rate", 0.0), 8),
+                    funding_annualised_pct=round(snap.get("annualised_pct", 0.0), 3),
+                    seconds_to_funding=int(snap.get("seconds_to_funding", 0)),
+                    open_interest=round(snap.get("open_interest", 0.0), 3),
+                    open_interest_value_usd=round(snap.get("open_interest_value", 0.0), 2),
+                    oi_change_24h_pct=round(snap.get("oi_change_24h_pct", 0.0), 3),
+                    top_long_short_ratio=round(snap.get("top_long_short_ratio", 0.0), 4),
+                    oi_price_quadrant=quadrant,
+                    oi_history_days=snap.get("history_limit_days", 30)
+                )
+        except Exception as err:
+            logger.warning(f"Positioning unavailable this run: {err}")
+
+        # The summary has to describe the levels that ship, not every cluster found.
+        # Counting across all of them while publishing the nearest twelve made the
+        # dashboard's stat cards disagree with its own table -- 12 supports claimed
+        # above a list showing 11. `levels_tracked` keeps the total available for
+        # anyone who wants it, under a name that says what it counts.
+        published = sr_levels[:12]
+
         telemetry = TelemetryPayload(
             timestamp=datetime.now(timezone.utc).isoformat(),
             symbol=self.symbol,
@@ -471,14 +625,19 @@ class QuantEngine:
             high_24h=high_24h,
             low_24h=low_24h,
             volume_24h=volume_24h,
-            sr_levels=sr_levels[:12],  # Top 12 closest S/R levels
+            sr_levels=published,  # Top 12 closest S/R levels
             volume_profile=volume_prof,
+            tape_profile=tape,
+            order_flow=flow,
+            positioning=pos,
+            liquidity_pools=pools_out,
             market_summary={
                 "total_candles_analyzed": len(window),
                 "pine_pivots_found": len(pivots),
-                "support_levels_count": len([l for l in sr_levels if l.type == "SUPPORT"]),
-                "resistance_levels_count": len([l for l in sr_levels if l.type == "RESISTANCE"]),
-                "high_conviction_count": len([l for l in sr_levels if l.conviction == "HIGH"])
+                "levels_tracked": len(sr_levels),
+                "support_levels_count": len([l for l in published if l.type == "SUPPORT"]),
+                "resistance_levels_count": len([l for l in published if l.type == "RESISTANCE"]),
+                "high_conviction_count": len([l for l in published if l.conviction == "HIGH"])
             }
         )
 

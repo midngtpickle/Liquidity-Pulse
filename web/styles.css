@@ -420,6 +420,26 @@ body {
   color: var(--text-dim);
 }
 
+/* The briefing regenerates independently of the telemetry around it, so its badge
+   carries the artifact's age rather than a fixed "live". Amber, matching the
+   order-book completeness warnings, because both say the same thing: this number
+   is not as current as the ones beside it. */
+.badge-success {
+  background: rgba(0, 230, 118, 0.15);
+  color: var(--green);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+}
+
+.badge-warn {
+  background: rgba(255, 183, 77, 0.14);
+  color: #ffb74d;
+  border: 1px solid rgba(255, 183, 77, 0.35);
+}
+
+.briefing-content.briefing-stale {
+  opacity: 0.72;
+}
+
 /* Depth Bands */
 .depth-bands-grid {
   display: flex;
@@ -557,6 +577,131 @@ body {
 @media (max-width: 640px) {
   .stats-grid { grid-template-columns: 1fr; }
   .navbar { flex-direction: column; gap: 14px; align-items: flex-start; }
+}
+
+/* ---- Positioning ------------------------------------------------------ */
+.pos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.pos-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.pos-item-wide {
+  grid-column: 1 / -1;
+}
+
+.pos-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.pos-value {
+  margin-top: 3px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pos-sub {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* Amber, matching the order-book completeness warnings, because it says the same
+   kind of thing: this number is not backed by what the others are backed by. */
+.pos-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #ffb74d;
+  background: rgba(255, 183, 77, 0.08);
+  border: 1px solid rgba(255, 183, 77, 0.22);
+}
+
+.pos-empty {
+  padding: 12px;
+  font-size: 12px;
+}
+
+/* ---- Liquidity pools -------------------------------------------------- */
+/* Styled distinctly from the S/R table on purpose. The two look similar enough
+   structurally that a reader could take a pool for a support level, and the
+   benchmark says they behave the opposite way. */
+.pools-note {
+  padding: 10px 18px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pools-note strong {
+  color: var(--cyan);
+}
+
+.card-pools .data-table td {
+  font-size: 12px;
+}
+
+/* ---- Complete-span imbalance ----------------------------------------- */
+/* Given top billing over the three wider bands because it is the only one whose
+   two sides are both fully known. Narrow, but comparable across time. */
+.depth-complete-span {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.depth-complete-span .cs-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.depth-complete-span .cs-width {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.depth-complete-span .cs-value {
+  margin-top: 4px;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.depth-complete-span .cs-tag {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.depth-complete-span .cs-detail {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-dim);
 }
 
 /* ---- Order book completeness ----------------------------------------- */

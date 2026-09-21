@@ -287,14 +287,30 @@ class SRBacktester:
         lookback: int = 500,
         horizon: int = 50,
         min_touches: int = 2,
-        control_seeds: int = 5
+        control_seeds: int = 5,
+        anchor: str = "entry"
     ) -> Dict[str, Any]:
         """
         Walk-forward evaluation.
 
         At each fold, S/R levels are derived from the trailing `lookback` candles and
         tested over the next `horizon` candles, then the window advances by `horizon`.
+
+        `anchor` defaults to "entry", which is a change of default and not of method.
+        Measuring from the level inflates the hold rate by construction -- a test
+        entering at the far edge of a +/-0.35% zone leaves the target 0.15% away and
+        the barrier 0.70%, so it reports the geometry of the zone more than the
+        behaviour of price. That default produced an 86.34% headline here while
+        derivation_study.py, which anchors on entry, measured the same levels at 41%.
+        Anyone reading the two side by side would have concluded the wrong thing about
+        both.
+
+        Entry anchoring with equal target and margin has a ~50% random-walk baseline,
+        so the number means something on its own. "level" is still available for
+        comparison, and print_summary() labels it as inflated when it is used.
         """
+        if anchor not in ("entry", "level"):
+            raise ValueError(f"anchor must be 'entry' or 'level', got {anchor!r}")
         klines = self.history()
 
         if len(klines) < lookback + horizon:
@@ -311,7 +327,8 @@ class SRBacktester:
             "lookback": lookback,
             "horizon": horizon,
             "min_touches": min_touches,
-            "control_seeds": control_seeds
+            "control_seeds": control_seeds,
+            "anchor": anchor
         }
 
         results: Dict[str, Any] = {
@@ -357,7 +374,7 @@ class SRBacktester:
 
             fold_records = self.evaluate_fold(
                 active_levels, test_klines, cluster_threshold_pct,
-                target_pct, break_margin_pct, resolve_bars
+                target_pct, break_margin_pct, resolve_bars, anchor
             )
 
             fold_counts = {outcome: 0 for outcome in OUTCOMES}
@@ -374,7 +391,7 @@ class SRBacktester:
                 control = self.control_levels(active_levels, rngs[seed_index], cluster_threshold_pct)
                 for record in self.evaluate_fold(
                     control, test_klines, cluster_threshold_pct,
-                    target_pct, break_margin_pct, resolve_bars
+                    target_pct, break_margin_pct, resolve_bars, anchor
                 ):
                     control_totals[seed_index][record["outcome"]] += 1
 
@@ -442,8 +459,11 @@ class SRBacktester:
         print(f"History:           {results['total_candles']} candles over {results['folds']} folds")
         print(f"Level derivation:  {p['lookback']} trailing candles, "
               f"zone +/-{p['cluster_threshold_pct'] * 100:.2f}%, min {p['min_touches']} touches")
+        anchor = p.get("anchor", "entry")
         print(f"Outcome rule:      target {p['target_pct'] * 100:.2f}% / "
               f"break {p['break_margin_pct'] * 100:.2f}% within {p['resolve_bars']} candles")
+        print(f"Measured from:     {'entry price' if anchor == 'entry' else 'the level itself'}"
+              f"  ({'~50% random-walk baseline' if anchor == 'entry' else 'INFLATED - see below'})")
         print(f"Avg levels/fold:   {results['avg_levels_per_fold']}")
         print("-" * 74)
         print(f"Tests recorded:    {n}")
@@ -452,6 +472,15 @@ class SRBacktester:
         print(f"  UNRESOLVED       {totals['UNRESOLVED']}"
               f"   ({totals['UNRESOLVED'] / n * 100:.1f}% of tests)" if n else "")
         print(f"HOLD RATE:         {results['hold_rate_pct']}%   (of {resolved} resolved)")
+        if anchor == "level":
+            # Loud, because this number invites exactly one misreading and it is a
+            # flattering one. Measured from the level, a test entering at the far edge
+            # of the zone has its target 0.15% away and its barrier 0.70% away; the
+            # hold rate that produces is mostly the shape of the zone.
+            print("  ^ INFLATED BY CONSTRUCTION. Measured from the level, not from entry,")
+            print("    so the target sits closer than the barrier on most tests. Compare")
+            print("    only against the control below, never against 50%. Re-run with")
+            print("    --anchor entry for a rate that means something on its own.")
         print("-" * 74)
         print(f"{'TIER':<10}{'HOLD':>8}{'BREAK':>8}{'UNRES':>8}{'HOLD RATE':>12}")
         for tier in CONVICTION_TIERS:
@@ -492,6 +521,10 @@ if __name__ == "__main__":
     parser.add_argument("--min-touches", type=int, default=2)
     parser.add_argument("--control-seeds", type=int, default=5,
                         help="Random-level control runs (0 disables)")
+    parser.add_argument("--anchor", choices=["entry", "level"], default="entry",
+                        help="Measure the outcome from the entry price (default, ~50%% "
+                             "random-walk baseline) or from the level itself (inflated "
+                             "by the zone geometry; kept for comparison only)")
     args = parser.parse_args()
 
     backtester = SRBacktester(symbol="BTCUSDT", interval="15m", total_candles=args.candles)
@@ -502,7 +535,8 @@ if __name__ == "__main__":
         lookback=args.lookback,
         horizon=args.horizon,
         min_touches=args.min_touches,
-        control_seeds=args.control_seeds
+        control_seeds=args.control_seeds,
+        anchor=args.anchor
     )
     backtester.print_summary(res)
 

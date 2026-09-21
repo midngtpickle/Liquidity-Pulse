@@ -61,7 +61,7 @@ Liquidity-Pulse/
 │   ├── __init__.py                    # Source package initializer
 │   ├── init.py                        # Alternative initializer alias
 │   ├── quant_engine.py                # REST data fetcher, S/R clustering & volume profile engine
-│   ├── ws_feed.py                     # Real-time WebSocket depth delta & liquidation cascade monitor
+│   ├── ws_feed.py                     # Binance depth delta + Bybit/OKX liquidation cascade monitor
 │   ├── sentinel.py                    # Session intelligence orchestrator & briefing generator
 │   ├── telegram_bot.py                # Telegram Bot API alert dispatcher
 │   ├── discord_webhook.py             # Discord Webhook rich visual embed dispatcher
@@ -110,7 +110,7 @@ python src/sentinel.py
 ```
 
 ### 4. Run the Real-time WebSocket Feed
-Monitors order book depth imbalance (0.5%, 1%, 2% bands) and liquidation cascades (> $5,000,000 in 3-minute sliding window):
+Monitors order book depth imbalance (0.5%, 1%, 2% bands) from Binance, and liquidation cascades (> $5,000,000 in a 3-minute sliding window) from **Bybit and OKX** — Binance accepts a `forceOrder` subscription and never sends anything, verified over 8.7 hours of uptime with zero events:
 ```bash
 python src/ws_feed.py --duration 30
 ```
@@ -126,7 +126,7 @@ python src/ws_feed.py --duration 30
    - ⚡ **MEDIUM**: $2$ touch points.
    - ▫️ **LOW / MINOR**: Isolated pivot points.
 4. **Volume Profile Analysis**: Calculates VPOC (Volume Point of Control), HVNs (High Volume Nodes), and LVNs (Low Volume Nodes).
-5. **Liquidity Cascade Alerting**: Tracks force orders over a 3-minute sliding window and alerts on $> \$5,000,000$ cascades.
+5. **Liquidity Cascade Alerting**: Tracks liquidations across Bybit and OKX over a 3-minute sliding window and alerts on $> \$5,000,000$ cascades. The threshold predates the venue change and now sums a smaller population, so it is a number to re-tune, not one to trust.
 
 ---
 

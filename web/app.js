@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let _lastSRFingerprint = "";
   let _lastHeaderFingerprint = "";
   let _lastVPFingerprint = "";
+  let _lastPoolsFingerprint = "";
 
   const btnRefresh = document.getElementById("btn-refresh");
   const filterBtns = document.querySelectorAll(".filter-btn");
@@ -71,6 +72,8 @@ document.addEventListener("DOMContentLoaded", () => {
       telemetryData = await res.json();
       renderHeaderAndStats();
       renderSRTable();
+      renderPools();
+      renderPositioning();
       renderVolumeProfileChart();
     } catch (err) {
       console.error("Telemetry fetch error:", err);
@@ -100,11 +103,47 @@ document.addEventListener("DOMContentLoaded", () => {
         // DOMPurify sanitization against XSS attacks
         const cleanHtml = typeof DOMPurify !== "undefined" ? DOMPurify.sanitize(rawHtml) : rawHtml;
         briefingContainer.innerHTML = cleanHtml;
-        document.getElementById("briefing-timestamp").innerText = "Updated Live";
+        renderBriefingAge(data.age_seconds);
       }
     } catch (err) {
       console.error("Briefing fetch error:", err);
     }
+  }
+
+  // The briefing only regenerates when sentinel.py runs or /api/refresh is posted,
+  // while the panels around it refresh on their own. A stale one used to render
+  // under a green "Updated Live" badge, so a ten-day-old BEARISH call sat directly
+  // beneath a live BULLISH one. Say the age, and stop calling it live once the
+  // telemetry beside it has moved on.
+  const BRIEFING_STALE_AFTER_S = 15 * 60;
+
+  function renderBriefingAge(ageSeconds) {
+    const badge = document.getElementById("briefing-timestamp");
+    if (!badge) return;
+
+    if (ageSeconds === null || ageSeconds === undefined) {
+      badge.innerText = "Never generated";
+      badge.className = "badge badge-warn";
+      badge.title = "Run sentinel.py, or hit Refresh Telemetry, to generate one.";
+      return;
+    }
+
+    const stale = ageSeconds >= BRIEFING_STALE_AFTER_S;
+    badge.innerText = stale ? `Stale — ${formatAge(ageSeconds)} old` : "Updated Live";
+    badge.className = stale ? "badge badge-warn" : "badge badge-success";
+    badge.title = stale
+      ? "This briefing predates the live telemetry above it. Hit Refresh Telemetry to regenerate."
+      : "";
+
+    const container = document.getElementById("briefing-container");
+    if (container) container.classList.toggle("briefing-stale", stale);
+  }
+
+  function formatAge(s) {
+    if (s < 90) return `${Math.round(s)}s`;
+    if (s < 5400) return `${Math.round(s / 60)}m`;
+    if (s < 172800) return `${Math.round(s / 3600)}h`;
+    return `${Math.round(s / 86400)}d`;
   }
 
   async function triggerManualRefresh() {
@@ -136,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const vol24h = telemetryData.volume_24h || 0;
     const summary = telemetryData.market_summary || {};
 
-    const fingerprint = `${currentPrice}_${vpoc}_${high24h}_${low24h}_${vol24h}_${summary.high_conviction_count}`;
+    const fingerprint = `${currentPrice}_${vpoc}_${high24h}_${low24h}_${vol24h}_${summary.high_conviction_count}_${telemetryData.order_flow?.cvd ?? "x"}`;
     if (fingerprint === _lastHeaderFingerprint) return;
     _lastHeaderFingerprint = fingerprint;
 
@@ -159,6 +198,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("header-session").innerText = sessionName;
 
+    renderOrderFlow(telemetryData.order_flow);
+
     // Market Bias
     const biasElem = document.getElementById("stat-bias");
     if (currentPrice > vpoc) {
@@ -168,6 +209,157 @@ document.addEventListener("DOMContentLoaded", () => {
       biasElem.innerText = "BEARISH";
       biasElem.className = "stat-value text-red";
     }
+  }
+
+  // Taker flow. Binance reports per-kline taker-buy volume, so this is who crossed
+  // the spread rather than an inference from candle shape. Absent on the Bybit
+  // fallback, which is shown as "no data" and never as a balanced market.
+  function renderOrderFlow(flow) {
+    const valueEl = document.getElementById("stat-cvd");
+    const subEl = document.getElementById("stat-cvd-sub");
+    if (!valueEl || !subEl) return;
+
+    if (!flow || !flow.available) {
+      valueEl.innerText = "n/a";
+      valueEl.className = "stat-value text-muted";
+      subEl.innerText = "Venue supplies no taker data";
+      return;
+    }
+
+    const cvd = flow.cvd || 0;
+    valueEl.innerText = `${cvd > 0 ? "+" : ""}${cvd.toLocaleString(undefined, {maximumFractionDigits: 0})} BTC`;
+    valueEl.className = `stat-value ${cvd > 0 ? "text-green" : (cvd < 0 ? "text-red" : "text-muted")}`;
+
+    const d24 = flow.cvd_24h || 0;
+    const div = flow.divergence || 0;
+    // Divergence is signed CVD-minus-price movement, both scaled by their own recent
+    // magnitude, so it reads as "flow is running ahead of / behind price".
+    const divNote = Math.abs(div) < 1
+      ? "flow tracking price"
+      : (div > 0 ? "buying not lifting price" : "selling not pressing price");
+    subEl.innerText = `24h ${d24 > 0 ? "+" : ""}${d24.toLocaleString(undefined, {maximumFractionDigits: 0})} BTC · ${divNote}`;
+  }
+
+  const QUADRANT = {
+    NEW_LONGS: ["New longs", "price up on rising OI — fresh money joining"],
+    SHORT_COVERING: ["Short covering", "price up on falling OI — positions closing, not opening"],
+    NEW_SHORTS: ["New shorts", "price down on rising OI — fresh money selling"],
+    LONG_UNWIND: ["Long unwind", "price down on falling OI — positions closing, not opening"]
+  };
+
+  function fmtCountdown(s) {
+    if (!s || s < 0) return "—";
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
+
+  // Open interest, funding and crowd ratio. Deliberately carries a caveat the other
+  // cards do not: the exchange caps OI and ratio history at 30 days, which is far too
+  // little for the walk-forward benchmark, so unlike the level derivations these
+  // numbers have never been tested. They describe; they do not predict.
+  function renderPositioning() {
+    const grid = document.getElementById("positioning-grid");
+    const note = document.getElementById("positioning-note");
+    if (!grid) return;
+
+    const p = telemetryData?.positioning;
+    if (!p || !p.available) {
+      grid.innerHTML = `<div class="pos-empty text-muted">Positioning endpoints unavailable.</div>`;
+      if (note) note.hidden = true;
+      return;
+    }
+
+    const fr = p.funding_rate || 0;
+    const ann = p.funding_annualised_pct || 0;
+    // Funding sign says who pays whom, which is the readable part.
+    const frClass = fr > 0 ? "text-red" : (fr < 0 ? "text-green" : "text-muted");
+    const frWho = fr > 0 ? "longs pay shorts" : (fr < 0 ? "shorts pay longs" : "flat");
+
+    const oiChange = p.oi_change_24h_pct || 0;
+    const oiClass = oiChange > 0 ? "text-green" : (oiChange < 0 ? "text-red" : "text-muted");
+    const oiBn = (p.open_interest_value_usd || 0) / 1e9;
+
+    const ls = p.top_long_short_ratio || 0;
+    const lsClass = ls > 1 ? "text-green" : (ls > 0 && ls < 1 ? "text-red" : "text-muted");
+
+    const q = QUADRANT[p.oi_price_quadrant];
+
+    grid.innerHTML = `
+      <div class="pos-item">
+        <div class="pos-label">Funding (8h)</div>
+        <div class="pos-value ${frClass}">${(fr * 100).toFixed(4)}%</div>
+        <div class="pos-sub">${ann.toFixed(1)}%/yr · ${frWho}</div>
+      </div>
+      <div class="pos-item">
+        <div class="pos-label">Next funding</div>
+        <div class="pos-value">${fmtCountdown(p.seconds_to_funding)}</div>
+        <div class="pos-sub">settles every 8h</div>
+      </div>
+      <div class="pos-item">
+        <div class="pos-label">Open interest</div>
+        <div class="pos-value">$${oiBn.toFixed(2)}B</div>
+        <div class="pos-sub ${oiClass}">${oiChange > 0 ? "+" : ""}${oiChange.toFixed(2)}% 24h</div>
+      </div>
+      <div class="pos-item">
+        <div class="pos-label">Top traders L/S</div>
+        <div class="pos-value ${lsClass}">${ls.toFixed(2)}</div>
+        <div class="pos-sub">by position size</div>
+      </div>
+      ${q ? `<div class="pos-item pos-item-wide">
+        <div class="pos-label">OI vs price, 24h</div>
+        <div class="pos-value">${q[0]}</div>
+        <div class="pos-sub">${q[1]}</div>
+      </div>` : ""}
+    `;
+
+    if (note) {
+      note.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>Binance caps open interest and long/short history at <strong>${p.oi_history_days} days</strong> — too short for the walk-forward benchmark, so these are <strong>untested</strong>, unlike the S/R derivations. Funding <em>was</em> tested across 36 conditions and separated from its control in none of them. Read this card as description, not signal.</span>`;
+      note.hidden = false;
+    }
+  }
+
+  const POOL_LABEL = {
+    UNTESTED_SWING: "Untested swing",
+    EQUAL_HIGHS: "Equal highs",
+    EQUAL_LOWS: "Equal lows",
+    SESSION: "Session extreme"
+  };
+
+  function renderPools() {
+    const body = document.getElementById("pools-tbody");
+    const note = document.getElementById("pools-note");
+    if (!body) return;
+
+    const pools = telemetryData?.liquidity_pools || [];
+    if (note) {
+      // Said once, here, rather than left for the reader to assume. The benchmark
+      // found these are reached more often than a displaced control and then
+      // reverse LESS often -- so they are targets, not places to fade.
+      note.innerHTML = pools.length
+        ? `Prices with unfilled stop orders behind them. The benchmark finds price is drawn <strong>through</strong> these and keeps going — treat them as targets, not as support or resistance.`
+        : `No untested pools in the current window.`;
+    }
+
+    const fingerprint = pools.map(p => `${p.price}_${p.kind}_${p.strength}_${p.distance_pct}`).join("|");
+    if (fingerprint === _lastPoolsFingerprint) return;
+    _lastPoolsFingerprint = fingerprint;
+
+    body.innerHTML = pools.map(p => {
+      const above = p.side === "ABOVE";
+      const sideBadge = above
+        ? `<span class="badge badge-resistance">Sell-side</span>`
+        : `<span class="badge badge-support">Buy-side</span>`;
+      const distClass = p.distance_pct > 0 ? "text-red" : "text-green";
+      const stacked = p.strength > 1 ? `<strong>×${p.strength}</strong>` : "—";
+      return `
+        <tr>
+          <td class="price-cell">$${p.price.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+          <td class="text-muted">${POOL_LABEL[p.kind] || p.kind}</td>
+          <td>${sideBadge}</td>
+          <td>${stacked}</td>
+          <td class="${distClass}">${p.distance_pct > 0 ? "+" : ""}${p.distance_pct.toFixed(2)}%</td>
+        </tr>`;
+    }).join("");
   }
 
   function renderSRTable() {
@@ -338,10 +530,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const deltaEl = itemEl.querySelector(".band-delta");
       if (deltaEl) {
-        deltaEl.textContent = isPartial ? `${deltaText} — floor` : deltaText;
+        // The depth sums are floors. The delta between them is not: it is a
+        // difference of two independently under-reported sides, biased in an
+        // unknown direction, and it drifts on its own for minutes after a seed as
+        // the diff stream fills the book in. Measured against the span the book is
+        // actually complete to, it disagreed even on sign about half the time.
+        deltaEl.textContent = isPartial ? `${deltaText} — unreliable` : deltaText;
         deltaEl.className = `band-delta ${deltaClass}`;
         deltaEl.title = isPartial
-          ? "Order book is not known to be complete across this band; true depth is at least this much."
+          ? "Depths are floors across this band. Their delta is not — both sides are under-reported by unknown and unequal amounts, so treat the sign as unconfirmed and read the complete-span figure instead."
           : "";
       }
 
@@ -358,6 +555,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (askInfo) askInfo.innerHTML = `Asks: $${askUSD}M (${askPct}%) <i class="fa-solid fa-arrow-down"></i>`;
     });
 
+    renderCompleteSpan();
     renderDepthBookNote();
   }
 
@@ -377,8 +575,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const reach = Math.min(book.complete_bid_span_pct ?? 0, book.complete_ask_span_pct ?? 0);
-    noteEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Snapshot vouches for the book to ±${reach.toFixed(2)}% of mid. Bands marked <span class="band-partial">partial</span> extend past that, so their depth is under-reported and the delta is a floor.`;
+    const age = book.age_seconds ?? 0;
+    // The note is a flex row of icon + text, so the text has to stay inside one
+    // element. Inline tags left loose here become sibling flex items and the
+    // sentence renders as columns.
+    noteEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span>Snapshot vouches for the book to ±${reach.toFixed(2)}% of mid. Bands marked <span class="band-partial">partial</span> extend past that: their depths are floors, and their deltas are <strong>not</strong> — both sides are under-reported unequally, and they keep drifting as the stream fills the book in (seeded ${formatAge(age)} ago). Read the complete-span figure above them.</span>`;
     noteEl.hidden = false;
+  }
+
+  // The one depth number measured entirely inside the book's vouched-for reach, and
+  // therefore the only one comparable against a reading taken at another time.
+  function renderCompleteSpan() {
+    const el = document.getElementById("depth-complete-span");
+    if (!el) return;
+
+    const cs = depthData?.complete_span;
+    if (!cs || !cs.band_pct) {
+      el.hidden = true;
+      return;
+    }
+
+    const d = cs.imbalance_delta_pct;
+    const cls = d > 0 ? "text-green" : (d < 0 ? "text-red" : "text-muted");
+    const label = d > 0 ? "Bid Heavy" : (d < 0 ? "Ask Heavy" : "Balanced");
+    const bid = (cs.bid_depth_usd / 1_000_000).toFixed(2);
+    const ask = (cs.ask_depth_usd / 1_000_000).toFixed(2);
+
+    el.innerHTML = `
+      <div class="cs-label">Complete-book imbalance <span class="cs-width">±${cs.band_pct.toFixed(2)}% of mid</span></div>
+      <div class="cs-value ${cls}">${d > 0 ? "+" : ""}${d.toFixed(1)}% <span class="cs-tag">${label}</span></div>
+      <div class="cs-detail">Bids $${bid}M · Asks $${ask}M — both sides fully known across this span</div>
+    `;
+    el.hidden = false;
   }
 
   function showToast(msg, type = "success") {

@@ -94,7 +94,19 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
             self.send_json_response({"status": "healthy", "service": "LiquidityPulse"})
         else:
             # Fallback to static file handler
+            self._static_response = True
             super().do_GET()
+
+    def end_headers(self):
+        # SimpleHTTPRequestHandler serves web/ with only Last-Modified, and browsers
+        # heuristically cache that. A dashboard left open then keeps running the JS
+        # and CSS it already has, so an edit looks like it did nothing. The API
+        # responses set their own Cache-Control in send_json_response; this covers
+        # the static assets.
+        if getattr(self, "_static_response", False):
+            self.send_header("Cache-Control", "no-cache, must-revalidate")
+            self._static_response = False
+        super().end_headers()
 
     def do_POST(self):
         parsed = urlparse(self.path)
@@ -124,6 +136,10 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
             # If ws_feed hasn't written snapshot yet, synthesize fallback structure
             self.send_json_response({
                 "status": "waiting_for_feed",
+                "complete_span": {
+                    "bid_depth_usd": 0.0, "ask_depth_usd": 0.0,
+                    "imbalance_delta_pct": 0.0, "band_pct": 0.0
+                },
                 "bands": {
                     "0.5%": {"bid_depth_usd": 0.0, "ask_depth_usd": 0.0, "imbalance_delta_pct": 0.0},
                     "1.0%": {"bid_depth_usd": 0.0, "ask_depth_usd": 0.0, "imbalance_delta_pct": 0.0},
@@ -141,12 +157,25 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
 
     def handle_briefing_api(self):
         if not BRIEFING_PATH.exists():
-            self.send_json_response({"content": "# No briefing generated yet."}, status=200)
+            self.send_json_response(
+                {"content": "# No briefing generated yet.", "generated_at": None, "age_seconds": None},
+                status=200
+            )
             return
         try:
             with open(BRIEFING_PATH, "r", encoding="utf-8") as f:
                 content = f.read()
-            self.send_json_response({"content": content})
+            # The briefing is only rewritten by sentinel.py or POST /api/refresh, while
+            # telemetry refreshes on its own. Served without its age, a briefing days
+            # old renders beside live numbers and reads as current -- opposite price,
+            # opposite bias, same card. Ship the age so the client can say so.
+            mtime = BRIEFING_PATH.stat().st_mtime
+            generated = datetime.fromtimestamp(mtime, timezone.utc)
+            self.send_json_response({
+                "content": content,
+                "generated_at": generated.isoformat(),
+                "age_seconds": round(datetime.now(timezone.utc).timestamp() - mtime, 1)
+            })
         except Exception as err:
             logger.error(f"Error reading briefing: {err}")
             self.send_json_response({"error": str(err)}, status=500)

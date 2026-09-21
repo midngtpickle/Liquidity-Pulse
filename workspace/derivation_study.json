@@ -1,7 +1,7 @@
 {
   "symbol": "BTCUSDT",
   "interval": "15m",
-  "run_time_utc": "2026-08-26T11:22:48.252071+00:00",
+  "run_time_utc": "2026-09-21T08:19:58.129106+00:00",
   "params": {
     "total_candles": 20000,
     "folds": 390,
@@ -17,953 +17,1429 @@
   "derivations": [
     {
       "name": "pivot clusters (production)",
-      "avg_levels_per_fold": 9.91,
-      "tests": 2748,
-      "resolved": 2296,
+      "avg_levels_per_fold": 10.42,
+      "tests": 2956,
+      "resolved": 2517,
       "outcomes": {
-        "HOLD": 891,
-        "BREAK": 1405,
-        "UNRESOLVED": 452
+        "HOLD": 1041,
+        "BREAK": 1476,
+        "UNRESOLVED": 439
       },
-      "hold_rate_pct": 38.81,
-      "control_hold_rate_pct_mean": 38.73,
-      "control_hold_rate_pct_sd": 0.86,
-      "edge_points": 0.08,
-      "edge_sd": 0.09,
+      "hold_rate_pct": 41.36,
+      "control_hold_rate_pct_mean": 39.57,
+      "control_hold_rate_pct_sd": 0.83,
+      "edge_points": 1.79,
+      "edge_sd": 2.16,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 2685,
-          "unresolved": 63,
-          "hold_rate_pct": 37.13,
-          "control_mean_pct": 36.41,
-          "control_sd": 1.05,
-          "edge_points": 0.72,
-          "edge_sd": 0.69
+          "resolved": 2888,
+          "unresolved": 68,
+          "hold_rate_pct": 39.13,
+          "control_mean_pct": 37.99,
+          "control_sd": 0.83,
+          "edge_points": 1.14,
+          "edge_sd": 1.38
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 2553,
-          "unresolved": 195,
-          "hold_rate_pct": 47.51,
-          "control_mean_pct": 47.02,
-          "control_sd": 0.84,
-          "edge_points": 0.49,
-          "edge_sd": 0.59
+          "resolved": 2755,
+          "unresolved": 201,
+          "hold_rate_pct": 49.69,
+          "control_mean_pct": 48.54,
+          "control_sd": 1.33,
+          "edge_points": 1.15,
+          "edge_sd": 0.87
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 2175,
-          "unresolved": 573,
-          "hold_rate_pct": 48.51,
-          "control_mean_pct": 48.19,
-          "control_sd": 0.66,
-          "edge_points": 0.32,
-          "edge_sd": 0.48
+          "resolved": 2375,
+          "unresolved": 581,
+          "hold_rate_pct": 51.16,
+          "control_mean_pct": 49.44,
+          "control_sd": 0.9,
+          "edge_points": 1.72,
+          "edge_sd": 1.9
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 1370,
-          "unresolved": 1378,
-          "hold_rate_pct": 48.1,
-          "control_mean_pct": 48.44,
-          "control_sd": 1.02,
-          "edge_points": -0.34,
-          "edge_sd": 0.33
+          "resolved": 1459,
+          "unresolved": 1497,
+          "hold_rate_pct": 51.61,
+          "control_mean_pct": 50.46,
+          "control_sd": 1.61,
+          "edge_points": 1.15,
+          "edge_sd": 0.71
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 452,
-          "unresolved": 2296,
-          "hold_rate_pct": 47.79,
-          "control_mean_pct": 49.49,
-          "control_sd": 1.55,
-          "edge_points": -1.7,
-          "edge_sd": 1.1
+          "resolved": 422,
+          "unresolved": 2534,
+          "hold_rate_pct": 52.84,
+          "control_mean_pct": 50.04,
+          "control_sd": 2.84,
+          "edge_points": 2.8,
+          "edge_sd": 0.99
         }
       ]
     },
     {
       "name": "pivot clusters, 5+ touches",
-      "avg_levels_per_fold": 8,
-      "tests": 2446,
-      "resolved": 2048,
+      "avg_levels_per_fold": 8.52,
+      "tests": 2613,
+      "resolved": 2226,
       "outcomes": {
-        "HOLD": 800,
-        "BREAK": 1248,
-        "UNRESOLVED": 398
+        "HOLD": 919,
+        "BREAK": 1307,
+        "UNRESOLVED": 387
       },
-      "hold_rate_pct": 39.06,
-      "control_hold_rate_pct_mean": 39.06,
-      "control_hold_rate_pct_sd": 1.35,
-      "edge_points": -0.0,
-      "edge_sd": 0.0,
+      "hold_rate_pct": 41.28,
+      "control_hold_rate_pct_mean": 39.33,
+      "control_hold_rate_pct_sd": 0.97,
+      "edge_points": 1.96,
+      "edge_sd": 2.03,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 2392,
-          "unresolved": 54,
-          "hold_rate_pct": 37.5,
-          "control_mean_pct": 36.57,
-          "control_sd": 1.05,
-          "edge_points": 0.93,
-          "edge_sd": 0.89
+          "resolved": 2553,
+          "unresolved": 60,
+          "hold_rate_pct": 39.4,
+          "control_mean_pct": 38.23,
+          "control_sd": 0.79,
+          "edge_points": 1.18,
+          "edge_sd": 1.49
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 2277,
-          "unresolved": 169,
-          "hold_rate_pct": 48.18,
-          "control_mean_pct": 47.86,
-          "control_sd": 1.1,
-          "edge_points": 0.32,
-          "edge_sd": 0.29
+          "resolved": 2439,
+          "unresolved": 174,
+          "hold_rate_pct": 49.94,
+          "control_mean_pct": 48.88,
+          "control_sd": 1.62,
+          "edge_points": 1.06,
+          "edge_sd": 0.65
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 1933,
+          "resolved": 2100,
           "unresolved": 513,
-          "hold_rate_pct": 48.73,
-          "control_mean_pct": 48.25,
-          "control_sd": 1.76,
-          "edge_points": 0.48,
-          "edge_sd": 0.27
+          "hold_rate_pct": 51.29,
+          "control_mean_pct": 48.92,
+          "control_sd": 1.03,
+          "edge_points": 2.36,
+          "edge_sd": 2.3
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 1218,
-          "unresolved": 1228,
-          "hold_rate_pct": 49.26,
-          "control_mean_pct": 48.55,
-          "control_sd": 1.46,
-          "edge_points": 0.72,
-          "edge_sd": 0.49
+          "resolved": 1279,
+          "unresolved": 1334,
+          "hold_rate_pct": 51.37,
+          "control_mean_pct": 50.99,
+          "control_sd": 1.55,
+          "edge_points": 0.38,
+          "edge_sd": 0.25
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 405,
-          "unresolved": 2041,
-          "hold_rate_pct": 48.64,
-          "control_mean_pct": 49.41,
-          "control_sd": 2.64,
-          "edge_points": -0.77,
-          "edge_sd": 0.29
+          "resolved": 357,
+          "unresolved": 2256,
+          "hold_rate_pct": 54.62,
+          "control_mean_pct": 52.34,
+          "control_sd": 2.7,
+          "edge_points": 2.28,
+          "edge_sd": 0.84
         }
       ]
     },
     {
       "name": "HTF pivots (30/30)",
       "avg_levels_per_fold": 6.19,
-      "tests": 1800,
-      "resolved": 1534,
+      "tests": 1787,
+      "resolved": 1506,
       "outcomes": {
-        "HOLD": 585,
-        "BREAK": 949,
-        "UNRESOLVED": 266
+        "HOLD": 592,
+        "BREAK": 914,
+        "UNRESOLVED": 281
       },
-      "hold_rate_pct": 38.14,
-      "control_hold_rate_pct_mean": 40.72,
-      "control_hold_rate_pct_sd": 1.46,
-      "edge_points": -2.58,
-      "edge_sd": 1.77,
+      "hold_rate_pct": 39.31,
+      "control_hold_rate_pct_mean": 39.92,
+      "control_hold_rate_pct_sd": 1.52,
+      "edge_points": -0.61,
+      "edge_sd": 0.4,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 1755,
-          "unresolved": 45,
-          "hold_rate_pct": 38.92,
-          "control_mean_pct": 37.44,
-          "control_sd": 1.35,
-          "edge_points": 1.48,
-          "edge_sd": 1.1
+          "resolved": 1751,
+          "unresolved": 36,
+          "hold_rate_pct": 40.21,
+          "control_mean_pct": 38.1,
+          "control_sd": 0.72,
+          "edge_points": 2.11,
+          "edge_sd": 2.92
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 1675,
-          "unresolved": 125,
-          "hold_rate_pct": 46.63,
-          "control_mean_pct": 48.91,
-          "control_sd": 0.78,
-          "edge_points": -2.28,
-          "edge_sd": 2.91
+          "resolved": 1668,
+          "unresolved": 119,
+          "hold_rate_pct": 48.08,
+          "control_mean_pct": 48.74,
+          "control_sd": 1.82,
+          "edge_points": -0.66,
+          "edge_sd": 0.36
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 1440,
-          "unresolved": 360,
-          "hold_rate_pct": 47.01,
-          "control_mean_pct": 50.16,
-          "control_sd": 1.5,
-          "edge_points": -3.15,
-          "edge_sd": 2.1
+          "resolved": 1420,
+          "unresolved": 367,
+          "hold_rate_pct": 48.31,
+          "control_mean_pct": 48.98,
+          "control_sd": 1.49,
+          "edge_points": -0.67,
+          "edge_sd": 0.45
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 909,
-          "unresolved": 891,
-          "hold_rate_pct": 47.08,
-          "control_mean_pct": 51.01,
-          "control_sd": 2.64,
-          "edge_points": -3.93,
-          "edge_sd": 1.49
+          "resolved": 838,
+          "unresolved": 949,
+          "hold_rate_pct": 47.02,
+          "control_mean_pct": 50.79,
+          "control_sd": 2.19,
+          "edge_points": -3.78,
+          "edge_sd": 1.72
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 301,
-          "unresolved": 1499,
-          "hold_rate_pct": 45.51,
-          "control_mean_pct": 52.11,
-          "control_sd": 2.17,
-          "edge_points": -6.6,
-          "edge_sd": 3.04
+          "resolved": 244,
+          "unresolved": 1543,
+          "hold_rate_pct": 50.82,
+          "control_mean_pct": 49.11,
+          "control_sd": 3.11,
+          "edge_points": 1.71,
+          "edge_sd": 0.55
         }
       ]
     },
     {
       "name": "recent pivots (150 bars)",
-      "avg_levels_per_fold": 4.35,
-      "tests": 1834,
-      "resolved": 1563,
+      "avg_levels_per_fold": 4.42,
+      "tests": 1933,
+      "resolved": 1632,
       "outcomes": {
-        "HOLD": 631,
-        "BREAK": 932,
-        "UNRESOLVED": 271
+        "HOLD": 650,
+        "BREAK": 982,
+        "UNRESOLVED": 301
       },
-      "hold_rate_pct": 40.37,
-      "control_hold_rate_pct_mean": 40.2,
-      "control_hold_rate_pct_sd": 0.61,
-      "edge_points": 0.17,
-      "edge_sd": 0.28,
+      "hold_rate_pct": 39.83,
+      "control_hold_rate_pct_mean": 40.15,
+      "control_hold_rate_pct_sd": 1.7,
+      "edge_points": -0.33,
+      "edge_sd": 0.19,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 1791,
-          "unresolved": 43,
-          "hold_rate_pct": 38.14,
-          "control_mean_pct": 35.93,
-          "control_sd": 0.7,
-          "edge_points": 2.21,
-          "edge_sd": 3.15
+          "resolved": 1899,
+          "unresolved": 34,
+          "hold_rate_pct": 37.97,
+          "control_mean_pct": 37.5,
+          "control_sd": 1.36,
+          "edge_points": 0.47,
+          "edge_sd": 0.34
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 1708,
-          "unresolved": 126,
-          "hold_rate_pct": 48.42,
-          "control_mean_pct": 47.42,
-          "control_sd": 0.8,
-          "edge_points": 1.0,
-          "edge_sd": 1.25
+          "resolved": 1820,
+          "unresolved": 113,
+          "hold_rate_pct": 48.85,
+          "control_mean_pct": 49.26,
+          "control_sd": 1.02,
+          "edge_points": -0.41,
+          "edge_sd": 0.4
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 1481,
-          "unresolved": 353,
-          "hold_rate_pct": 49.63,
-          "control_mean_pct": 49.98,
-          "control_sd": 0.56,
-          "edge_points": -0.35,
-          "edge_sd": 0.63
+          "resolved": 1538,
+          "unresolved": 395,
+          "hold_rate_pct": 49.09,
+          "control_mean_pct": 49.88,
+          "control_sd": 1.69,
+          "edge_points": -0.79,
+          "edge_sd": 0.47
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 947,
-          "unresolved": 887,
-          "hold_rate_pct": 49.1,
-          "control_mean_pct": 49.28,
-          "control_sd": 0.49,
-          "edge_points": -0.18,
-          "edge_sd": 0.37
+          "resolved": 960,
+          "unresolved": 973,
+          "hold_rate_pct": 49.79,
+          "control_mean_pct": 51.08,
+          "control_sd": 2.1,
+          "edge_points": -1.29,
+          "edge_sd": 0.61
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 322,
-          "unresolved": 1512,
-          "hold_rate_pct": 53.11,
-          "control_mean_pct": 50.21,
-          "control_sd": 1.31,
-          "edge_points": 2.9,
-          "edge_sd": 2.21
+          "resolved": 296,
+          "unresolved": 1637,
+          "hold_rate_pct": 51.69,
+          "control_mean_pct": 54.94,
+          "control_sd": 2.19,
+          "edge_points": -3.25,
+          "edge_sd": 1.49
         }
       ]
     },
     {
       "name": "VPOC + HVN nodes",
       "avg_levels_per_fold": 10,
-      "tests": 2746,
-      "resolved": 2311,
+      "tests": 2694,
+      "resolved": 2284,
       "outcomes": {
-        "HOLD": 905,
-        "BREAK": 1406,
-        "UNRESOLVED": 435
+        "HOLD": 880,
+        "BREAK": 1404,
+        "UNRESOLVED": 410
       },
-      "hold_rate_pct": 39.16,
-      "control_hold_rate_pct_mean": 39.55,
-      "control_hold_rate_pct_sd": 1.63,
-      "edge_points": -0.39,
-      "edge_sd": 0.24,
+      "hold_rate_pct": 38.53,
+      "control_hold_rate_pct_mean": 38.91,
+      "control_hold_rate_pct_sd": 0.38,
+      "edge_points": -0.38,
+      "edge_sd": 1.01,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 2675,
-          "unresolved": 71,
-          "hold_rate_pct": 39.51,
-          "control_mean_pct": 38.05,
-          "control_sd": 1.5,
-          "edge_points": 1.47,
-          "edge_sd": 0.98
+          "resolved": 2627,
+          "unresolved": 67,
+          "hold_rate_pct": 39.44,
+          "control_mean_pct": 38.24,
+          "control_sd": 0.56,
+          "edge_points": 1.19,
+          "edge_sd": 2.14
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 2548,
-          "unresolved": 198,
-          "hold_rate_pct": 47.14,
-          "control_mean_pct": 48.15,
-          "control_sd": 1.17,
-          "edge_points": -1.02,
-          "edge_sd": 0.87
+          "resolved": 2484,
+          "unresolved": 210,
+          "hold_rate_pct": 47.71,
+          "control_mean_pct": 48.2,
+          "control_sd": 0.72,
+          "edge_points": -0.5,
+          "edge_sd": 0.69
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 2182,
-          "unresolved": 564,
-          "hold_rate_pct": 49.18,
-          "control_mean_pct": 48.37,
-          "control_sd": 1.37,
-          "edge_points": 0.8,
-          "edge_sd": 0.58
+          "resolved": 2147,
+          "unresolved": 547,
+          "hold_rate_pct": 48.72,
+          "control_mean_pct": 48.31,
+          "control_sd": 0.92,
+          "edge_points": 0.41,
+          "edge_sd": 0.45
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 1348,
-          "unresolved": 1398,
-          "hold_rate_pct": 49.04,
-          "control_mean_pct": 48.83,
-          "control_sd": 1.6,
-          "edge_points": 0.21,
-          "edge_sd": 0.13
+          "resolved": 1278,
+          "unresolved": 1416,
+          "hold_rate_pct": 52.74,
+          "control_mean_pct": 49.3,
+          "control_sd": 0.94,
+          "edge_points": 3.44,
+          "edge_sd": 3.66
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 435,
-          "unresolved": 2311,
-          "hold_rate_pct": 49.66,
-          "control_mean_pct": 51.79,
-          "control_sd": 1.15,
-          "edge_points": -2.14,
-          "edge_sd": 1.85
+          "resolved": 416,
+          "unresolved": 2278,
+          "hold_rate_pct": 57.45,
+          "control_mean_pct": 50.02,
+          "control_sd": 3.35,
+          "edge_points": 7.43,
+          "edge_sd": 2.22
         }
       ]
     },
     {
       "name": "LVN nodes",
-      "avg_levels_per_fold": 7.47,
-      "tests": 1591,
-      "resolved": 1332,
+      "avg_levels_per_fold": 7.35,
+      "tests": 1617,
+      "resolved": 1341,
       "outcomes": {
-        "HOLD": 540,
-        "BREAK": 792,
-        "UNRESOLVED": 259
+        "HOLD": 538,
+        "BREAK": 803,
+        "UNRESOLVED": 276
       },
-      "hold_rate_pct": 40.54,
-      "control_hold_rate_pct_mean": 39.91,
-      "control_hold_rate_pct_sd": 0.68,
-      "edge_points": 0.63,
-      "edge_sd": 0.93,
+      "hold_rate_pct": 40.12,
+      "control_hold_rate_pct_mean": 40.08,
+      "control_hold_rate_pct_sd": 0.88,
+      "edge_points": 0.04,
+      "edge_sd": 0.04,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 1566,
-          "unresolved": 25,
-          "hold_rate_pct": 38.44,
-          "control_mean_pct": 38.4,
-          "control_sd": 0.59,
-          "edge_points": 0.04,
-          "edge_sd": 0.07
+          "resolved": 1575,
+          "unresolved": 42,
+          "hold_rate_pct": 42.73,
+          "control_mean_pct": 38.32,
+          "control_sd": 0.74,
+          "edge_points": 4.41,
+          "edge_sd": 5.93
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 1470,
-          "unresolved": 121,
-          "hold_rate_pct": 47.96,
-          "control_mean_pct": 47.83,
-          "control_sd": 0.83,
-          "edge_points": 0.13,
-          "edge_sd": 0.16
+          "resolved": 1483,
+          "unresolved": 134,
+          "hold_rate_pct": 48.35,
+          "control_mean_pct": 47.93,
+          "control_sd": 1.19,
+          "edge_points": 0.42,
+          "edge_sd": 0.35
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 1242,
-          "unresolved": 349,
-          "hold_rate_pct": 50.72,
-          "control_mean_pct": 49.17,
-          "control_sd": 0.91,
-          "edge_points": 1.56,
-          "edge_sd": 1.7
+          "resolved": 1251,
+          "unresolved": 366,
+          "hold_rate_pct": 48.44,
+          "control_mean_pct": 49.85,
+          "control_sd": 1.78,
+          "edge_points": -1.41,
+          "edge_sd": 0.79
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 747,
-          "unresolved": 844,
-          "hold_rate_pct": 49.53,
-          "control_mean_pct": 47.5,
-          "control_sd": 1.03,
-          "edge_points": 2.03,
-          "edge_sd": 1.98
+          "resolved": 706,
+          "unresolved": 911,
+          "hold_rate_pct": 47.17,
+          "control_mean_pct": 52.01,
+          "control_sd": 1.87,
+          "edge_points": -4.84,
+          "edge_sd": 2.59
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 248,
-          "unresolved": 1343,
-          "hold_rate_pct": 52.82,
-          "control_mean_pct": 49.42,
-          "control_sd": 0.93,
-          "edge_points": 3.4,
-          "edge_sd": 3.67
+          "resolved": 186,
+          "unresolved": 1431,
+          "hold_rate_pct": 44.09,
+          "control_mean_pct": 53.4,
+          "control_sd": 2.1,
+          "edge_points": -9.32,
+          "edge_sd": 4.44
         }
       ]
     },
     {
       "name": "prior-day high/low",
       "avg_levels_per_fold": 2,
-      "tests": 825,
-      "resolved": 694,
+      "tests": 805,
+      "resolved": 684,
       "outcomes": {
-        "HOLD": 280,
-        "BREAK": 414,
-        "UNRESOLVED": 131
+        "HOLD": 248,
+        "BREAK": 436,
+        "UNRESOLVED": 121
       },
-      "hold_rate_pct": 40.35,
-      "control_hold_rate_pct_mean": 41.6,
-      "control_hold_rate_pct_sd": 2.86,
-      "edge_points": -1.25,
-      "edge_sd": 0.44,
+      "hold_rate_pct": 36.26,
+      "control_hold_rate_pct_mean": 41.98,
+      "control_hold_rate_pct_sd": 1.36,
+      "edge_points": -5.73,
+      "edge_sd": 4.22,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 802,
-          "unresolved": 23,
-          "hold_rate_pct": 38.15,
-          "control_mean_pct": 37.92,
-          "control_sd": 1.26,
-          "edge_points": 0.24,
-          "edge_sd": 0.19
+          "resolved": 790,
+          "unresolved": 15,
+          "hold_rate_pct": 40.38,
+          "control_mean_pct": 38.29,
+          "control_sd": 1.22,
+          "edge_points": 2.09,
+          "edge_sd": 1.72
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 764,
-          "unresolved": 61,
-          "hold_rate_pct": 48.95,
+          "resolved": 757,
+          "unresolved": 48,
+          "hold_rate_pct": 47.56,
           "control_mean_pct": 50.2,
-          "control_sd": 0.4,
-          "edge_points": -1.25,
-          "edge_sd": 3.15
+          "control_sd": 1.38,
+          "edge_points": -2.65,
+          "edge_sd": 1.92
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 660,
-          "unresolved": 165,
-          "hold_rate_pct": 49.24,
-          "control_mean_pct": 50.89,
-          "control_sd": 2.01,
-          "edge_points": -1.65,
-          "edge_sd": 0.82
+          "resolved": 641,
+          "unresolved": 164,
+          "hold_rate_pct": 45.71,
+          "control_mean_pct": 50.99,
+          "control_sd": 1.18,
+          "edge_points": -5.28,
+          "edge_sd": 4.48
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 412,
-          "unresolved": 413,
-          "hold_rate_pct": 40.29,
-          "control_mean_pct": 48.18,
-          "control_sd": 1.9,
-          "edge_points": -7.89,
-          "edge_sd": 4.15
+          "resolved": 374,
+          "unresolved": 431,
+          "hold_rate_pct": 43.05,
+          "control_mean_pct": 51.79,
+          "control_sd": 1.44,
+          "edge_points": -8.74,
+          "edge_sd": 6.07
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 136,
+          "resolved": 116,
           "unresolved": 689,
-          "hold_rate_pct": 44.85,
-          "control_mean_pct": 50.99,
-          "control_sd": 4.24,
-          "edge_points": -6.14,
-          "edge_sd": 1.45
+          "hold_rate_pct": 52.59,
+          "control_mean_pct": 50.88,
+          "control_sd": 4.05,
+          "edge_points": 1.71,
+          "edge_sd": 0.42
         }
       ]
     },
     {
       "name": "round numbers",
-      "avg_levels_per_fold": 2.41,
-      "tests": 1159,
-      "resolved": 1014,
+      "avg_levels_per_fold": 2.18,
+      "tests": 1055,
+      "resolved": 915,
       "outcomes": {
-        "HOLD": 382,
-        "BREAK": 632,
-        "UNRESOLVED": 145
+        "HOLD": 352,
+        "BREAK": 563,
+        "UNRESOLVED": 140
       },
-      "hold_rate_pct": 37.67,
-      "control_hold_rate_pct_mean": 39.1,
-      "control_hold_rate_pct_sd": 0.88,
-      "edge_points": -1.43,
-      "edge_sd": 1.62,
+      "hold_rate_pct": 38.47,
+      "control_hold_rate_pct_mean": 39.91,
+      "control_hold_rate_pct_sd": 1.0,
+      "edge_points": -1.44,
+      "edge_sd": 1.44,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 1130,
-          "unresolved": 29,
-          "hold_rate_pct": 35.58,
-          "control_mean_pct": 32.91,
-          "control_sd": 0.7,
-          "edge_points": 2.67,
-          "edge_sd": 3.82
+          "resolved": 1037,
+          "unresolved": 18,
+          "hold_rate_pct": 37.22,
+          "control_mean_pct": 35.5,
+          "control_sd": 2.06,
+          "edge_points": 1.72,
+          "edge_sd": 0.84
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 1097,
+          "resolved": 993,
           "unresolved": 62,
-          "hold_rate_pct": 47.77,
-          "control_mean_pct": 45.86,
-          "control_sd": 0.88,
-          "edge_points": 1.91,
-          "edge_sd": 2.17
+          "hold_rate_pct": 47.43,
+          "control_mean_pct": 46.96,
+          "control_sd": 1.96,
+          "edge_points": 0.47,
+          "edge_sd": 0.24
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 972,
-          "unresolved": 187,
-          "hold_rate_pct": 46.5,
-          "control_mean_pct": 48.02,
-          "control_sd": 0.8,
-          "edge_points": -1.52,
-          "edge_sd": 1.91
+          "resolved": 877,
+          "unresolved": 178,
+          "hold_rate_pct": 46.98,
+          "control_mean_pct": 49.32,
+          "control_sd": 2.18,
+          "edge_points": -2.34,
+          "edge_sd": 1.07
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 634,
-          "unresolved": 525,
-          "hold_rate_pct": 49.53,
-          "control_mean_pct": 47.93,
-          "control_sd": 1.29,
-          "edge_points": 1.59,
-          "edge_sd": 1.24
+          "resolved": 541,
+          "unresolved": 514,
+          "hold_rate_pct": 46.77,
+          "control_mean_pct": 50.22,
+          "control_sd": 5.27,
+          "edge_points": -3.45,
+          "edge_sd": 0.66
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 234,
-          "unresolved": 925,
-          "hold_rate_pct": 48.29,
-          "control_mean_pct": 46.77,
-          "control_sd": 1.69,
-          "edge_points": 1.52,
-          "edge_sd": 0.9
+          "resolved": 170,
+          "unresolved": 885,
+          "hold_rate_pct": 57.06,
+          "control_mean_pct": 54.27,
+          "control_sd": 5.54,
+          "edge_points": 2.79,
+          "edge_sd": 0.5
         }
       ]
     },
     {
       "name": "untested pivots (1 touch)",
       "avg_levels_per_fold": 0.68,
-      "tests": 81,
+      "tests": 71,
       "resolved": 65,
       "outcomes": {
-        "HOLD": 23,
-        "BREAK": 42,
-        "UNRESOLVED": 16
+        "HOLD": 24,
+        "BREAK": 41,
+        "UNRESOLVED": 6
       },
-      "hold_rate_pct": 35.38,
-      "control_hold_rate_pct_mean": 43.99,
-      "control_hold_rate_pct_sd": 3.59,
-      "edge_points": -8.61,
-      "edge_sd": 2.4,
+      "hold_rate_pct": 36.92,
+      "control_hold_rate_pct_mean": 39.83,
+      "control_hold_rate_pct_sd": 1.07,
+      "edge_points": -2.91,
+      "edge_sd": 2.71,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 74,
-          "unresolved": 7,
-          "hold_rate_pct": 25.68,
-          "control_mean_pct": 38.69,
-          "control_sd": 3.29,
-          "edge_points": -13.02,
-          "edge_sd": 3.95
+          "resolved": 70,
+          "unresolved": 1,
+          "hold_rate_pct": 34.29,
+          "control_mean_pct": 35.44,
+          "control_sd": 1.48,
+          "edge_points": -1.16,
+          "edge_sd": 0.78
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 69,
-          "unresolved": 12,
-          "hold_rate_pct": 42.03,
-          "control_mean_pct": 53.26,
-          "control_sd": 5.16,
-          "edge_points": -11.23,
-          "edge_sd": 2.18
+          "resolved": 68,
+          "unresolved": 3,
+          "hold_rate_pct": 48.53,
+          "control_mean_pct": 49.57,
+          "control_sd": 2.0,
+          "edge_points": -1.04,
+          "edge_sd": 0.52
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 63,
-          "unresolved": 18,
-          "hold_rate_pct": 52.38,
-          "control_mean_pct": 50.1,
-          "control_sd": 3.82,
-          "edge_points": 2.28,
-          "edge_sd": 0.6
+          "resolved": 62,
+          "unresolved": 9,
+          "hold_rate_pct": 54.84,
+          "control_mean_pct": 47.35,
+          "control_sd": 1.94,
+          "edge_points": 7.49,
+          "edge_sd": 3.87
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 41,
-          "unresolved": 40,
-          "hold_rate_pct": 51.22,
-          "control_mean_pct": 54.52,
-          "control_sd": 4.12,
-          "edge_points": -3.3,
-          "edge_sd": 0.8
+          "resolved": 40,
+          "unresolved": 31,
+          "hold_rate_pct": 45.0,
+          "control_mean_pct": 45.22,
+          "control_sd": 6.89,
+          "edge_points": -0.22,
+          "edge_sd": 0.03
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 17,
-          "unresolved": 64,
-          "hold_rate_pct": 47.06,
-          "control_mean_pct": 57.08,
-          "control_sd": 4.58,
-          "edge_points": -10.02,
-          "edge_sd": 2.19
+          "resolved": 16,
+          "unresolved": 55,
+          "hold_rate_pct": 62.5,
+          "control_mean_pct": 45.22,
+          "control_sd": 13.49,
+          "edge_points": 17.28,
+          "edge_sd": 1.28
         }
       ]
     },
     {
       "name": "session opens",
       "avg_levels_per_fold": 3,
-      "tests": 1421,
-      "resolved": 1214,
+      "tests": 1398,
+      "resolved": 1164,
       "outcomes": {
-        "HOLD": 465,
-        "BREAK": 749,
-        "UNRESOLVED": 207
+        "HOLD": 477,
+        "BREAK": 687,
+        "UNRESOLVED": 234
       },
-      "hold_rate_pct": 38.3,
-      "control_hold_rate_pct_mean": 40.76,
-      "control_hold_rate_pct_sd": 1.79,
-      "edge_points": -2.45,
-      "edge_sd": 1.37,
+      "hold_rate_pct": 40.98,
+      "control_hold_rate_pct_mean": 40.36,
+      "control_hold_rate_pct_sd": 1.66,
+      "edge_points": 0.62,
+      "edge_sd": 0.38,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 1391,
-          "unresolved": 30,
-          "hold_rate_pct": 39.04,
-          "control_mean_pct": 36.37,
-          "control_sd": 1.07,
-          "edge_points": 2.66,
-          "edge_sd": 2.5
+          "resolved": 1361,
+          "unresolved": 37,
+          "hold_rate_pct": 38.5,
+          "control_mean_pct": 37.6,
+          "control_sd": 1.83,
+          "edge_points": 0.9,
+          "edge_sd": 0.49
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 1316,
-          "unresolved": 105,
-          "hold_rate_pct": 49.85,
-          "control_mean_pct": 47.19,
-          "control_sd": 1.76,
-          "edge_points": 2.66,
-          "edge_sd": 1.51
+          "resolved": 1287,
+          "unresolved": 111,
+          "hold_rate_pct": 51.36,
+          "control_mean_pct": 48.19,
+          "control_sd": 1.45,
+          "edge_points": 3.17,
+          "edge_sd": 2.19
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 1140,
-          "unresolved": 281,
-          "hold_rate_pct": 47.72,
-          "control_mean_pct": 49.75,
-          "control_sd": 1.72,
-          "edge_points": -2.03,
-          "edge_sd": 1.18
+          "resolved": 1089,
+          "unresolved": 309,
+          "hold_rate_pct": 50.6,
+          "control_mean_pct": 50.2,
+          "control_sd": 1.46,
+          "edge_points": 0.39,
+          "edge_sd": 0.27
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 703,
-          "unresolved": 718,
-          "hold_rate_pct": 48.36,
-          "control_mean_pct": 51.98,
-          "control_sd": 2.55,
-          "edge_points": -3.62,
-          "edge_sd": 1.42
+          "resolved": 669,
+          "unresolved": 729,
+          "hold_rate_pct": 49.63,
+          "control_mean_pct": 52.36,
+          "control_sd": 1.33,
+          "edge_points": -2.73,
+          "edge_sd": 2.06
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 218,
-          "unresolved": 1203,
-          "hold_rate_pct": 53.21,
-          "control_mean_pct": 46.84,
-          "control_sd": 3.08,
-          "edge_points": 6.37,
-          "edge_sd": 2.07
+          "resolved": 199,
+          "unresolved": 1199,
+          "hold_rate_pct": 54.27,
+          "control_mean_pct": 51.38,
+          "control_sd": 4.14,
+          "edge_points": 2.89,
+          "edge_sd": 0.7
         }
       ]
     },
     {
       "name": "prior-week high/low",
       "avg_levels_per_fold": 2,
-      "tests": 335,
-      "resolved": 270,
+      "tests": 298,
+      "resolved": 246,
       "outcomes": {
-        "HOLD": 102,
-        "BREAK": 168,
-        "UNRESOLVED": 65
+        "HOLD": 100,
+        "BREAK": 146,
+        "UNRESOLVED": 52
       },
-      "hold_rate_pct": 37.78,
-      "control_hold_rate_pct_mean": 41.53,
-      "control_hold_rate_pct_sd": 3.5,
-      "edge_points": -3.75,
-      "edge_sd": 1.07,
+      "hold_rate_pct": 40.65,
+      "control_hold_rate_pct_mean": 39.11,
+      "control_hold_rate_pct_sd": 1.75,
+      "edge_points": 1.54,
+      "edge_sd": 0.88,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 320,
-          "unresolved": 15,
-          "hold_rate_pct": 36.25,
-          "control_mean_pct": 37.18,
-          "control_sd": 1.74,
-          "edge_points": -0.93,
-          "edge_sd": 0.53
+          "resolved": 293,
+          "unresolved": 5,
+          "hold_rate_pct": 34.47,
+          "control_mean_pct": 36.79,
+          "control_sd": 1.69,
+          "edge_points": -2.32,
+          "edge_sd": 1.37
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 300,
-          "unresolved": 35,
-          "hold_rate_pct": 49.0,
-          "control_mean_pct": 48.83,
-          "control_sd": 1.15,
-          "edge_points": 0.17,
-          "edge_sd": 0.15
+          "resolved": 278,
+          "unresolved": 20,
+          "hold_rate_pct": 46.76,
+          "control_mean_pct": 46.8,
+          "control_sd": 1.32,
+          "edge_points": -0.04,
+          "edge_sd": 0.03
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 261,
-          "unresolved": 74,
-          "hold_rate_pct": 48.28,
-          "control_mean_pct": 50.21,
-          "control_sd": 2.16,
-          "edge_points": -1.93,
-          "edge_sd": 0.89
+          "resolved": 238,
+          "unresolved": 60,
+          "hold_rate_pct": 49.16,
+          "control_mean_pct": 48.32,
+          "control_sd": 2.77,
+          "edge_points": 0.84,
+          "edge_sd": 0.3
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 165,
-          "unresolved": 170,
-          "hold_rate_pct": 41.21,
-          "control_mean_pct": 49.97,
-          "control_sd": 2.78,
-          "edge_points": -8.76,
-          "edge_sd": 3.15
+          "resolved": 138,
+          "unresolved": 160,
+          "hold_rate_pct": 43.48,
+          "control_mean_pct": 48.66,
+          "control_sd": 3.8,
+          "edge_points": -5.19,
+          "edge_sd": 1.37
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 48,
-          "unresolved": 287,
-          "hold_rate_pct": 41.67,
-          "control_mean_pct": 49.75,
-          "control_sd": 7.24,
-          "edge_points": -8.08,
-          "edge_sd": 1.12
+          "resolved": 46,
+          "unresolved": 252,
+          "hold_rate_pct": 52.17,
+          "control_mean_pct": 48.52,
+          "control_sd": 3.08,
+          "edge_points": 3.65,
+          "edge_sd": 1.18
         }
       ]
     },
     {
       "name": "fib retracements",
       "avg_levels_per_fold": 3,
-      "tests": 1244,
-      "resolved": 1046,
+      "tests": 1290,
+      "resolved": 1097,
       "outcomes": {
-        "HOLD": 421,
-        "BREAK": 625,
-        "UNRESOLVED": 198
+        "HOLD": 463,
+        "BREAK": 634,
+        "UNRESOLVED": 193
       },
-      "hold_rate_pct": 40.25,
-      "control_hold_rate_pct_mean": 39.23,
-      "control_hold_rate_pct_sd": 1.73,
-      "edge_points": 1.02,
-      "edge_sd": 0.59,
+      "hold_rate_pct": 42.21,
+      "control_hold_rate_pct_mean": 39.81,
+      "control_hold_rate_pct_sd": 1.52,
+      "edge_points": 2.39,
+      "edge_sd": 1.57,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 1213,
-          "unresolved": 31,
-          "hold_rate_pct": 39.82,
-          "control_mean_pct": 37.56,
-          "control_sd": 0.9,
-          "edge_points": 2.26,
-          "edge_sd": 2.53
+          "resolved": 1262,
+          "unresolved": 28,
+          "hold_rate_pct": 41.13,
+          "control_mean_pct": 37.39,
+          "control_sd": 0.68,
+          "edge_points": 3.74,
+          "edge_sd": 5.52
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 1145,
-          "unresolved": 99,
-          "hold_rate_pct": 48.82,
-          "control_mean_pct": 47.77,
-          "control_sd": 1.3,
-          "edge_points": 1.06,
-          "edge_sd": 0.81
+          "resolved": 1193,
+          "unresolved": 97,
+          "hold_rate_pct": 50.04,
+          "control_mean_pct": 48.8,
+          "control_sd": 1.14,
+          "edge_points": 1.24,
+          "edge_sd": 1.09
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 982,
-          "unresolved": 262,
-          "hold_rate_pct": 48.98,
-          "control_mean_pct": 48.61,
-          "control_sd": 1.4,
-          "edge_points": 0.37,
-          "edge_sd": 0.27
+          "resolved": 1029,
+          "unresolved": 261,
+          "hold_rate_pct": 50.44,
+          "control_mean_pct": 48.63,
+          "control_sd": 1.42,
+          "edge_points": 1.81,
+          "edge_sd": 1.27
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 617,
-          "unresolved": 627,
-          "hold_rate_pct": 49.27,
-          "control_mean_pct": 48.35,
-          "control_sd": 2.13,
-          "edge_points": 0.92,
-          "edge_sd": 0.43
+          "resolved": 625,
+          "unresolved": 665,
+          "hold_rate_pct": 52.32,
+          "control_mean_pct": 49.15,
+          "control_sd": 1.47,
+          "edge_points": 3.17,
+          "edge_sd": 2.15
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 201,
-          "unresolved": 1043,
-          "hold_rate_pct": 49.75,
-          "control_mean_pct": 49.14,
-          "control_sd": 3.62,
-          "edge_points": 0.61,
-          "edge_sd": 0.17
+          "resolved": 200,
+          "unresolved": 1090,
+          "hold_rate_pct": 55.0,
+          "control_mean_pct": 51.5,
+          "control_sd": 4.87,
+          "edge_points": 3.5,
+          "edge_sd": 0.72
         }
       ]
     },
     {
       "name": "anchored VWAP",
       "avg_levels_per_fold": 1,
-      "tests": 336,
-      "resolved": 293,
+      "tests": 319,
+      "resolved": 272,
       "outcomes": {
-        "HOLD": 106,
-        "BREAK": 187,
-        "UNRESOLVED": 43
+        "HOLD": 112,
+        "BREAK": 160,
+        "UNRESOLVED": 47
       },
-      "hold_rate_pct": 36.18,
-      "control_hold_rate_pct_mean": 37.26,
-      "control_hold_rate_pct_sd": 2.58,
-      "edge_points": -1.08,
-      "edge_sd": 0.42,
+      "hold_rate_pct": 41.18,
+      "control_hold_rate_pct_mean": 39.06,
+      "control_hold_rate_pct_sd": 1.59,
+      "edge_points": 2.12,
+      "edge_sd": 1.33,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 333,
-          "unresolved": 3,
-          "hold_rate_pct": 38.74,
-          "control_mean_pct": 36.98,
-          "control_sd": 1.98,
-          "edge_points": 1.76,
-          "edge_sd": 0.89
+          "resolved": 314,
+          "unresolved": 5,
+          "hold_rate_pct": 37.26,
+          "control_mean_pct": 40.51,
+          "control_sd": 1.6,
+          "edge_points": -3.24,
+          "edge_sd": 2.03
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 322,
-          "unresolved": 14,
-          "hold_rate_pct": 46.89,
-          "control_mean_pct": 45.67,
-          "control_sd": 1.48,
-          "edge_points": 1.22,
-          "edge_sd": 0.83
+          "resolved": 293,
+          "unresolved": 26,
+          "hold_rate_pct": 50.51,
+          "control_mean_pct": 47.17,
+          "control_sd": 1.15,
+          "edge_points": 3.34,
+          "edge_sd": 2.9
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 277,
-          "unresolved": 59,
-          "hold_rate_pct": 48.01,
-          "control_mean_pct": 48.41,
-          "control_sd": 2.94,
-          "edge_points": -0.39,
-          "edge_sd": 0.13
+          "resolved": 257,
+          "unresolved": 62,
+          "hold_rate_pct": 54.09,
+          "control_mean_pct": 49.33,
+          "control_sd": 2.78,
+          "edge_points": 4.76,
+          "edge_sd": 1.71
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 189,
-          "unresolved": 147,
-          "hold_rate_pct": 48.68,
-          "control_mean_pct": 48.6,
-          "control_sd": 3.12,
-          "edge_points": 0.08,
-          "edge_sd": 0.02
+          "resolved": 150,
+          "unresolved": 169,
+          "hold_rate_pct": 57.33,
+          "control_mean_pct": 48.94,
+          "control_sd": 3.68,
+          "edge_points": 8.4,
+          "edge_sd": 2.28
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 64,
-          "unresolved": 272,
-          "hold_rate_pct": 48.44,
-          "control_mean_pct": 54.69,
-          "control_sd": 5.94,
-          "edge_points": -6.26,
-          "edge_sd": 1.05
+          "resolved": 50,
+          "unresolved": 269,
+          "hold_rate_pct": 50.0,
+          "control_mean_pct": 57.13,
+          "control_sd": 6.87,
+          "edge_points": -7.13,
+          "edge_sd": 1.04
         }
       ]
     },
     {
       "name": "50/200 EMA (static)",
       "avg_levels_per_fold": 2,
-      "tests": 1150,
-      "resolved": 969,
+      "tests": 1137,
+      "resolved": 954,
       "outcomes": {
-        "HOLD": 382,
-        "BREAK": 587,
-        "UNRESOLVED": 181
+        "HOLD": 417,
+        "BREAK": 537,
+        "UNRESOLVED": 183
       },
-      "hold_rate_pct": 39.42,
-      "control_hold_rate_pct_mean": 39.68,
-      "control_hold_rate_pct_sd": 2.56,
-      "edge_points": -0.25,
-      "edge_sd": 0.1,
+      "hold_rate_pct": 43.71,
+      "control_hold_rate_pct_mean": 39.31,
+      "control_hold_rate_pct_sd": 1.28,
+      "edge_points": 4.4,
+      "edge_sd": 3.44,
       "threshold_curve": [
         {
           "threshold_pct": 0.1,
-          "resolved": 1125,
-          "unresolved": 25,
-          "hold_rate_pct": 39.29,
-          "control_mean_pct": 35.29,
-          "control_sd": 1.89,
-          "edge_points": 4.0,
-          "edge_sd": 2.11
+          "resolved": 1109,
+          "unresolved": 28,
+          "hold_rate_pct": 42.11,
+          "control_mean_pct": 38.12,
+          "control_sd": 1.25,
+          "edge_points": 3.99,
+          "edge_sd": 3.2
         },
         {
           "threshold_pct": 0.25,
-          "resolved": 1074,
-          "unresolved": 76,
-          "hold_rate_pct": 49.07,
-          "control_mean_pct": 48.61,
-          "control_sd": 3.51,
-          "edge_points": 0.46,
-          "edge_sd": 0.13
+          "resolved": 1044,
+          "unresolved": 93,
+          "hold_rate_pct": 50.77,
+          "control_mean_pct": 48.57,
+          "control_sd": 1.91,
+          "edge_points": 2.2,
+          "edge_sd": 1.15
         },
         {
           "threshold_pct": 0.5,
-          "resolved": 908,
-          "unresolved": 242,
-          "hold_rate_pct": 49.01,
-          "control_mean_pct": 50.12,
-          "control_sd": 2.0,
-          "edge_points": -1.11,
-          "edge_sd": 0.56
+          "resolved": 893,
+          "unresolved": 244,
+          "hold_rate_pct": 53.3,
+          "control_mean_pct": 48.3,
+          "control_sd": 1.59,
+          "edge_points": 5.0,
+          "edge_sd": 3.15
         },
         {
           "threshold_pct": 1.0,
-          "resolved": 540,
-          "unresolved": 610,
-          "hold_rate_pct": 47.78,
-          "control_mean_pct": 51.25,
-          "control_sd": 2.58,
-          "edge_points": -3.48,
-          "edge_sd": 1.35
+          "resolved": 562,
+          "unresolved": 575,
+          "hold_rate_pct": 54.09,
+          "control_mean_pct": 49.03,
+          "control_sd": 2.94,
+          "edge_points": 5.06,
+          "edge_sd": 1.72
         },
         {
           "threshold_pct": 2.0,
-          "resolved": 177,
-          "unresolved": 973,
-          "hold_rate_pct": 49.15,
-          "control_mean_pct": 49.32,
-          "control_sd": 4.35,
-          "edge_points": -0.17,
-          "edge_sd": 0.04
+          "resolved": 172,
+          "unresolved": 965,
+          "hold_rate_pct": 59.88,
+          "control_mean_pct": 50.12,
+          "control_sd": 6.88,
+          "edge_points": 9.77,
+          "edge_sd": 1.42
+        }
+      ]
+    },
+    {
+      "name": "VPOC + HVN (range-dist.)",
+      "avg_levels_per_fold": 24,
+      "tests": 3757,
+      "resolved": 3106,
+      "outcomes": {
+        "HOLD": 1261,
+        "BREAK": 1845,
+        "UNRESOLVED": 651
+      },
+      "hold_rate_pct": 40.6,
+      "control_hold_rate_pct_mean": 39.11,
+      "control_hold_rate_pct_sd": 0.46,
+      "edge_points": 1.48,
+      "edge_sd": 3.2,
+      "threshold_curve": [
+        {
+          "threshold_pct": 0.1,
+          "resolved": 3656,
+          "unresolved": 101,
+          "hold_rate_pct": 41.38,
+          "control_mean_pct": 39.17,
+          "control_sd": 0.37,
+          "edge_points": 2.22,
+          "edge_sd": 5.93
+        },
+        {
+          "threshold_pct": 0.25,
+          "resolved": 3434,
+          "unresolved": 323,
+          "hold_rate_pct": 49.88,
+          "control_mean_pct": 48.19,
+          "control_sd": 0.5,
+          "edge_points": 1.69,
+          "edge_sd": 3.37
+        },
+        {
+          "threshold_pct": 0.5,
+          "resolved": 2917,
+          "unresolved": 840,
+          "hold_rate_pct": 50.43,
+          "control_mean_pct": 48.15,
+          "control_sd": 0.35,
+          "edge_points": 2.28,
+          "edge_sd": 6.42
+        },
+        {
+          "threshold_pct": 1.0,
+          "resolved": 1726,
+          "unresolved": 2031,
+          "hold_rate_pct": 52.84,
+          "control_mean_pct": 49.15,
+          "control_sd": 0.81,
+          "edge_points": 3.69,
+          "edge_sd": 4.57
+        },
+        {
+          "threshold_pct": 2.0,
+          "resolved": 563,
+          "unresolved": 3194,
+          "hold_rate_pct": 56.84,
+          "control_mean_pct": 47.57,
+          "control_sd": 1.24,
+          "edge_points": 9.27,
+          "edge_sd": 7.47
+        }
+      ]
+    },
+    {
+      "name": "value area edges (70%)",
+      "avg_levels_per_fold": 2,
+      "tests": 613,
+      "resolved": 531,
+      "outcomes": {
+        "HOLD": 224,
+        "BREAK": 307,
+        "UNRESOLVED": 82
+      },
+      "hold_rate_pct": 42.18,
+      "control_hold_rate_pct_mean": 41.04,
+      "control_hold_rate_pct_sd": 2.58,
+      "edge_points": 1.15,
+      "edge_sd": 0.44,
+      "threshold_curve": [
+        {
+          "threshold_pct": 0.1,
+          "resolved": 597,
+          "unresolved": 16,
+          "hold_rate_pct": 36.68,
+          "control_mean_pct": 37.25,
+          "control_sd": 1.85,
+          "edge_points": -0.57,
+          "edge_sd": 0.31
+        },
+        {
+          "threshold_pct": 0.25,
+          "resolved": 567,
+          "unresolved": 46,
+          "hold_rate_pct": 48.85,
+          "control_mean_pct": 48.66,
+          "control_sd": 1.36,
+          "edge_points": 0.2,
+          "edge_sd": 0.14
+        },
+        {
+          "threshold_pct": 0.5,
+          "resolved": 491,
+          "unresolved": 122,
+          "hold_rate_pct": 51.32,
+          "control_mean_pct": 51.02,
+          "control_sd": 1.96,
+          "edge_points": 0.3,
+          "edge_sd": 0.16
+        },
+        {
+          "threshold_pct": 1.0,
+          "resolved": 300,
+          "unresolved": 313,
+          "hold_rate_pct": 53.0,
+          "control_mean_pct": 51.61,
+          "control_sd": 2.3,
+          "edge_points": 1.39,
+          "edge_sd": 0.61
+        },
+        {
+          "threshold_pct": 2.0,
+          "resolved": 82,
+          "unresolved": 531,
+          "hold_rate_pct": 52.44,
+          "control_mean_pct": 51.48,
+          "control_sd": 1.93,
+          "edge_points": 0.96,
+          "edge_sd": 0.5
+        }
+      ]
+    },
+    {
+      "name": "LVN nodes (range-dist.)",
+      "avg_levels_per_fold": 24.16,
+      "tests": 2075,
+      "resolved": 1667,
+      "outcomes": {
+        "HOLD": 641,
+        "BREAK": 1026,
+        "UNRESOLVED": 408
+      },
+      "hold_rate_pct": 38.45,
+      "control_hold_rate_pct_mean": 39.74,
+      "control_hold_rate_pct_sd": 0.81,
+      "edge_points": -1.28,
+      "edge_sd": 1.58,
+      "threshold_curve": [
+        {
+          "threshold_pct": 0.1,
+          "resolved": 2014,
+          "unresolved": 61,
+          "hold_rate_pct": 39.97,
+          "control_mean_pct": 39.38,
+          "control_sd": 0.42,
+          "edge_points": 0.59,
+          "edge_sd": 1.41
+        },
+        {
+          "threshold_pct": 0.25,
+          "resolved": 1875,
+          "unresolved": 200,
+          "hold_rate_pct": 46.99,
+          "control_mean_pct": 48.54,
+          "control_sd": 0.59,
+          "edge_points": -1.55,
+          "edge_sd": 2.62
+        },
+        {
+          "threshold_pct": 0.5,
+          "resolved": 1554,
+          "unresolved": 521,
+          "hold_rate_pct": 47.55,
+          "control_mean_pct": 48.91,
+          "control_sd": 0.66,
+          "edge_points": -1.36,
+          "edge_sd": 2.04
+        },
+        {
+          "threshold_pct": 1.0,
+          "resolved": 858,
+          "unresolved": 1217,
+          "hold_rate_pct": 48.83,
+          "control_mean_pct": 49.48,
+          "control_sd": 1.24,
+          "edge_points": -0.65,
+          "edge_sd": 0.52
+        },
+        {
+          "threshold_pct": 2.0,
+          "resolved": 269,
+          "unresolved": 1806,
+          "hold_rate_pct": 50.19,
+          "control_mean_pct": 51.24,
+          "control_sd": 1.33,
+          "edge_points": -1.05,
+          "edge_sd": 0.8
+        }
+      ]
+    },
+    {
+      "name": "pools: untested extremes",
+      "avg_levels_per_fold": 8.23,
+      "tests": 1548,
+      "resolved": 1293,
+      "outcomes": {
+        "HOLD": 497,
+        "BREAK": 796,
+        "UNRESOLVED": 255
+      },
+      "hold_rate_pct": 38.44,
+      "control_hold_rate_pct_mean": 40.93,
+      "control_hold_rate_pct_sd": 1.37,
+      "edge_points": -2.49,
+      "edge_sd": 1.82,
+      "threshold_curve": [
+        {
+          "threshold_pct": 0.1,
+          "resolved": 1509,
+          "unresolved": 39,
+          "hold_rate_pct": 38.9,
+          "control_mean_pct": 38.81,
+          "control_sd": 0.96,
+          "edge_points": 0.09,
+          "edge_sd": 0.1
+        },
+        {
+          "threshold_pct": 0.25,
+          "resolved": 1429,
+          "unresolved": 119,
+          "hold_rate_pct": 46.54,
+          "control_mean_pct": 49.79,
+          "control_sd": 1.76,
+          "edge_points": -3.25,
+          "edge_sd": 1.85
+        },
+        {
+          "threshold_pct": 0.5,
+          "resolved": 1213,
+          "unresolved": 335,
+          "hold_rate_pct": 46.99,
+          "control_mean_pct": 50.62,
+          "control_sd": 1.32,
+          "edge_points": -3.63,
+          "edge_sd": 2.75
+        },
+        {
+          "threshold_pct": 1.0,
+          "resolved": 703,
+          "unresolved": 845,
+          "hold_rate_pct": 43.24,
+          "control_mean_pct": 52.25,
+          "control_sd": 1.92,
+          "edge_points": -9.01,
+          "edge_sd": 4.69
+        },
+        {
+          "threshold_pct": 2.0,
+          "resolved": 207,
+          "unresolved": 1341,
+          "hold_rate_pct": 47.34,
+          "control_mean_pct": 53.37,
+          "control_sd": 2.72,
+          "edge_points": -6.03,
+          "edge_sd": 2.22
+        }
+      ]
+    },
+    {
+      "name": "pools: equal highs/lows",
+      "avg_levels_per_fold": 1.6,
+      "tests": 466,
+      "resolved": 384,
+      "outcomes": {
+        "HOLD": 132,
+        "BREAK": 252,
+        "UNRESOLVED": 82
+      },
+      "hold_rate_pct": 34.38,
+      "control_hold_rate_pct_mean": 41.54,
+      "control_hold_rate_pct_sd": 5.13,
+      "edge_points": -7.17,
+      "edge_sd": 1.4,
+      "threshold_curve": [
+        {
+          "threshold_pct": 0.1,
+          "resolved": 455,
+          "unresolved": 11,
+          "hold_rate_pct": 36.92,
+          "control_mean_pct": 39.73,
+          "control_sd": 2.48,
+          "edge_points": -2.8,
+          "edge_sd": 1.13
+        },
+        {
+          "threshold_pct": 0.25,
+          "resolved": 432,
+          "unresolved": 34,
+          "hold_rate_pct": 46.76,
+          "control_mean_pct": 51.44,
+          "control_sd": 3.61,
+          "edge_points": -4.68,
+          "edge_sd": 1.3
+        },
+        {
+          "threshold_pct": 0.5,
+          "resolved": 352,
+          "unresolved": 114,
+          "hold_rate_pct": 42.33,
+          "control_mean_pct": 51.58,
+          "control_sd": 5.23,
+          "edge_points": -9.25,
+          "edge_sd": 1.77
+        },
+        {
+          "threshold_pct": 1.0,
+          "resolved": 219,
+          "unresolved": 247,
+          "hold_rate_pct": 34.7,
+          "control_mean_pct": 52.54,
+          "control_sd": 5.62,
+          "edge_points": -17.83,
+          "edge_sd": 3.17
+        },
+        {
+          "threshold_pct": 2.0,
+          "resolved": 57,
+          "unresolved": 409,
+          "hold_rate_pct": 36.84,
+          "control_mean_pct": 49.02,
+          "control_sd": 5.31,
+          "edge_points": -12.18,
+          "edge_sd": 2.29
+        }
+      ]
+    },
+    {
+      "name": "pools: session extremes",
+      "avg_levels_per_fold": 2.69,
+      "tests": 776,
+      "resolved": 646,
+      "outcomes": {
+        "HOLD": 240,
+        "BREAK": 406,
+        "UNRESOLVED": 130
+      },
+      "hold_rate_pct": 37.15,
+      "control_hold_rate_pct_mean": 40.16,
+      "control_hold_rate_pct_sd": 2.15,
+      "edge_points": -3.01,
+      "edge_sd": 1.4,
+      "threshold_curve": [
+        {
+          "threshold_pct": 0.1,
+          "resolved": 761,
+          "unresolved": 15,
+          "hold_rate_pct": 41.13,
+          "control_mean_pct": 38.32,
+          "control_sd": 1.42,
+          "edge_points": 2.81,
+          "edge_sd": 1.98
+        },
+        {
+          "threshold_pct": 0.25,
+          "resolved": 722,
+          "unresolved": 54,
+          "hold_rate_pct": 50.55,
+          "control_mean_pct": 48.34,
+          "control_sd": 1.32,
+          "edge_points": 2.21,
+          "edge_sd": 1.68
+        },
+        {
+          "threshold_pct": 0.5,
+          "resolved": 600,
+          "unresolved": 176,
+          "hold_rate_pct": 46.0,
+          "control_mean_pct": 49.33,
+          "control_sd": 2.6,
+          "edge_points": -3.33,
+          "edge_sd": 1.28
+        },
+        {
+          "threshold_pct": 1.0,
+          "resolved": 351,
+          "unresolved": 425,
+          "hold_rate_pct": 47.29,
+          "control_mean_pct": 50.86,
+          "control_sd": 4.13,
+          "edge_points": -3.56,
+          "edge_sd": 0.86
+        },
+        {
+          "threshold_pct": 2.0,
+          "resolved": 118,
+          "unresolved": 658,
+          "hold_rate_pct": 48.31,
+          "control_mean_pct": 53.19,
+          "control_sd": 4.21,
+          "edge_points": -4.89,
+          "edge_sd": 1.16
+        }
+      ]
+    },
+    {
+      "name": "pools: all combined",
+      "avg_levels_per_fold": 8.1,
+      "tests": 1588,
+      "resolved": 1332,
+      "outcomes": {
+        "HOLD": 506,
+        "BREAK": 826,
+        "UNRESOLVED": 256
+      },
+      "hold_rate_pct": 37.99,
+      "control_hold_rate_pct_mean": 39.31,
+      "control_hold_rate_pct_sd": 1.56,
+      "edge_points": -1.32,
+      "edge_sd": 0.85,
+      "threshold_curve": [
+        {
+          "threshold_pct": 0.1,
+          "resolved": 1547,
+          "unresolved": 41,
+          "hold_rate_pct": 38.66,
+          "control_mean_pct": 38.79,
+          "control_sd": 0.49,
+          "edge_points": -0.13,
+          "edge_sd": 0.27
+        },
+        {
+          "threshold_pct": 0.25,
+          "resolved": 1471,
+          "unresolved": 117,
+          "hold_rate_pct": 46.77,
+          "control_mean_pct": 48.81,
+          "control_sd": 0.95,
+          "edge_points": -2.04,
+          "edge_sd": 2.15
+        },
+        {
+          "threshold_pct": 0.5,
+          "resolved": 1250,
+          "unresolved": 338,
+          "hold_rate_pct": 46.48,
+          "control_mean_pct": 48.75,
+          "control_sd": 1.59,
+          "edge_points": -2.27,
+          "edge_sd": 1.43
+        },
+        {
+          "threshold_pct": 1.0,
+          "resolved": 720,
+          "unresolved": 868,
+          "hold_rate_pct": 45.14,
+          "control_mean_pct": 50.25,
+          "control_sd": 1.55,
+          "edge_points": -5.11,
+          "edge_sd": 3.29
+        },
+        {
+          "threshold_pct": 2.0,
+          "resolved": 212,
+          "unresolved": 1376,
+          "hold_rate_pct": 49.53,
+          "control_mean_pct": 53.04,
+          "control_sd": 2.69,
+          "edge_points": -3.51,
+          "edge_sd": 1.31
         }
       ]
     }

@@ -1,37 +1,44 @@
 """
 Liquidation feed probe.
 
-Standalone diagnostic for one question: does btcusdt@forceOrder actually deliver?
-The stream was subscribed on the spot host for a long time, where Binance accepts
-the subscription and then never sends anything, so silence alone proves nothing.
+Originally built to answer one question -- does `btcusdt@forceOrder` actually deliver?
+-- because Binance accepts the subscription and then sends nothing, so silence alone
+proved nothing without a record of having been listening.
 
-Every run appends to workspace/liquidation_probe.jsonl, and the file records the
-probe's own uptime as well as the events. That distinction is the whole point: an
-empty log means "nothing happened" only if the probe can show it was listening.
+It answered it. `workspace/liquidation_probe.jsonl` holds 8.7 hours of uptime with zero
+events, on the BTC stream and on `!forceOrder@arr` (every USD-M symbol) simultaneously.
+That, plus a three-venue side-by-side where Binance logged 0 while Bybit logged 26 and
+OKX 57 over the same 100 seconds, is why src/liquidation_feed.py defaults to Bybit and
+OKX instead.
 
-    python tools/liquidation_probe.py            # run until Ctrl-C
-    python tools/liquidation_probe.py --hours 6  # stop on its own
+The probe is kept and repointed, because the question it answers is permanent: **is my
+liquidation feed alive, or merely connected?** A feed that silently stops delivering
+looks exactly like a calm market, and the only way to tell them apart is a log that
+records the probe's own uptime alongside the events.
 
-Safe to stop and restart across days; records accumulate.
+    python tools/liquidation_probe.py                      # bybit + okx, until Ctrl-C
+    python tools/liquidation_probe.py --venues binance     # re-check the Binance block
+    python tools/liquidation_probe.py --hours 6
+
+Every run appends to workspace/liquidation_probe.jsonl. Safe to stop and restart across
+days; records accumulate.
 """
 
 import argparse
 import asyncio
 import json
 import signal
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-import websockets
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from liquidation_feed import LiquidationFeed, Liquidation, DEFAULT_VENUES, SOURCES
 
 WORKSPACE = Path(__file__).parent.parent / "workspace"
 LOG_PATH = WORKSPACE / "liquidation_probe.jsonl"
-
-# btcusdt@forceOrder is the stream ws_feed consumes. !forceOrder@arr covers every
-# USD-M symbol and acts as the control: if BTC is silent while the market is not,
-# that is a real signal. If both are silent, the market is simply quiet.
-STREAM_URL = "wss://fstream.binance.com/stream?streams=!forceOrder@arr/btcusdt@forceOrder"
 
 HEARTBEAT_SECONDS = 300
 _stop = asyncio.Event()
@@ -45,81 +52,68 @@ def write(record: dict) -> None:
     print(json.dumps(record), flush=True)
 
 
-async def run(deadline: float | None) -> None:
+async def run(venues, symbols, deadline) -> None:
     started = time.time()
-    btc = 0
-    all_market = 0
-    reconnects = 0
+    feed = LiquidationFeed(symbols=symbols, venues=venues)
+    counts = {v: 0 for v in venues}
 
-    write({"type": "session_start", "stream_url": STREAM_URL})
+    write({"type": "session_start", "venues": list(venues), "symbols": list(symbols)})
 
-    while not _stop.is_set() and (deadline is None or time.time() < deadline):
-        try:
-            async with websockets.connect(STREAM_URL, ping_interval=20, ping_timeout=20) as ws:
-                write({"type": "connected", "reconnects": reconnects})
+    def on_event(event: Liquidation) -> None:
+        counts[event.venue] = counts.get(event.venue, 0) + 1
+        write({
+            "type": "liquidation",
+            "venue": event.venue,
+            "symbol": event.symbol,
+            "liquidated_side": event.liquidated_side,
+            "forced_order_side": event.forced_order_side,
+            "price": event.price,
+            "qty": event.qty,
+            "usd": round(event.usd, 2),
+        })
+
+    feed_task = asyncio.create_task(feed.run(on_event))
+    last_beat = time.time()
+
+    try:
+        while not _stop.is_set() and (deadline is None or time.time() < deadline):
+            await asyncio.sleep(1.0)
+            if time.time() - last_beat >= HEARTBEAT_SECONDS:
                 last_beat = time.time()
-
-                while not _stop.is_set() and (deadline is None or time.time() < deadline):
-                    timeout = min(
-                        HEARTBEAT_SECONDS - (time.time() - last_beat),
-                        30.0 if deadline is None else max(1.0, deadline - time.time()),
-                    )
-                    try:
-                        raw = await asyncio.wait_for(ws.recv(), timeout=max(1.0, timeout))
-                    except asyncio.TimeoutError:
-                        raw = None
-
-                    if raw:
-                        msg = json.loads(raw)
-                        order = msg.get("data", {}).get("o", {})
-                        if order:
-                            usd = float(order["p"]) * float(order["q"])
-                            if msg.get("stream", "").startswith("!"):
-                                all_market += 1
-                                # Counted only; storing every symbol would bury the BTC ones.
-                            else:
-                                btc += 1
-                                write({
-                                    "type": "btc_liquidation",
-                                    "symbol": order.get("s"),
-                                    "side": order.get("S"),
-                                    "price": float(order["p"]),
-                                    "qty": float(order["q"]),
-                                    "usd": round(usd, 2),
-                                })
-
-                    if time.time() - last_beat >= HEARTBEAT_SECONDS:
-                        last_beat = time.time()
-                        write({
-                            "type": "heartbeat",
-                            "uptime_s": round(time.time() - started),
-                            "btc_liquidations": btc,
-                            "all_market_liquidations": all_market,
-                        })
-
+                # Uptime alongside the counts is the whole point: zero events over a
+                # known listening period is evidence, zero events over an unknown one
+                # is nothing at all.
+                write({
+                    "type": "heartbeat",
+                    "uptime_s": round(time.time() - started),
+                    "counts": dict(counts),
+                    "stats": feed.stats(),
+                })
+    finally:
+        feed.stop()
+        feed_task.cancel()
+        try:
+            await feed_task
         except asyncio.CancelledError:
-            break
-        except Exception as err:
-            # A closing laptop drops the socket; that is expected, not a failure.
-            reconnects += 1
-            write({"type": "disconnected", "error": f"{type(err).__name__}: {err}"})
-            try:
-                await asyncio.wait_for(_stop.wait(), timeout=5.0)
-            except asyncio.TimeoutError:
-                pass
+            pass
 
     write({
         "type": "session_end",
         "uptime_s": round(time.time() - started),
-        "btc_liquidations": btc,
-        "all_market_liquidations": all_market,
-        "reconnects": reconnects,
+        "counts": dict(counts),
+        "stats": feed.stats(),
     })
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Probe the Binance USD-M liquidation stream.")
-    ap.add_argument("--hours", type=float, default=None, help="Stop after this many hours (default: run until Ctrl-C)")
+    ap = argparse.ArgumentParser(description="Probe the liquidation feed for real delivery.")
+    ap.add_argument("--venues", nargs="+", default=list(DEFAULT_VENUES),
+                    choices=sorted(SOURCES),
+                    help="Default: bybit okx. 'binance' is kept selectable so the block "
+                         "can be re-checked; it has never delivered an event here.")
+    ap.add_argument("--symbols", nargs="+", default=["BTCUSDT"])
+    ap.add_argument("--hours", type=float, default=None,
+                    help="Stop after this many hours (default: run until Ctrl-C)")
     args = ap.parse_args()
 
     deadline = time.time() + args.hours * 3600 if args.hours else None
@@ -131,10 +125,21 @@ def main() -> None:
     except (ValueError, AttributeError):
         pass
     try:
-        loop.run_until_complete(run(deadline))
+        loop.run_until_complete(run(args.venues, args.symbols, deadline))
     except KeyboardInterrupt:
         pass
     finally:
+        # websockets leaves a keepalive task per connection. Closing the loop without
+        # draining them prints "Task was destroyed but it is pending!" on every exit,
+        # which is noise in a log whose whole value is that unusual lines mean
+        # something. asyncio.run() does this for us but cannot be used here, because
+        # the SIGINT handler needs the loop before the coroutine starts.
+        pending = [t for t in asyncio.all_tasks(loop) if not t.done()]
+        for task in pending:
+            task.cancel()
+        if pending:
+            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+        loop.run_until_complete(loop.shutdown_asyncgens())
         loop.close()
 
 

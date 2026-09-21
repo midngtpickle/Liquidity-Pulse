@@ -8,8 +8,13 @@ backtested from data you can fetch later. It can only be tested against data you
 recording beforehand. This module exists so that recording starts now rather than after
 the question becomes urgent.
 
-Two tiers are written:
+Tiers written:
 
+  liq      - every liquidation from the venues in liquidation_feed.py, unthrottled.
+             Sparse and individually meaningful, and a cascade is exactly the burst
+             sampling would discard. Same file as the depth records on purpose: the
+             question worth asking about a cascade is what the book did around it,
+             and one file sorted by `t` is already aligned.
   depth    - derived band metrics, once per second. Small, and the series analysis
              actually runs over. ~13MB/day raw, 2-3MB gzipped.
   book     - top-N levels per side, once per minute. Insurance: derived-only logging
@@ -49,6 +54,12 @@ class DepthRecorder:
         self.derived_interval = derived_interval
         self.snapshot_interval = snapshot_interval
         self.snapshot_levels = snapshot_levels
+
+        # Refuse to be the second writer. Two processes appending to one gzip file
+        # produce an unreadable file, not a merged one -- see src/runlock.py for the
+        # incident this exists because of.
+        from runlock import RunLock
+        self._lock = RunLock(self.directory / ".recorder.lock", "depth recorder").acquire()
 
         self._handle: Optional[gzip.GzipFile] = None
         self._handle_date: Optional[str] = None
@@ -196,6 +207,34 @@ class DepthRecorder:
             record.update(self._snapshot(book, self.snapshot_levels))
             self._write(record, now)
 
+    def record_liquidation(self, event, now: Optional[float] = None) -> None:
+        """
+        Append one liquidation, unthrottled.
+
+        No sampling interval, unlike the depth records: liquidations are sparse and
+        individually meaningful, and a cascade is precisely the burst you would be
+        throwing away by sampling it.
+
+        Recorded into the same daily file as the depth stream, deliberately. The
+        interesting question about a cascade is what the order book was doing around
+        it, and answering that across two files means aligning two clocks; in one
+        file, sorted by `t`, it is already aligned.
+        """
+        now = now if now is not None else time.time()
+        self._write({
+            "t": round(now, 3),
+            "type": "liquidation",
+            "venue": event.venue,
+            "sym": event.symbol,
+            # LONG or SHORT: the position closed out, normalised across venues that
+            # disagree about what their own side field means. See liquidation_feed.py.
+            "side": event.liquidated_side,
+            "px": event.price,
+            "qty": event.qty,
+            "usd": round(event.usd, 2),
+            "et": round(event.event_time, 3)
+        }, now)
+
     def close(self) -> None:
         self.mark_gap("stop")
         if self._handle is not None:
@@ -204,3 +243,4 @@ class DepthRecorder:
             except Exception:
                 pass
         self._close_handle()
+        self._lock.release()
