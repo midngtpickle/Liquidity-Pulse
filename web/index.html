@@ -98,6 +98,16 @@
         <div class="stat-value" id="stat-bias">NEUTRAL</div>
         <div class="stat-footer text-muted" id="stat-bias-sub">Relative to VPOC</div>
       </div>
+
+      <!-- Taker order flow. Who crossed the spread, which the candle cannot show. -->
+      <div class="stat-card" id="stat-card-cvd">
+        <div class="stat-header">
+          <span class="stat-title">TAKER FLOW (CVD)</span>
+          <i class="fa-solid fa-right-left stat-icon text-cyan"></i>
+        </div>
+        <div class="stat-value" id="stat-cvd">--</div>
+        <div class="stat-footer text-muted" id="stat-cvd-sub">Cumulative delta, 500 candles</div>
+      </div>
     </section>
 
     <!-- Main Content Area -->
@@ -140,6 +150,52 @@
           </div>
         </div>
 
+        <!-- Positioning: what the market is holding. Carries a caveat the other cards
+             do not, because open interest and the crowd ratios are capped at 30 days
+             of history by the exchange and so have never been through the benchmark. -->
+        <div class="card card-positioning">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-scale-balanced icon-gradient"></i> Positioning
+            </div>
+            <span class="badge badge-info" id="positioning-badge">OI &amp; FUNDING</span>
+          </div>
+          <div class="card-body">
+            <div class="pos-grid" id="positioning-grid"></div>
+            <div class="pos-note" id="positioning-note"></div>
+          </div>
+        </div>
+
+        <!-- Liquidity Pools. A different claim from the S/R table above it: these are
+             prices with unfilled stop orders behind them, which the benchmark finds
+             price is drawn THROUGH rather than turned by. The card says so, because a
+             magnet rendered like a support level will get traded like one. -->
+        <div class="card card-pools">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-magnet icon-gradient"></i> Liquidity Pools
+            </div>
+            <span class="badge badge-info">UNFILLED STOPS</span>
+          </div>
+          <div class="card-body no-padding">
+            <div class="pools-note" id="pools-note"></div>
+            <div class="table-responsive">
+              <table class="data-table" id="pools-table">
+                <thead>
+                  <tr>
+                    <th>Price</th>
+                    <th>Type</th>
+                    <th>Stops</th>
+                    <th>Stacked</th>
+                    <th>Distance</th>
+                  </tr>
+                </thead>
+                <tbody id="pools-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- Liquidity Depth Delta Card -->
         <div class="card card-depth">
           <div class="card-header">
@@ -149,6 +205,10 @@
             <span class="badge badge-info" id="depth-stream-badge">WebSocket Feed</span>
           </div>
           <div class="card-body">
+            <!-- Headline: the only imbalance measured across a span both sides of
+                 the book are known to be complete to. The wider bands below it are
+                 partial on both sides and their deltas drift as the book fills. -->
+            <div class="depth-complete-span" id="depth-complete-span" hidden></div>
             <div class="depth-book-note" id="depth-book-note" hidden></div>
             <div class="depth-bands-grid" id="depth-bands-container">
               <!-- Rendered dynamically -->
