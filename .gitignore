@@ -35,6 +35,11 @@ workspace/tradingview_signals.json
 # the tree dirty. server.py serves a waiting_for_feed state when it is absent.
 workspace/depth_latest.json
 
+# Same again for the liquidation cascade window: rewritten on every liquidation
+# and on a 2s heartbeat, so a committed copy is stale on arrival. server.py
+# serves waiting_for_feed when it is absent, which is the honest state.
+workspace/liquidations_latest.json
+
 # Deliberately NOT ignored: workspace/telemetry_latest.json. It changes only
 # when the pipeline runs, and docs/AGENT_INTEGRATION_GUIDE.md points other
 # tools at it as the worked example of the documented schema. Kept on purpose.
