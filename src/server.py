@@ -38,6 +38,7 @@ WEB_DIR = PROJECT_ROOT / "web"
 WORKSPACE_DIR = PROJECT_ROOT / "workspace"
 TELEMETRY_PATH = WORKSPACE_DIR / "telemetry_latest.json"
 DEPTH_PATH = WORKSPACE_DIR / "depth_latest.json"
+LIQUIDATIONS_PATH = WORKSPACE_DIR / "liquidations_latest.json"
 BRIEFING_PATH = WORKSPACE_DIR / "artifacts" / "SESSION_BRIEFING.md"
 SIGNALS_PATH = WORKSPACE_DIR / "tradingview_signals.json"
 
@@ -86,6 +87,8 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
             self.handle_telemetry_api()
         elif path == "/api/depth":
             self.handle_depth_api()
+        elif path == "/api/liquidations":
+            self.handle_liquidations_api()
         elif path == "/api/briefing":
             self.handle_briefing_api()
         elif path == "/api/tradingview/signals":
@@ -153,6 +156,33 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
             self.send_json_response(data)
         except Exception as err:
             logger.error(f"Error reading depth data: {err}")
+            self.send_json_response({"error": str(err)}, status=500)
+
+    def handle_liquidations_api(self):
+        """
+        Serve the rolling liquidation cascade window written by ws_feed.
+
+        Consumers veto trades on this, so a snapshot that cannot be read must look
+        unavailable rather than calm: the placeholder below carries
+        status "waiting_for_feed", never "NORMAL".
+        """
+        if not LIQUIDATIONS_PATH.exists():
+            self.send_json_response({
+                "status": "waiting_for_feed",
+                "window_seconds": 180,
+                "total_liquidations_usd": 0.0,
+                "long_liquidations_usd": 0.0,
+                "short_liquidations_usd": 0.0,
+                "event_count": 0,
+                "venues": []
+            })
+            return
+        try:
+            with open(LIQUIDATIONS_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self.send_json_response(data)
+        except Exception as err:
+            logger.error(f"Error reading liquidation data: {err}")
             self.send_json_response({"error": str(err)}, status=500)
 
     def handle_briefing_api(self):

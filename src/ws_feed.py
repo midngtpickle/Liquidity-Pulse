@@ -23,7 +23,7 @@ import threading
 import asyncio
 from pathlib import Path
 from collections import deque
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # Add src to sys.path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -50,6 +50,10 @@ logger = logging.getLogger("WSFeed")
 PROJECT_ROOT = Path(__file__).parent.parent
 WORKSPACE_DIR = PROJECT_ROOT / "workspace"
 DEPTH_FILE_PATH = WORKSPACE_DIR / "depth_latest.json"
+# The cascade window was computed in memory and pushed only to Telegram/Discord,
+# so nothing could read it programmatically. Published on the same file-then-serve
+# pattern as the depth snapshot.
+LIQUIDATION_FILE_PATH = WORKSPACE_DIR / "liquidations_latest.json"
 DEPTH_HISTORY_DIR = WORKSPACE_DIR / "depth_history"
 
 
@@ -197,6 +201,10 @@ class LiquidityPulseWS:
     CASCADE_THRESHOLD_USD = 5_000_000.0  # $5M
     CASCADE_WINDOW_SECONDS = 180  # 3 minutes
     CASCADE_COOLDOWN_SECONDS = 180  # Cooldown between Telegram cascade alerts
+    # Heartbeat for the liquidation snapshot. Writing only when a liquidation
+    # arrives would leave the file untouched through a quiet market, and a consumer
+    # cannot tell a quiet market from a dead feed.
+    LIQUIDATION_WRITE_INTERVAL_SECONDS = 2.0
     SEED_RETRY_SECONDS = 2.0  # Floor between order book snapshot attempts
 
     def __init__(
@@ -215,6 +223,7 @@ class LiquidityPulseWS:
         self.last_mid_price: float = 0.0
         self.last_cascade_alert_time: float = 0.0
         self.last_depth_write_time: float = 0.0
+        self.last_liquidation_write_time: float = 0.0
         self.running: bool = False
         self.order_book = LocalOrderBook()
         self.last_seed_attempt: float = 0.0
@@ -365,6 +374,59 @@ class LiquidityPulseWS:
 
         return results
 
+    def liquidation_window_state(self, now: Optional[float] = None) -> Dict[str, Any]:
+        """
+        The current 3-minute cascade window as a plain dict.
+
+        Recomputed from the deque against `now` rather than read from a running
+        total: the window is only pruned when a liquidation arrives, so a total
+        cached at the last event would keep reporting a cascade long after the
+        liquidations that caused it had aged out.
+        """
+        now = time.time() if now is None else now
+        cutoff = now - self.CASCADE_WINDOW_SECONDS
+        in_window = [item for item in self.liquidation_window if item[0] >= cutoff]
+
+        total = sum(item[1] for item in in_window)
+        longs = sum(item[1] for item in in_window if item[2] == LONG)
+        shorts = sum(item[1] for item in in_window if item[2] == SHORT)
+
+        return {
+            "timestamp": now,
+            "window_seconds": self.CASCADE_WINDOW_SECONDS,
+            "threshold_usd": self.CASCADE_THRESHOLD_USD,
+            "status": "CASCADE" if total >= self.CASCADE_THRESHOLD_USD else "NORMAL",
+            "total_liquidations_usd": round(total, 2),
+            # Longs liquidated are forced sells; shorts liquidated are forced buys.
+            "long_liquidations_usd": round(longs, 2),
+            "short_liquidations_usd": round(shorts, 2),
+            "event_count": len(in_window),
+            "venues": list(self.liquidation_feed.stats()) if self.liquidation_feed else [],
+            "mid_price": round(self.last_mid_price, 2),
+        }
+
+    def write_liquidation_snapshot(self, force: bool = False) -> None:
+        """
+        Persist the cascade window to workspace/liquidations_latest.json.
+
+        Throttled, except when `force` is set so a cascade is published the moment
+        it is detected rather than up to an interval later. Never raises: a snapshot
+        write must not be able to take the feed down.
+        """
+        now = time.time()
+        if not force and (now - self.last_liquidation_write_time) < self.LIQUIDATION_WRITE_INTERVAL_SECONDS:
+            return
+        self.last_liquidation_write_time = now
+
+        try:
+            payload = self.liquidation_window_state(now)
+            temp_path = LIQUIDATION_FILE_PATH.with_suffix(".tmp")
+            with open(temp_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2)
+            temp_path.replace(LIQUIDATION_FILE_PATH)
+        except Exception as err:
+            logger.debug(f"Error persisting liquidation snapshot: {err}")
+
     def process_liquidation(self, event: Liquidation) -> None:
         """
         Records one normalised liquidation and checks the 3-minute cascade threshold.
@@ -404,6 +466,10 @@ class LiquidityPulseWS:
             f"@ ${event.price:,.2f} | Val: ${event.usd:,.2f} | "
             f"3m Window Total: ${total_cascade_usd:,.2f}"
         )
+
+        # Publish straight away: a consumer vetoing trades on this needs the window
+        # the moment it moves, not on the next heartbeat.
+        self.write_liquidation_snapshot(force=True)
 
         if total_cascade_usd >= self.CASCADE_THRESHOLD_USD:
             logger.warning(
@@ -469,6 +535,11 @@ class LiquidityPulseWS:
                             logger.info(f"Reached execution duration limit ({duration_sec}s). Stopping.")
                             self.running = False
                             break
+
+                        # Heartbeat. Ages events out of the published window during a
+                        # quiet market and keeps the snapshot's timestamp moving, so a
+                        # consumer can distinguish "no liquidations" from "feed down".
+                        self.write_liquidation_snapshot()
 
                         try:
                             message = await asyncio.wait_for(ws.recv(), timeout=10.0)
