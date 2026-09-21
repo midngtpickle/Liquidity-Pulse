@@ -121,7 +121,13 @@ python src/sentinel.py
 > **Output**: `workspace/artifacts/SESSION_BRIEFING.md`
 
 ### Step 4: Run the Real-Time WebSocket Feed (`src/ws_feed.py`)
-Connects to Binance live WebSockets (`@depth@100ms` and `@forceOrder`), maintains a full local order book seeded from a REST snapshot, calculates 0.5%, 1%, and 2% depth imbalance deltas, and triggers alerts on liquidation cascades exceeding $5,000,000 over a 3-minute window.
+Connects to Binance for depth (`@depth@100ms`) and to **Bybit and OKX** for liquidations, maintains a full local order book seeded from a REST snapshot, calculates 0.5%, 1%, and 2% depth imbalance deltas, and triggers alerts on liquidation cascades exceeding $5,000,000 over a 3-minute window summed across those venues.
+
+> [!NOTE]
+> Liquidations do not come from Binance. `btcusdt@forceOrder` and the market-wide `!forceOrder@arr` both accept a subscription here and then deliver nothing — 8.7 hours of logged uptime at zero events, and 0 against Bybit's 26 and OKX's 57 over an identical 100 seconds. See [`src/liquidation_feed.py`](../src/liquidation_feed.py).
+
+> [!WARNING]
+> Only one recorder may write at a time. `workspace/depth_history/` is append-only gzip, and two writers produce an unreadable file rather than a merged one. A second `--record` process refuses to start and names the PID holding the lock.
 
 The REST snapshot is capped at 1,000 levels per side on the USD-M perpetual, which reaches roughly 0.16% from mid, so all three bands sit outside it. Bands wider than that reach are under-reported until resting liquidity beyond it moves, so every snapshot publishes a `bands_complete` map alongside `book.complete_bid_span_pct` / `complete_ask_span_pct`. Treat a band flagged `false` as a floor, not a measurement.
 ```bash
@@ -234,5 +240,5 @@ Connect your TradingView charts directly into the Liquidity-Pulse server:
 ## ⏰ 8. Automated Session Schedule & Daemons
 
 To run the framework continuously in the background:
-- **WebSocket Daemon**: Runs `ws_feed.py` with automatic reconnection logic to capture liquidation cascades.
+- **WebSocket Daemon**: Runs `ws_feed.py` with automatic reconnection logic, per venue, to capture liquidation cascades. Each source reconnects independently, so one venue going down costs that venue only.
 - **Session Open Cron**: Triggers `sentinel.py` at `00:00 UTC` (Asia Open), `07:00 UTC` (London Open), and `13:30 UTC` (NY Open).
