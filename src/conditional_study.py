@@ -36,6 +36,8 @@ sys.path.insert(0, str(os.path.dirname(__file__)))
 
 from quant_engine import QuantEngine, SRLevel
 from backtester import SRBacktester
+import tape_profile
+import positioning
 
 logging.basicConfig(
     level=logging.INFO,
@@ -72,7 +74,40 @@ CONDITIONS: List[Tuple[str, Callable[[Dict[str, Any]], bool]]] = [
     ("Asia session", lambda c: c["session"] == "ASIA"),
     ("London session", lambda c: c["session"] == "LONDON"),
     ("New York session", lambda c: c["session"] == "NY"),
+    # Taker order flow. These are the conditions the candle cannot show: whether the
+    # bar that reached the level was bought or sold into, and whether cumulative
+    # delta has been pulling against price on the way in. Absorption -- price holding
+    # while delta runs the other way -- is the specific thing worth testing, since it
+    # is the mechanism traders cite for why a level holds.
+    ("delta with direction", lambda c: c["delta_agrees"] is True),
+    ("delta against direction", lambda c: c["delta_agrees"] is False),
+    ("one-sided taker bar (|d|>0.3)", lambda c: abs(c["delta_ratio"] or 0.0) >= 0.3),
+    ("balanced taker bar (|d|<0.1)", lambda c: c["delta_ratio"] is not None and abs(c["delta_ratio"]) < 0.1),
+    ("absorption (CVD vs price)", lambda c: c["absorption"] is True),
+    ("no absorption", lambda c: c["absorption"] is False),
+    ("sweep + absorption", lambda c: c["sweep"] and c["absorption"] is True),
+    ("sweep + delta with direction", lambda c: c["sweep"] and c["delta_agrees"] is True),
+    # Funding. The only positioning series with enough history to appear here at all --
+    # open interest and the crowd ratios stop 30 days back, which is ~46 folds, and the
+    # control spread at that sample size swamps any edge worth having. See
+    # src/positioning.py.
+    #
+    # The hypothesis is crowding: when longs are paying to stay long, the marginal
+    # holder is levered and the bid is weaker than it looks. "Funding against
+    # direction" is that read applied to the level being tested.
+    ("funding positive (longs pay)", lambda c: (c["funding_rate"] or 0.0) > 0.00005),
+    ("funding negative (shorts pay)", lambda c: (c["funding_rate"] or 0.0) < -0.00005),
+    ("funding near zero", lambda c: c["funding_rate"] is not None and abs(c["funding_rate"]) <= 0.00005),
+    ("funding extreme (|z|>1.5)", lambda c: abs(c["funding_z"] or 0.0) >= 1.5),
+    ("funding crowds the level", lambda c: c["funding_crowded"] is True),
+    ("funding favours the level", lambda c: c["funding_crowded"] is False),
 ]
+
+# Above this, CVD and price are judged to be pulling meaningfully against each other
+# rather than just wobbling. Chosen before looking at any outcome; it is the scale at
+# which the two legs of cvd_divergence differ by about one average bar.
+ABSORPTION_THRESHOLD = 1.0
+DELTA_DEADBAND = 0.05
 
 
 def _session(hour: int) -> str:
@@ -95,7 +130,9 @@ class ConditionalStudy:
         level_price: float,
         direction: str,
         vpoc: float,
-        zone_tolerance_pct: float
+        zone_tolerance_pct: float,
+        funding: Optional[List[Optional[float]]] = None,
+        funding_z: Optional[List[Optional[float]]] = None
     ) -> Dict[str, Any]:
         """
         Market state at the moment of a touch. Everything is computed from candles at or
@@ -155,9 +192,50 @@ class ConditionalStudy:
         base_range = sum(base_ranges) / len(base_ranges) if base_ranges else 0.0
         volatility_ratio = mean_range / base_range if base_range else 1.0
 
+        # Taker flow on the bar that made the touch, and cumulative delta's
+        # disagreement with price over the approach. Both are None when the venue
+        # supplied no taker volume (the Bybit fallback), and every condition that
+        # uses them is written to exclude None rather than coerce it -- a missing
+        # reading must not be silently counted as a balanced one.
+        d_ratio = tape_profile.delta_ratio(candle)
+        if d_ratio is None or abs(d_ratio) < DELTA_DEADBAND:
+            delta_agrees: Optional[bool] = None
+        else:
+            # Buying into a support test, or selling into a resistance test, is the
+            # taker side "agreeing" with the level holding.
+            delta_agrees = (d_ratio > 0) == (direction == "SUPPORT")
+
+        divergence = tape_profile.cvd_divergence(klines, index)
+        if divergence is None:
+            absorption: Optional[bool] = None
+        else:
+            # At a support test, absorption means CVD is falling faster than price --
+            # sellers hitting bids that are soaking it up. Mirror that at resistance.
+            signed = -divergence if direction == "SUPPORT" else divergence
+            absorption = signed >= ABSORPTION_THRESHOLD
+
+        # Funding in force when the touch happened, aligned strictly at-or-before the
+        # candle open so a settlement that had not occurred yet cannot leak in.
+        f_rate = funding[index] if funding is not None and index < len(funding) else None
+        f_z = funding_z[index] if funding_z is not None and index < len(funding_z) else None
+
+        if f_rate is None or abs(f_rate) <= 0.00005:
+            funding_crowded: Optional[bool] = None
+        else:
+            # Longs paying while support is tested means the side defending the level
+            # is the side paying to be there. Same logic mirrored at resistance.
+            funding_crowded = (f_rate > 0) == (direction == "SUPPORT")
+
         stamp = datetime.fromtimestamp(candle["open_time"] / 1000.0, tz=timezone.utc)
 
         return {
+            "funding_rate": f_rate,
+            "funding_z": f_z,
+            "funding_crowded": funding_crowded,
+            "delta_ratio": d_ratio,
+            "delta_agrees": delta_agrees,
+            "cvd_divergence": divergence,
+            "absorption": absorption,
             "trend_agrees": trend_agrees,
             "above_vpoc": close > vpoc,
             "sweep": sweep,
@@ -187,6 +265,12 @@ class ConditionalStudy:
         so adding a condition costs nothing.
         """
         klines = self.backtester.history()
+
+        # Funding, aligned once for the whole history rather than per fold. The series
+        # is fetched from the exchange, so a network failure degrades the funding
+        # conditions to "no data" instead of taking the whole study down with it.
+        funding_series, funding_z = self._funding_features(klines)
+
         starts = list(range(lookback, len(klines) - horizon + 1, horizon))
         real: List[Dict[str, Any]] = []
         controls: List[List[Dict[str, Any]]] = [[] for _ in range(seeds)]
@@ -212,11 +296,52 @@ class ConditionalStudy:
                     outcome = self.backtester.resolve_outcome(
                         anchor_price, direction, test, i, target, break_margin, resolve_bars
                     )
-                    ctx = self.context(klines, start + i, level.price, direction, vpoc, tol)
+                    ctx = self.context(klines, start + i, level.price, direction, vpoc, tol,
+                                       funding_series, funding_z)
                     ctx["outcome"] = outcome
                     sink.append(ctx)
 
         return real, controls
+
+    @staticmethod
+    def _funding_features(
+        klines: List[Dict[str, float]]
+    ) -> Tuple[Optional[List[Optional[float]]], Optional[List[Optional[float]]]]:
+        """
+        Per-candle funding rate and its z-score against the trailing 90 settlements
+        (30 days, since funding settles three times a day).
+
+        Returns (None, None) on any failure. The funding conditions then match nothing
+        and are reported with zero resolved tests, which is a visible "not measured"
+        rather than a silent zero that would read as a genuine neutral.
+        """
+        try:
+            start_ms = int(klines[0]["open_time"]) - 30 * 86400000
+            end_ms = int(klines[-1]["open_time"]) + 86400000
+            rates = positioning.fetch_funding(start_ms=start_ms, end_ms=end_ms)
+            if not rates:
+                return None, None
+
+            aligned = positioning.align_to_klines(klines, rates, "funding_rate")
+
+            # The z-score is taken over the settlement series, not the candle series:
+            # 90 settlements is 30 days, whereas 90 candles would be under a day and
+            # would mostly measure the same single rate against itself.
+            values = [r["funding_rate"] for r in rates]
+            z_by_time: Dict[int, Optional[float]] = {}
+            for i, r in enumerate(rates):
+                z_by_time[r["timestamp"]] = positioning.zscore(values, i, 90)
+
+            z_series = [{"timestamp": r["timestamp"], "z": z_by_time[r["timestamp"]]}
+                        for r in rates if z_by_time[r["timestamp"]] is not None]
+            aligned_z = positioning.align_to_klines(klines, z_series, "z") if z_series else None
+
+            logger.info(f"Funding aligned over {len(rates)} settlements "
+                        f"({positioning.coverage_days(rates):.0f} days).")
+            return aligned, aligned_z
+        except Exception as err:
+            logger.warning(f"Funding features unavailable, conditions will be empty: {err}")
+            return None, None
 
     @staticmethod
     def rate(records: List[Dict[str, Any]], predicate) -> Tuple[float, int, int]:

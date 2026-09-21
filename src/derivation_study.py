@@ -27,6 +27,8 @@ sys.path.insert(0, str(os.path.dirname(__file__)))
 
 from quant_engine import QuantEngine, SRLevel
 from backtester import SRBacktester
+import tape_profile
+import liquidity_pools
 
 logging.basicConfig(
     level=logging.INFO,
@@ -182,6 +184,50 @@ def moving_averages(engine, klines, ref_price, tol):
     return out
 
 
+def tape_vpoc_nodes(engine, klines, ref_price, tol):
+    """Range-distributed volume profile, replacing the mid-price binning. Directly
+    comparable to the 'VPOC + HVN nodes' row above, which is the point: the two
+    differ only in how a candle's volume is attributed to price."""
+    profile = tape_profile.build_profile(klines)
+    return [_level(p, ref_price) for p in [profile.vpoc] + list(profile.hvn_zones)]
+
+
+def tape_value_area(engine, klines, ref_price, tol):
+    """The 70% value area edges. Where acceptance ends, rather than where it peaks."""
+    profile = tape_profile.build_profile(klines)
+    return [_level(profile.value_area_high, ref_price),
+            _level(profile.value_area_low, ref_price)]
+
+
+def tape_lvn_nodes(engine, klines, ref_price, tol):
+    """LVNs from the range-distributed profile."""
+    profile = tape_profile.build_profile(klines)
+    return [_level(p, ref_price) for p in profile.lvn_zones]
+
+
+def pool_untested(engine, klines, ref_price, tol):
+    """Swing extremes price has never traded beyond."""
+    return [_level(p.price, ref_price)
+            for p in liquidity_pools.untested_extremes(klines)]
+
+
+def pool_equal_levels(engine, klines, ref_price, tol):
+    """Stop shelves: two or more swings within 0.08% of each other, still untested."""
+    return [_level(p.price, ref_price)
+            for p in liquidity_pools.equal_levels(klines)]
+
+
+def pool_session_extremes(engine, klines, ref_price, tol):
+    """Untested highs and lows of the last three completed sessions."""
+    return [_level(p.price, ref_price)
+            for p in liquidity_pools.session_extremes(klines)]
+
+
+def pool_all(engine, klines, ref_price, tol):
+    """Every pool type together, deduplicated."""
+    return [_level(p.price, ref_price) for p in liquidity_pools.all_pools(klines)]
+
+
 DERIVATIONS: List[Tuple[str, Derivation]] = [
     ("pivot clusters (production)", pivot_clusters),
     ("pivot clusters, 5+ touches", pivot_clusters_strong),
@@ -197,6 +243,16 @@ DERIVATIONS: List[Tuple[str, Derivation]] = [
     ("fib retracements", fib_retracements),
     ("anchored VWAP", anchored_vwap),
     ("50/200 EMA (static)", moving_averages),
+    # Volume at price, attributed across each candle's range instead of to its mid.
+    ("VPOC + HVN (range-dist.)", tape_vpoc_nodes),
+    ("value area edges (70%)", tape_value_area),
+    ("LVN nodes (range-dist.)", tape_lvn_nodes),
+    # Liquidity pools: where unfilled stops sit, not where price has turned. A
+    # different hypothesis from everything above it, held to the same control.
+    ("pools: untested extremes", pool_untested),
+    ("pools: equal highs/lows", pool_equal_levels),
+    ("pools: session extremes", pool_session_extremes),
+    ("pools: all combined", pool_all),
 ]
 
 
