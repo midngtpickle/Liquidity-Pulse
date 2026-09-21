@@ -17,6 +17,13 @@ Thumbs.db
 
 # Recorded order book history (grows continuously; not source)
 workspace/depth_history/
+# Same reasoning: recorded positioning history is local data, not source. It is
+# also the only copy that will ever exist past the exchange 30-day wall.
+workspace/positioning_history/
+
+# Recorder logs. Written by the scheduled tasks under pythonw.exe, which has no
+# console to write to; runtime diagnostics, not source.
+workspace/logs/
 
 # Inbound TradingView webhook payloads. Runtime state, not source: whatever a
 # caller posts lands here verbatim, so committing it turns any field they send
