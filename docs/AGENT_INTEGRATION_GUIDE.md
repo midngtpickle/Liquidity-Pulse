@@ -58,6 +58,18 @@ paths:
       responses:
         '200':
           description: Successful depth metrics retrieval
+  /api/liquidations:
+    get:
+      summary: Fetch Rolling Liquidation Cascade Window
+      description: >-
+        Returns the trailing 3-minute liquidation total split by liquidated side,
+        with status NORMAL or CASCADE against the $5M threshold. Check the timestamp
+        for staleness before acting on it: a stopped feed leaves the last snapshot in
+        place, and status is "waiting_for_feed" before the first write.
+      operationId: getLiquidationWindow
+      responses:
+        '200':
+          description: Successful liquidation window retrieval
   /api/briefing:
     get:
       summary: Fetch Latest Session Briefing

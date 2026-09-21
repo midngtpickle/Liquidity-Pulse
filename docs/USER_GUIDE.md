@@ -177,6 +177,7 @@ The dashboard web server exposes REST API endpoints for integration:
 | :--- | :--- | :--- |
 | `GET /api/telemetry` | `GET` | Returns machine-readable market telemetry JSON (`telemetry_latest.json`) |
 | `GET /api/depth` | `GET` | Returns real-time depth delta and band metrics (`depth_latest.json`) |
+| `GET /api/liquidations` | `GET` | Returns the rolling 3-minute liquidation cascade window (`liquidations_latest.json`): `status` (`NORMAL`/`CASCADE`), `total_liquidations_usd`, `long_liquidations_usd`, `short_liquidations_usd`, `event_count`, `venues`. Written by `ws_feed` on every liquidation and on a 2s heartbeat, so a moving `timestamp` distinguishes a quiet market from a stopped feed. Serves `status: "waiting_for_feed"` before the first snapshot. |
 | `GET /api/briefing` | `GET` | Returns latest session briefing markdown content (`SESSION_BRIEFING.md`) |
 | `POST /api/refresh` | `POST` | Triggers `QuantEngine` and updates telemetry & briefing on demand |
 | `POST /api/webhook/tradingview` | `POST` | Ingests TradingView alert webhook signals and broadcasts to Discord/Telegram |
