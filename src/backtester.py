@@ -287,7 +287,7 @@ class SRBacktester:
         lookback: int = 500,
         horizon: int = 50,
         min_touches: int = 2,
-        control_seeds: int = 5,
+        control_seeds: int = 30,
         anchor: str = "entry"
     ) -> Dict[str, Any]:
         """
@@ -519,7 +519,7 @@ if __name__ == "__main__":
     parser.add_argument("--break-margin", type=float, default=0.0035)
     parser.add_argument("--resolve-bars", type=int, default=8)
     parser.add_argument("--min-touches", type=int, default=2)
-    parser.add_argument("--control-seeds", type=int, default=5,
+    parser.add_argument("--control-seeds", type=int, default=30,
                         help="Random-level control runs (0 disables)")
     parser.add_argument("--anchor", choices=["entry", "level"], default="entry",
                         help="Measure the outcome from the entry price (default, ~50%% "
