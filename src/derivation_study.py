@@ -312,7 +312,7 @@ class DerivationStudy:
         break_margin: float = 0.0035,
         resolve_bars: int = 32,
         anchor: str = "entry",
-        seeds: int = 5
+        seeds: int = 30
     ) -> Dict[str, Any]:
         klines = self.backtester.history()
         starts = list(range(lookback, len(klines) - horizon + 1, horizon))
@@ -459,7 +459,7 @@ if __name__ == "__main__":
     parser.add_argument("--break-margin", type=float, default=0.0035)
     parser.add_argument("--resolve-bars", type=int, default=32)
     parser.add_argument("--anchor", choices=["entry", "level"], default="entry")
-    parser.add_argument("--seeds", type=int, default=5)
+    parser.add_argument("--seeds", type=int, default=30)
     args = parser.parse_args()
 
     study = DerivationStudy(total_candles=args.candles)

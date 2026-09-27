@@ -6,33 +6,19 @@ Welcome to the **Liquidity-Pulse User Operational Guide**. This guide explains h
 
 ## 📐 1. Component & Architecture Overview
 
-Liquidity-Pulse operates using a **Sentinel & Subagent Architecture**:
+Liquidity-Pulse is a set of deterministic Python processes plus a TradingView indicator.
+There are no LLM agents at runtime; "Sentinel" and "Quant engine" are module names.
 
 ```
-                         ┌─────────────────────────────┐
-                         │ Sentinel Agent Orchestrator │
-                         │ Schedule: 00:00, 07:00, 13:30│
-                         └──────────────┬──────────────┘
-                                        │
-           ┌────────────────────────────┴────────────────────────────┐
-           ▼                                                         ▼
-┌──────────────────────┐                                 ┌──────────────────────┐
-│    Quant Subagent    │                                 │    Macro Subagent    │
-│  (src/quant_engine.py)│                                 │   (src/sentinel.py)  │
-└──────────┬───────────┘                                 └──────────┬───────────┘
-           │                                                        │
-           ▼                                                        ▼
-┌──────────────────────┐                                 ┌──────────────────────┐
-│telemetry_latest.json │                                 │  SESSION_BRIEFING.md │
-└──────────┬───────────┘                                 └──────────┬───────────┘
-           │                                                        │
-           └────────────────────────────┬───────────────────────────┘
-                                        ▼
-                         ┌─────────────────────────────┐
-                         │   Visual Dashboard Server   │
-                         │    http://localhost:8080    │
-                         └─────────────────────────────┘
+ sentinel.py ─► quant_engine.py ─► telemetry_latest.json ─┐
+            └─────────────────────► SESSION_BRIEFING.md ───┤
+ ws_feed.py ──► depth_latest.json, liquidations_latest.json┼─► server.py ─► http://localhost:8080
+ liquidity_pulse_sr.pine (TradingView) ─── alert webhook ──┘
 ```
+
+`sentinel.py` runs when you start it, when `start_all.bat` starts it, or when the dashboard's
+Refresh button is pressed. Nothing runs it on a timer. `ws_feed.py` and `server.py` are
+long-running. See [RUNTIME_ARCHITECTURE.md](RUNTIME_ARCHITECTURE.md) for the full picture.
 
 ## 💻 Standalone Windows Operating & Startup Guide (No Antigravity Required)
 
@@ -114,7 +100,7 @@ python src/quant_engine.py
 > **Output**: `workspace/telemetry_latest.json`
 
 ### Step 3: Run the Sentinel Orchestrator (`src/sentinel.py`)
-Executes `quant_engine.py`, detects the active session open (Asia, London, or New York), and generates an institutional session intelligence briefing.
+Executes `quant_engine.py`, labels the active session (Asia, London, or New York), generates the session briefing, and sends it to Telegram/Discord if their credentials are set.
 ```bash
 python src/sentinel.py
 ```
@@ -152,20 +138,21 @@ python src/server.py --port 8080
 Open your browser to `http://localhost:8080` to access the terminal:
 
 1. **Header Bar**:
-   - Displays live $BTC mid-price, 24h High/Low range, 24h Volume, and Active Trading Session.
-   - **`Refresh Telemetry`** button triggers on-demand quantitative engine recalculation.
-2. **Pine S/R Clusters Heatmap Table**:
+   - Instrument (`BINANCE:BTCUSDT.P`), live mid-price, and the active trading session.
+   - **`Refresh Telemetry`** runs the full `sentinel.py` pipeline on demand. Once Telegram or Discord is configured, **every refresh also sends a briefing** to those channels.
+2. **Stat Cards**: 24h range and volume, VPOC, count of HIGH-conviction levels, VPOC bias, and cumulative taker delta (CVD) over the 500-candle window.
+3. **Pine S/R Clusters Table**:
    - Filter by `All`, `Supports`, `Resistances`, or `High Conviction`.
-   - Displays price levels, touch count frequency, distance %, and volume confluence tags (`VPOC/HVN`).
-3. **Volume Profile Chart**:
-   - Interactive horizontal bar chart.
-   - Gold bar = **VPOC** (Volume Point of Control / Fair Value Anchor).
-   - Cyan bars = **HVN** (High Volume Nodes / Price Acceptance).
-   - Magenta bars = **LVN** (Low Volume Nodes / Air Pockets).
-4. **Order Book Depth Imbalance Gauges**:
-   - Shows live bid vs. ask depth percentages across 0.5%, 1%, and 2% depth bands.
-5. **Institutional Session Briefing Reader**:
-   - Formatted Markdown renderer showing the latest report from `SESSION_BRIEFING.md`.
+   - Price levels, touch count, distance %, and volume confluence tags (`VPOC/HVN`). The same levels the Pine indicator draws on a 15m chart.
+4. **Positioning**: funding (and annualised rate) with a countdown to the next settlement, open interest and its 24h change, the top-trader long/short ratio, and the OI/price quadrant. Open interest and the ratios are marked **untested** — the exchange only serves 30 days of their history.
+5. **Liquidity Pools**: untested swing extremes, equal highs/lows and session extremes, with side and distance. These are targets price tends to reach, not levels to fade — see [STRATEGY.md §5](STRATEGY.md#pools-are-scored-by-the-wrong-harness-here).
+6. **Order Book Depth Imbalance**:
+   - Bid vs. ask depth across the 0.5%, 1% and 2% bands, from `ws_feed.py`.
+   - Bands wider than the order-book snapshot can see are marked **partial**. On the perpetual that is all three; treat them as floors, not measurements.
+7. **Volume Profile Chart**: gold bar = **VPOC**, cyan = **HVN**, magenta = **LVN**, over 500 candles.
+8. **Session Briefing Reader**: the latest `SESSION_BRIEFING.md`, rendered.
+
+Liquidations are not shown on the dashboard; read them from `GET /api/liquidations`.
 
 ---
 
@@ -179,67 +166,95 @@ The dashboard web server exposes REST API endpoints for integration:
 | `GET /api/depth` | `GET` | Returns real-time depth delta and band metrics (`depth_latest.json`) |
 | `GET /api/liquidations` | `GET` | Returns the rolling 3-minute liquidation cascade window (`liquidations_latest.json`): `status` (`NORMAL`/`CASCADE`), `total_liquidations_usd`, `long_liquidations_usd`, `short_liquidations_usd`, `event_count`, `venues`. Written by `ws_feed` on every liquidation and on a 2s heartbeat, so a moving `timestamp` distinguishes a quiet market from a stopped feed. Serves `status: "waiting_for_feed"` before the first snapshot. |
 | `GET /api/briefing` | `GET` | Returns latest session briefing markdown content (`SESSION_BRIEFING.md`) |
-| `POST /api/refresh` | `POST` | Triggers `QuantEngine` and updates telemetry & briefing on demand |
-| `POST /api/webhook/tradingview` | `POST` | Ingests TradingView alert webhook signals and broadcasts to Discord/Telegram |
+| `POST /api/refresh` | `POST` | Runs the full `sentinel.py` pipeline in the background (`202`, or `429` if one is already running): telemetry, briefing, and a briefing alert to any configured channel. Unauthenticated. |
+| `POST /api/webhook/tradingview` | `POST` | Ingests TradingView alert webhook signals and relays them to configured channels. Checks `TRADINGVIEW_WEBHOOK_SECRET` if set; `401` on a wrong secret, `413` over 64KB, `503` if bound off-box with no secret. |
 | `GET /api/tradingview/signals` | `GET` | Returns historical list of received TradingView alert signals |
 | `GET /api/health` | `GET` | Health check endpoint returning `{"status": "healthy"}` |
 
 ---
 
-## 📲 6. Discord & Telegram Alert Setup
+## 📲 5. Telegram & Discord Alert Setup
+
+Each channel is used **only when its environment variables are set**. An unconfigured
+channel is skipped silently (the dispatchers log a dry run instead). Sending costs nothing on
+either platform.
+
+### Telegram Bot Configuration
+1. Message [@BotFather](https://t.me/BotFather), send `/newbot`, and follow the prompts. It gives you a token.
+2. Send any message to your new bot, then open `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates` and read `"chat":{"id": ...}`. That number is your chat ID.
+3. Set both as persistent user environment variables:
+   ```powershell
+   setx TELEGRAM_BOT_TOKEN "your_token_here"
+   setx TELEGRAM_CHAT_ID "your_chat_id_here"
+   ```
+4. **Open a new terminal.** `setx` only affects processes started afterwards, and every module reads the environment once at import, so a running server or feed never sees the change. (`$env:NAME="..."` works too, but only for the current PowerShell window.)
+5. Test without sending anything: `python src/telegram_bot.py --dry-run`.
+
+Tokens are scrubbed from error logs before they are written.
 
 ### Discord Webhook Configuration
 1. Open your Discord server -> Channel Settings -> Integrations -> **Webhooks**.
 2. Click **New Webhook**, copy the Webhook URL.
-3. Set environment variable:
-   ```bash
-   # Windows PowerShell
-   $env:DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/your/webhook/url"
-   
-   # Windows CMD
-   set DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/your/webhook/url
-   ```
-4. **Dispatches**:
-   - 🟢 Color-coded Session Briefing Cards (Bulls in Green, Bears in Red) with VPOC, S/R tables, and clickable dashboard links.
-   - 🚨 High-urgency **$5M+ Liquidation Cascade Alert Embeds**.
+3. `setx DISCORD_WEBHOOK_URL "https://discord.com/api/webhooks/..."`, then open a new terminal.
 
-### Telegram Bot Configuration
-1. Create a bot with `@BotFather` on Telegram to get your `TELEGRAM_BOT_TOKEN`.
-2. Get your channel or user `TELEGRAM_CHAT_ID`.
-3. Set environment variables:
-   ```bash
-   $env:TELEGRAM_BOT_TOKEN="your_token_here"
-   $env:TELEGRAM_CHAT_ID="your_chat_id_here"
-   ```
+### What gets sent
+
+| Alert | When | Needs |
+| :--- | :--- | :--- |
+| Session briefing | whenever `sentinel.py` runs — including every dashboard Refresh | nothing else |
+| Liquidation cascade | more than $5M liquidated across Bybit and OKX within 3 minutes; 3-minute cooldown | `ws_feed.py` running |
+| TradingView S/R touch | price re-enters a HIGH-conviction zone on your chart | the setup in §6 |
+
+There is no queue: an alert that would have fired while the machine was off or the feed was
+stopped is simply never sent. Briefing dispatch has a hard 15-second deadline, so a hung
+request cannot stall the pipeline.
 
 ---
 
-## 📈 7. TradingView Webhook Integration
+## 📈 6. TradingView Webhook Integration
 
 Connect your TradingView charts directly into the Liquidity-Pulse server:
 
-1. In TradingView, add the **[`liquidity_pulse_sr.pine`](../liquidity_pulse_sr.pine)** indicator script.
-2. Click **Create Alert** on the indicator.
-3. In the alert settings:
-   - **Condition**: Select `Liquidity-Pulse: Support Touch` or `Liquidity-Pulse: Resistance Touch`.
-   - **Webhook URL**: Check the Webhook URL box and enter `http://your-server-ip:8080/api/webhook/tradingview` (or your ngrok / public URL).
-   - **Message**: Enter JSON payload:
-     ```json
-     {
-       "symbol": "{{ticker}}",
-       "event": "SUPPORT_TOUCH",
-       "level_type": "SUPPORT",
-       "price": {{close}},
-       "conviction": "HIGH",
-       "message": "High conviction support test on TradingView"
-     }
-     ```
-4. When triggered, the server receives the alert, saves it to `workspace/tradingview_signals.json`, and automatically relays rich embeds to your Discord channel and Telegram chat!
+1. In TradingView, add the **[`liquidity_pulse_sr.pine`](../liquidity_pulse_sr.pine)** indicator to a **15m** `BINANCE:BTCUSDT.P` chart. On other timeframes it will not agree with the dashboard.
+2. Make the server reachable from the internet. It binds `127.0.0.1` by default, which TradingView cannot reach; use a tunnel such as `ngrok http 8080`, which gives you an HTTPS URL and keeps the server bound to localhost.
+3. Set a secret **before** starting the server, then start it in a new terminal:
+   ```powershell
+   setx TRADINGVIEW_WEBHOOK_SECRET "a-long-random-string"
+   ```
+   If you instead bind the server off-box (`--host 0.0.0.0`) without a secret, the webhook refuses every request with `503`. Behind a tunnel the server is still bound to localhost, so that guard does **not** apply — without a secret, anyone who finds the tunnel URL can post alerts.
+4. Click **Create Alert** on the indicator and choose one of:
+   - **Condition** `Liquidity-Pulse: Support Touch` or `Resistance Touch` — sends a fixed JSON message with `{{close}}`.
+   - **Condition** `Any alert() function call` — sends a richer message that also carries the tested `level` and its `touch_count`.
+5. **Webhook URL**: `https://<your-tunnel>/api/webhook/tradingview?secret=<your-secret>`. The secret has to go in the query string: TradingView cannot set custom headers, and the alert messages are fixed in the indicator, so it cannot go in the body.
+6. When triggered, the server checks the secret, strips it from the payload, appends the signal to `workspace/tradingview_signals.json`, and relays it to whichever of Telegram and Discord are configured.
+
+> [!NOTE]
+> Every read endpoint and `POST /api/refresh` are unauthenticated. A public tunnel exposes
+> them too — including the ability to trigger a refresh, and therefore a Telegram briefing.
 
 ---
 
-## ⏰ 8. Automated Session Schedule & Daemons
+## ⏰ 7. Background Processes & Recorders
 
-To run the framework continuously in the background:
-- **WebSocket Daemon**: Runs `ws_feed.py` with automatic reconnection logic, per venue, to capture liquidation cascades. Each source reconnects independently, so one venue going down costs that venue only.
-- **Session Open Cron**: Triggers `sentinel.py` at `00:00 UTC` (Asia Open), `07:00 UTC` (London Open), and `13:30 UTC` (NY Open).
+- **WebSocket feed**: `ws_feed.py` reconnects on its own. Each liquidation venue reconnects independently with capped backoff, so one venue going down costs that venue only.
+- **Session briefings are not scheduled.** `sentinel.py` uses 00:00, 07:00 and 13:30 UTC to label which session is active, but nothing runs it at those times. If you want briefings at session opens, add a Windows Task Scheduler entry for `venv\Scripts\python.exe src\sentinel.py`.
+- **Data recorders** (optional): order-book depth and open interest cannot be fetched retroactively, so the only way to have their history is to record it. Install both as scheduled tasks once:
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File scripts\install_recorders.ps1
+  ```
+  They run while you are logged on (locking the screen is fine; signing out stops them) and restart themselves if they die. Remove with `scripts\uninstall_recorders.ps1`, which never deletes recorded data. Details in [STRATEGY.md §6](STRATEGY.md#how-the-recorders-are-scheduled).
+
+---
+
+## 🔬 8. Research Harnesses
+
+Each benchmark re-derives levels walk-forward and scores them against randomly displaced
+control levels, because a hold rate on its own says nothing. Results and their limits are
+written up in [STRATEGY.md §5](STRATEGY.md#5-what-the-benchmark-says).
+
+```bash
+python src/backtester.py                        # production levels, hold rate vs control
+python src/derivation_study.py --candles 20000  # many ways of deriving levels
+python src/conditional_study.py --candles 20000 # levels under trend, sweeps, session, flow
+python src/pool_study.py --candles 20000        # liquidity pools as magnets
+```

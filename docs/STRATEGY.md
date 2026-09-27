@@ -23,7 +23,7 @@ the strategy itself.
 
 ## 1. What the system computes
 
-Three independent signals:
+Eight signals, from three kinds of source:
 
 | Signal | Question it answers | Where it lives |
 | :--- | :--- | :--- |
@@ -38,11 +38,13 @@ Three independent signals:
 
 The first two are derived from OHLCV candles and are computed **twice** — once in Pine for
 the chart, once in Python for the dashboard, briefings and alerts. The next three are
-Python-only and derived from candles. Depth imbalance needs a live order book.
+Python-only and also derived from candles. Positioning comes from Binance's futures data
+endpoints, depth imbalance needs a live order book, and liquidations come from Bybit and OKX
+websocket streams.
 
-The first five all answer questions about *price levels*. Liquidity pools is the only one
-that asks a different kind of question, and it is scored by a different harness
-(`pool_study.py`) for that reason — see §5.
+Liquidity pools ask a different kind of question from the other candle-derived signals —
+where price is drawn *to*, not where it turns — and are scored by a different harness
+(`pool_study.py`) for that reason; see §5.
 
 ### Volume at price, and why there are two profiles
 
@@ -158,12 +160,18 @@ moves that look identical on a chart.
 
 ### S/R derivation, step by step
 
-1. **Pivots** — `ta.pivothigh` / `ta.pivotlow` with 10 bars either side. A candle is a
-   pivot high if its high exceeds the 10 highs before it and meets or exceeds the 10 after.
-2. **Clustering** — each new pivot is merged into an existing level if it falls within
-   **0.35%** of that level's running mean; otherwise it starts a new level.
+Everything below is rebuilt from scratch over the trailing 500 candles — every run in
+Python, and on the last bar of every update in Pine — rather than accumulated.
+
+1. **Pivots** — 10 bars either side. A candle is a pivot high if its high exceeds the 10
+   highs before it and meets or exceeds the 10 after (and mirrored for lows). Pine scans the
+   window directly instead of using `ta.pivothigh` / `ta.pivotlow`, because the built-ins
+   report a pivot once, on the bar it confirms, and a rebuild needs every pivot every pass.
+2. **Clustering** — pivots are taken in time order; each merges into the *first* existing
+   level within **0.35%** of that level's running mean, otherwise it starts a new level.
 3. **Touch counting** — a touch is counted when price *enters* the level's zone from
-   outside. Bars that merely sit inside the zone do not add touches.
+   outside. Bars that merely sit inside the zone do not add touches; the window's first bar
+   counts if it is already inside.
 4. **Conviction** — see the invariant table below.
 
 ### Volume profile
@@ -184,7 +192,7 @@ maintained by the `@depth@100ms` diff stream.
 > **under-reported** — the diff stream reports a level only when it changes, so resting
 > liquidity beyond the seed reach is invisible. Every snapshot publishes a
 > `bands_complete` map alongside `book.complete_bid_span_pct`. A band flagged `false` is a
-> floor, not a measurement, and the dashboard marks it `PARTIAL`.
+> floor, not a measurement, and the dashboard marks it *partial*.
 
 #### Book reach: spot vs perpetual
 
@@ -223,7 +231,7 @@ most trustworthy of the three, and all three are floors.
         TradingView chart                        Your machine
    ┌───────────────────────────┐        ┌──────────────────────────────┐
    │ liquidity_pulse_sr.pine   │        │ quant_engine.py              │
-   │  · ta.pivothigh/low 10/10 │        │  · calculate_pine_pivots()   │
+   │  · window pivot scan 10/10│        │  · calculate_pine_pivots()   │
    │  · merge within 0.35%     │  ═══   │  · cluster_sr_levels()       │
    │  · debounced touches      │ must   │  · debounced touch counting  │
    │  · 50-bin VPOC histogram  │ agree  │  · calculate_volume_profile()│
@@ -294,6 +302,13 @@ briefings will quietly disagree.
 > **The chart must be on 15m** for the Pine output to match the telemetry. The indicator
 > reads whatever timeframe the chart is on; the backend is hardcoded to `15m`. On a 1h
 > chart the indicator is internally consistent but will not agree with the dashboard.
+>
+> 5m was tested as an alternative, because levels can *look* better fitted on it. Against
+> the same control, with resolution matched by wall-clock time, production levels scored no
+> better on 5m than on 15m — both indistinguishable from random. Lines on a shorter window
+> sit closer to price and look more relevant for that reason alone. The backend also assumes
+> 15m in two places (`window[-96:]` as 24 hours, and the Bybit fallback's interval mapping),
+> so switching it is not a one-line change.
 
 Conviction cannot be finalised where levels are clustered, because the volume profile does
 not exist yet. In Python, `cluster_sr_levels()` grades provisionally and
@@ -331,6 +346,20 @@ The endpoint binds `127.0.0.1`. Until you put a tunnel in front of it the secret
 optional; the moment you do, an unauthenticated endpoint lets anyone who finds the URL
 write to your signals file and fire your Discord and Telegram alerts.
 
+The server **fails closed** only when it is *bound* off-box: `--host 0.0.0.0` with no secret
+answers every webhook with `503`. A tunnel such as ngrok forwards to `127.0.0.1`, so that
+guard never sees it — behind a tunnel, setting the secret is on you.
+
+Pine offers two ways to fire: the two `alertcondition()` entries, whose messages are fixed
+strings carrying only `{{close}}`, or *Any alert() function call*, whose message also
+carries the tested level and its touch count.
+
+Each channel is dispatched only when its credentials are set; an unconfigured one is skipped.
+The session briefing sends on daemon threads against a hard 15-second deadline, so a hung
+Telegram request cannot stall `sentinel.py` or keep the process alive. Liquidation cascades
+take a separate path — evaluated in `ws_feed.py` on every event, $5M over 3 minutes, 3-minute
+cooldown — and never touch the webhook.
+
 ---
 
 ## 5. What the benchmark says
@@ -342,7 +371,7 @@ building anything on top of the conviction tiers.
 > [!NOTE]
 > The numbers below are a **re-run on a later 20,000-candle window** (to 2026-09-21) than
 > the original fourteen-row table, and the baseline moved: production pivot clusters went
-> from +0.08 (0.2 sd) to +1.79 (2.2 sd). That is the sample changing, not the method
+> from +0.08 (0.1 sd) to +1.79 (2.2 sd). That is the sample changing, not the method
 > improving. It is also the clearest possible warning against reading any single row here
 > as settled — a result that swings from nothing to 2 sd when the window moves is a result
 > that will swing back.
@@ -356,6 +385,14 @@ or UNRESOLVED.
 **The control.** Every derivation is scored against the same levels displaced by a random
 0.6–2% offset. This asks the sharp question: *is this particular price special, or would
 any price nearby do as well?*
+
+> [!WARNING]
+> **The sd column in the table below is optimistic.** `derivation_study.py` defaults to
+> **5** control seeds, and this table was produced at that default. Five samples cannot see
+> the control's real spread: re-running one row (LVN at 5m) at 40 seeds widened its control
+> sd from 0.68 to 1.75 and cut a 4.8 sd "result" to 2.6 sd — which then failed to survive a
+> larger sample entirely. `conditional_study.py` and `pool_study.py` default to 30 seeds and
+> are not affected. Re-run with `--seeds 30` before treating any row here as past 2 sd.
 
 **Result** — BTCUSDT 15m, 20,000 candles (~7 months), 390 folds:
 
@@ -383,7 +420,8 @@ any price nearby do as well?*
 | untested pivots (1 touch) | 65 | 36.92% | 39.83% | −2.91 | 2.7 |
 | prior-day high/low | 684 | 36.26% | 41.98% | −5.73 | 4.2 |
 
-**Four rows clear 2 sd on this window, and none of them should be believed yet.** Twenty-one
+**Four rows clear 2 sd on this window, and none of them should be believed yet** — on top of
+the reasons below, those sd figures come from five control seeds (see the warning above). Twenty-one
 derivations tested means roughly one row past 2 sd by chance alone; four is more than that,
 but not by much, and three of the four have an obvious problem:
 
@@ -466,6 +504,16 @@ and it points the *opposite* way to the crowding hypothesis that motivated it �
 slightly better when funding was against the side defending them, not worse. At 1-in-36
 that is noise with a direction, not a finding.
 
+**Sweeps, over a longer history.** The one lead from an earlier 22-condition run was the
+sweep — price piercing a level and closing back on the side it came from. Over 7 months it
+measured +1.99 points (0.5 sd) on 187 tests, and was the only family positive across every
+variant. Re-run over 100,000 candles (~2.8 years, 11,802 resolved touches), it measured
+**+0.24 points (0.1 sd) on 914 tests**: an apparent edge decaying toward zero as the sample
+grew. The same run put the baseline at −0.26 (0.5 sd), above-VPOC at −0.29 and below-VPOC at
+−0.28, and found zero positive conditions past 2 sd against 1.0 expected by chance. At that
+size the baseline's control sd is 0.49, so an edge as small as about one point would have
+been visible. A sweep is still worth *seeing* on a chart; it is not a signal to act on.
+
 Worth noting against the previous run: taker flow's "delta against direction" was the single
 2 sd hit at 30 conditions and fell back to 1.8 sd here, on a window differing by a handful of
 candles. Rows at that level of significance are not stable enough to trade.
@@ -476,9 +524,11 @@ predict the next move.
 
 ### What this does and does not establish
 
-**Does:** over this sample, price entering these zones does not reverse more often than it
-reverses at an arbitrary price 0.6–2% away. The sample supports ruling out an edge larger
-than roughly 2 points.
+**Does:** across the windows tested, price entering these zones reverses at an arbitrary
+price 0.6–2% away about as often as at the level itself. The production derivation has
+measured anywhere from +0.08 to +1.79 points depending on the window, and the tiers do not
+measurably separate. That supports ruling out an edge larger than roughly 2 points, and
+leaves open a small one that moves with the sample.
 
 **Does not:** it tests whether price *reverses at a level over the following bars*. It
 says nothing about levels as context for position sizing or stop placement, nothing about
