@@ -103,6 +103,12 @@ $$\text{Imbalance Delta \%} = \frac{\text{Bid Depth USD} - \text{Ask Depth USD}}
 - **Positive Delta (> +15%)**: Passive Bids heavily outweigh Asks $\rightarrow$ Strong underlying price support.
 - **Negative Delta (< -15%)**: Passive Asks heavily outweigh Bids $\rightarrow$ Overhead supply pressure.
 
+> [!NOTE]
+> In Liquidity-Pulse these $\pm 15\%$ thresholds are conventions, not tested rules — the
+> imbalance signal cannot be benchmarked until enough order-book history has been recorded.
+> On the Binance perpetual the order-book snapshot only reaches about 0.16% from mid, so all
+> three bands (0.5%, 1%, 2%) are under-reported and the dashboard marks them *partial*.
+
 ### 4.2 Absorption vs. Exhaustion
 
 - **Absorption**: Aggressive market sellers hit a support level with huge volume, but price refuses to fall. This indicates a large passive institutional limit bid is **absorbing** all selling pressure.
@@ -114,18 +120,29 @@ $$\text{Imbalance Delta \%} = \frac{\text{Bid Depth USD} - \text{Ask Depth USD}}
 
 In leveraged crypto derivative markets (Binance / Bybit Futures), positions have strict liquidation prices.
 
-When price hits a liquidation threshold, the exchange forcibly closes the position by issuing a **Market Force Order (`@forceOrder`)**:
+When price hits a liquidation threshold, the exchange forcibly closes the position with a market order:
 - Long Liquidation $\rightarrow$ **Forced Market SELL**
 - Short Liquidation $\rightarrow$ **Forced Market BUY**
+
+Exchanges report this with different conventions. Binance's `forceOrder` gives the forced
+**order** side (a liquidated long is `SELL`); Bybit gives the **position** side (a liquidated
+long is `Buy`) under the same field name. Liquidity-Pulse normalises both to `LONG`/`SHORT`.
 
 ### 5.1 The Cascade Effect
 
 When price moves rapidly:
 $$\text{Price Drop} \rightarrow \text{Long Liquidations} \rightarrow \text{Market Sells} \rightarrow \text{Further Price Drop} \rightarrow \text{Next Liquidation Tier}$$
 
-Liquidity-Pulse monitors `@forceOrder` streams over a **3-minute sliding window**:
+Liquidity-Pulse monitors **Bybit and OKX** liquidation streams over a **3-minute sliding window**.
+It does not use Binance: `forceOrder` accepts a subscription and delivers nothing (zero events
+across 8.7 hours, against dozens per minute from Bybit and OKX).
+
 > [!WARNING]
-> When liquidation volume exceeds **$5,000,000 USD** in 3 minutes, market liquidity becomes temporarily depleted, creating sharp price wicks and high-probability mean-reversion bounce opportunities.
+> When liquidation volume exceeds **$5,000,000 USD** in 3 minutes, an alert fires. Cascades
+> like this can deplete liquidity and leave sharp wicks, and traders often look for
+> mean-reversion afterwards — but that bounce is **not** something this system has measured.
+> The threshold was also set for Binance's whole market and now sums a smaller two-venue
+> population, so treat it as a number to re-tune against cascades you actually see.
 
 ---
 
@@ -141,27 +158,38 @@ $$High[i] > High[i-k] \quad \forall k \in [1, 10] \quad \text{and} \quad High[i]
 ### 6.2 Density Clustering ($0.35\%$ Threshold)
 
 Raw pivots are clustered using spatial density grouping:
-- Pivots within $0.35\%$ of each other are merged into a single horizontal zone.
-- Touch counts across 500 candles are tallied.
+- Pivots are taken in the order they occurred and each merges into the first existing zone
+  whose running centre is within $0.35\%$; otherwise it starts a new zone.
+- A **touch** is price *entering* a zone from outside. Candles that merely sit inside it add
+  nothing — counting every overlapping candle measures how long price loitered, not how often
+  it tested the level.
+- Everything is rebuilt over the trailing 500 candles each time, on the chart and in the
+  backend alike, so the two agree.
 
 ### 6.3 Conviction Matrix
 
 | Touch Count | Volume Confluence | Conviction Tier | Actionable Strategy |
 | :--- | :--- | :--- | :--- |
-| $\ge 3$ touches | Yes (VPOC / HVN) | 🔥 **HIGH CONVICTION** | Most heavily constructed level — see the caveat below |
-| $2$ touches | Optional | ⚡ **MEDIUM CONVICTION** | Secondary key level |
-| $1$ touch | No | ▫️ **MINOR PIVOT** | Informational swing level |
+| $\ge 3$ touches | Yes (within 0.5% of VPOC / HVN) | 🔥 **HIGH CONVICTION** | Most heavily constructed level — see the caveat below |
+| $\ge 3$ touches | No | ⚡ **MEDIUM CONVICTION** | Touch count alone never reaches HIGH |
+| $2$ touches | Either | ⚡ **MEDIUM CONVICTION** | Secondary key level |
+| $1$ touch | Either | ▫️ **MINOR PIVOT** | Informational swing level |
 
 > [!IMPORTANT]
 > The tier describes how a level was **constructed**, not how likely it is to hold.
-> Across fourteen level derivations, none beat a randomly displaced control by 2
-> standard deviations. See [STRATEGY.md](STRATEGY.md#5-what-the-benchmark-says).
+> Across twenty-one level derivations, the production levels have measured anywhere from no
+> edge to a marginal one over randomly displaced prices depending on the window, and the
+> HIGH and MEDIUM tiers do not measurably separate. See [STRATEGY.md](STRATEGY.md#5-what-the-benchmark-says).
 
 ---
 
 ## 🎯 Summary Checklist for Traders
 
-1. **Check Session Open**: Note whether you are trading Asia, London, or NY open.
-2. **Locate VPOC**: Determine if price is above (bullish bias) or below (bearish bias) the VPOC anchor.
-3. **Identify High Conviction S/R**: Focus execution near levels with $\ge 3$ touches and VPOC/HVN volume confluence.
-4. **Watch for Sweeps**: Look for price wicks beyond S/R clusters accompanied by $5M+ liquidation cascades.
+These are the framework's reading habits — conventional order-flow practice. Where
+Liquidity-Pulse has been able to test one against its own history, the result is noted.
+
+1. **Check Session Open**: Note whether you are trading Asia, London, or NY open. *(Session made no measurable difference to whether levels held.)*
+2. **Locate VPOC**: Note whether price is above (bullish bias) or below (bearish bias) the VPOC anchor. *(Levels held no differently above or below it over ~2.8 years; treat bias as context.)*
+3. **Identify High Conviction S/R**: Note levels with $\ge 3$ touches and VPOC/HVN volume confluence. *(Useful as structure; not a higher-probability entry than MEDIUM.)*
+4. **Watch for Sweeps**: Look for price wicks beyond S/R clusters, especially alongside liquidation cascades. *(A pierce-and-reclaim of a level showed no edge over 914 tests.)*
+5. **Use Confluence**: Combine these with your own indicators rather than acting on any one of them alone.

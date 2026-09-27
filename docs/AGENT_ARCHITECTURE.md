@@ -1,78 +1,82 @@
-# Liquidity-Pulse — Multi-Agent Harness Manifest
+# Liquidity-Pulse — Runtime Architecture
 
-System Architecture for **Liquidity-Pulse**: Autonomous $BTC market liquidity monitoring and session intelligence agent cluster.
+What actually runs, what starts it, and what it writes.
+
+> [!IMPORTANT]
+> **There are no LLM agents in this system.** Earlier versions of this file described a
+> "Macro Subagent" doing LLM reasoning, cron-scheduled session runs, subagent invocation
+> and Slack dispatch. None of that existed. Every component below is deterministic Python:
+> the session briefing is a Markdown template with values interpolated, and the market bias
+> line in it is a single `if current_price > vpoc` comparison in `sentinel.py`.
+>
+> The names "Sentinel" and "Quant engine" are kept because they are the module names. An
+> external LLM can *consume* this system's output — see
+> [AGENT_INTEGRATION_GUIDE.md](AGENT_INTEGRATION_GUIDE.md) — but nothing inside it calls one.
 
 ---
 
-## Agent Cluster Hierarchy
+## Processes
 
 ```
-                   +----------------------------+
-                   |  Sentinel Agent (Orch.)   |
-                   | Cron: 00:00, 07:00, 13:30 |
-                   +-------------+--------------+
-                                 |
-         +-----------------------+-----------------------+
-         |                                               |
-         v                                               v
-+------------------+                           +--------------------+
-|  Quant Subagent  |                           |   Macro Subagent   |
-| (Code Execution) |                           |  (LLM Reasoning)   |
-+--------+---------+                           +---------+----------+
-         |                                               |
-         v                                               v
-[telemetry_latest.json]                       [SESSION_BRIEFING.md]
+ on demand / start_all.bat           long-running                     scheduled (optional)
+┌────────────────────────┐   ┌───────────────────────────┐   ┌──────────────────────────────┐
+│ sentinel.py            │   │ ws_feed.py                │   │ install_recorders.ps1         │
+│  └ quant_engine.py     │   │  · Binance USD-M depth    │   │  · ws_feed.py --record        │
+│     (klines, levels,   │   │  · Bybit + OKX liqs       │   │  · positioning.py --record    │
+│      profiles, flow,   │   │    (liquidation_feed.py)  │   │    --loop 300                 │
+│      pools, position.) │   └─────────────┬─────────────┘   └──────────────┬───────────────┘
+└───────────┬────────────┘                 │                                │
+            ▼                              ▼                                ▼
+ telemetry_latest.json        depth_latest.json               depth_history/*.jsonl.gz
+ artifacts/SESSION_BRIEFING   liquidations_latest.json        positioning_history/*.jsonl.gz
+            │                              │
+            └──────────────┬───────────────┘
+                           ▼
+              server.py  ·  http://localhost:8080
+              dashboard + REST API + TradingView webhook
 ```
 
----
-
-## 1. Sentinel Agent (Orchestrator)
-
-- **Role**: Lead Systems Orchestrator & Session Dispatcher.
-- **Capabilities**:
-  - Monitors session schedules across global trading hubs:
-    - **Asia Session Open**: `00:00 UTC` (`0 0 * * *`)
-    - **London Session Open**: `07:00 UTC` (`0 7 * * *`)
-    - **New York Session Open**: `13:30 UTC` (`30 13 * * *`)
-  - Evaluates real-time event hooks (liquidation spikes > $5M, order book depth delta imbalance > 35%).
-  - Triggers the pipeline execution sequence (`quant_engine.py` -> telemetry verification -> `sentinel.py` synthesis).
-- **Tool Access**: Read/Write filesystem, subagent invocation (`invoke_subagent`), schedule management (`schedule`).
-- **Permissions**: Full orchestration control.
+| Process | Started by | Lifetime | Writes |
+| :--- | :--- | :--- | :--- |
+| `sentinel.py` | you, `start_all.bat`, or `POST /api/refresh` | runs once and exits | `telemetry_latest.json`, `SESSION_BRIEFING.md`; Telegram/Discord if configured |
+| `quant_engine.py` | `sentinel.py` (or run directly) | runs once and exits | `telemetry_latest.json` |
+| `ws_feed.py` | you or `start_all.bat` | long-running, reconnects | `depth_latest.json`, `liquidations_latest.json`; cascade alerts |
+| `ws_feed.py --record` | the depth scheduled task | long-running daemon | `workspace/depth_history/` |
+| `positioning.py --record --loop` | the positioning scheduled task | long-running daemon | `workspace/positioning_history/` |
+| `server.py` | you or `start_all.bat` | long-running | `tradingview_signals.json` on webhook |
 
 ---
 
-## 2. Quant Subagent (Execution)
+## What triggers what
 
-- **Role**: Data Extraction, Math Engine & Telemetry Compiler.
-- **Capabilities**:
-  - Restricts operations to deterministic code execution and localized sandboxed data transformations.
-  - Fetches 500 candles of 15-minute `BINANCE:BTCUSDT.P` OHLCV data from Binance USD-M futures REST (Bybit `linear` fallback) with automatic retry logic.
-  - Executes Pine Script-style horizontal S/R pivot detection (`ta.pivothigh` / `ta.pivotlow`, left/right=10).
-  - Performs density-based spatial clustering (0.35% band tolerance) and ranks levels by touch frequency.
-  - Computes Volume Profile (VPOC, High/Low Volume Nodes) and liquidity depth imbalances.
-  - Outputs strictly structured, validated JSON to `workspace/telemetry_latest.json`.
-- **Tool Access**: `run_command`, filesystem read/write scoped to `src/` and `workspace/`.
-- **Permissions**: Code execution only; strictly prohibited from direct external narrative publishing.
+**Nothing runs `sentinel.py` on a schedule.** Older docs listed session-open runs at 00:00,
+07:00 and 13:30 UTC. Those are the boundaries `sentinel.py` uses to *label* the active
+session in the briefing; no cron job or scheduled task invokes it at those times. If you
+want briefings at session opens, add a Task Scheduler entry for `venv\Scripts\python.exe
+src\sentinel.py` yourself.
 
----
+The only scheduled tasks this repository installs are the two data recorders, via
+`scripts\install_recorders.ps1`. They run under `pythonw.exe` while you are logged on, with
+a five-minute watchdog trigger that restarts either if it dies. See
+[STRATEGY.md §6](STRATEGY.md#how-the-recorders-are-scheduled).
 
-## 3. Macro Subagent (Reasoning)
+**`POST /api/refresh`** — including the dashboard's *Refresh Telemetry* button — runs the
+full `sentinel.py` pipeline. Once Telegram is configured, that means every refresh also
+sends a briefing to your chat.
 
-- **Role**: Institutional Market Intelligence Synthesizer.
-- **Capabilities**:
-  - Ingests `workspace/telemetry_latest.json` alongside live market structure inputs.
-  - Applies institutional trading frameworks (Auction Market Theory, ICT Liquidity Sweeps, Wyckoff Accumulation/Distribution).
-  - Evaluates key S/R conviction levels (High Conviction: >= 3 touches + volume node confluence).
-  - Generates institutional-grade session briefs output to `workspace/artifacts/SESSION_BRIEFING.md`.
-  - Dispatches alerting payloads to designated Discord/Slack webhooks on high-conviction events.
-- **Tool Access**: Read `workspace/telemetry_latest.json`, write `workspace/artifacts/SESSION_BRIEFING.md`, network webhook dispatch.
-- **Permissions**: LLM synthesis and reporting; read-only access to quantitative telemetry.
+**Liquidation cascades** are evaluated inside `ws_feed.py` on every liquidation event:
+more than $5M liquidated across Bybit and OKX inside a 3-minute window fires an alert, with a
+3-minute cooldown. There is no depth-imbalance alert.
 
 ---
 
-## Agent Communication Protocol
+## Alert channels
 
-1. **Trigger Phase**: Sentinel receives schedule event or volatility alert.
-2. **Quant Phase**: Sentinel invokes Quant Subagent to run `quant_engine.py`. Quant Subagent writes `workspace/telemetry_latest.json`.
-3. **Macro Phase**: Sentinel triggers Macro Subagent with prompt referencing `telemetry_latest.json`.
-4. **Publish Phase**: Macro Subagent writes `workspace/artifacts/SESSION_BRIEFING.md` and reports completion back to Sentinel.
+Telegram and Discord are each dispatched **only when their environment variables are
+set** — `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`, and `DISCORD_WEBHOOK_URL`. An unconfigured
+channel is skipped, not retried. `sentinel.py` sends on daemon threads with a hard
+15-second deadline, so a hung request cannot stall the pipeline or block the process from
+exiting.
+
+There is no queue. An event that happens while the machine is off or the feed is stopped
+produces no alert later.

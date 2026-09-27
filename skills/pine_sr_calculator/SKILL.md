@@ -32,16 +32,17 @@ Follow TradingView's `ta.pivothigh` and `ta.pivotlow` algorithm:
 Individual pivot points must be merged into horizontal S/R zones using density clustering:
 
 1. **Threshold ($\epsilon$)**: $0.35\%$ ($0.0035 \times \text{Price}$).
-2. **Clustering Algorithm**:
-   - Collect all detected Pivot High and Pivot Low price levels.
-   - Sort price levels in ascending order.
-   - Group contiguous levels where $|P_{j} - P_{i}| / P_{i} \le 0.0035$.
-   - Calculate cluster center as the volume-weighted average price (VWAP) or mean of pivot prices in the cluster:
+2. **Clustering Algorithm** (matches `mergePivot()` in the Pine script and `cluster_sr_levels()` in `quant_engine.py`):
+   - Collect all detected Pivot High and Pivot Low prices **in the order they occurred** over the trailing 500-candle window.
+   - For each pivot, walk the existing clusters in creation order and merge into the **first** whose running centre is within $|P - C| / C \le 0.0035$. If none matches, start a new cluster.
+   - The centre is the arithmetic mean of the cluster's members, updated on every merge:
      $$\text{Level\_Price} = \frac{1}{N} \sum_{m=1}^{N} P_m$$
+   - Do **not** sort by price and chain contiguous levels. That is a different algorithm: every merge drags the centre toward the incoming pivot, so a run of gradually rising pivots collapses into one level far wider than the threshold.
 3. **Touch Count Calculation**:
-   - Iterate over all historical 15m candles in the dataset (e.g., 500 candles).
-   - Count a "touch" whenever a candle's range $[Low, High]$ intersects the level tolerance zone:
-     $$\text{Zone} = [\text{Level\_Price} \times (1 - 0.0035), \text{Level\_Price} \times (1 + 0.0035)]$$
+   - Iterate over the same 500-candle window, against the finished cluster centres.
+   - The zone is $[\text{Level\_Price} \times (1 - 0.0035), \text{Level\_Price} \times (1 + 0.0035)]$.
+   - Count a touch only when a candle **enters** the zone from outside — its range intersects the zone and the previous candle's did not. The first candle of the window counts if it is already inside.
+   - Do **not** count every candle whose range intersects the zone. That measures how long price loitered near a level, not how often it tested it, and inflated real levels to 200+ touches.
 
 ---
 
@@ -53,25 +54,32 @@ Each calculated level is tagged based on touch frequency and current price posit
   - `SUPPORT`: $\text{Level\_Price} < \text{Current Mid Price}$
   - `RESISTANCE`: $\text{Level\_Price} > \text{Current Mid Price}$
 
-- **Conviction Tiers**:
-  - **High Conviction**: $\ge 3$ touch points **AND** overlapping with High Volume Node (HVN) or Key Pivot.
-  - **Medium Conviction**: $2$ touch points.
-  - **Low Conviction / Minor**: $1$ touch point (isolated pivot).
+- **Volume Confluence**: the level sits within $0.5\%$ of the VPOC or of any HVN bin centre, measured against the reference price ($|L - X| / \text{Price} \le 0.005$).
+
+- **Conviction Tiers** (`grade_conviction()`):
+  - **High Conviction**: $\ge 3$ touches **AND** volume confluence. Touch count alone never reaches HIGH.
+  - **Medium Conviction**: $\ge 2$ touches — including $\ge 3$ touches without confluence.
+  - **Low Conviction / Minor**: $1$ touch (isolated pivot).
+
+> The tier describes how a level was **constructed**, not how likely it is to hold. See
+> `docs/STRATEGY.md` §5 for the benchmark.
 
 ---
 
 ## 4. Volume Profile Confluence Integration
 
-1. **Volume Profile Bins**: Divide price range into 50 equal bins over the 500-candle sample.
-2. **Volume Point of Control (VPOC)**: Bin with the absolute highest traded volume.
-3. **High Volume Nodes (HVN)**: Bins with volume in top 20th percentile of profile volume.
-4. **Low Volume Nodes (LVN)**: Bins with volume in bottom 20th percentile (acts as rapid price traversal / slippage zones).
+1. **Volume Profile Bins**: 50 equal bins spanning `min(mid)` to `max(mid)`, where `mid = (high + low) / 2`, each candle's whole volume placed in the bin holding its mid. This coarse profile is the one the Pine indicator reproduces bar for bar.
+2. **Volume Point of Control (VPOC)**: centre of the bin with the highest volume.
+3. **High Volume Nodes (HVN)**: bins at or above the 80th percentile of bin volume (numpy's linear interpolation).
+4. **Low Volume Nodes (LVN)**: bins at or below the 20th percentile.
+
+A finer 120-bin profile that spreads each candle's volume across its high-low range ships separately as `tape_profile`; see `src/tape_profile.py`.
 
 ---
 
 ## 5. Output Data Contract
 
-Quant Subagent scripts MUST produce JSON telemetry matching this schema structure:
+`quant_engine.py` produces JSON telemetry containing at least this structure (the full payload also carries `tape_profile`, `order_flow`, `positioning`, `liquidity_pools` and `market_summary`):
 
 ```json
 {

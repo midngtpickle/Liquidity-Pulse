@@ -6,7 +6,7 @@ This document provides system instructions, command shortcuts, architecture refe
 
 ## 🏛️ Project Architecture Overview
 
-Liquidity-Pulse is an autonomous $BTC market liquidity monitoring and session intelligence system organized under the **Sentinel & Subagent Pattern**:
+Liquidity-Pulse is a $BTC market liquidity monitoring and session intelligence system organized under the **Sentinel & Subagent Pattern**. The names are module names: every component is deterministic Python, and nothing at runtime calls an LLM. See `docs/AGENT_ARCHITECTURE.md` for what runs and what starts it — notably, nothing schedules `sentinel.py`.
 
 > [!IMPORTANT]
 > The tracked instrument is the **Binance USD-M perpetual, `BINANCE:BTCUSDT.P`**, on every
@@ -62,7 +62,8 @@ pip install -r requirements.txt
 # 1. Compile quantitative telemetry (500 candles, Pine S/R clusters, VPOC)
 python src/quant_engine.py
 
-# 2. Run Sentinel Orchestrator (updates telemetry, generates SESSION_BRIEFING.md, dispatches Discord/Telegram)
+# 2. Run Sentinel Orchestrator (updates telemetry, generates SESSION_BRIEFING.md,
+#    dispatches Telegram/Discord only when their env vars are set; 15s hard deadline)
 python src/sentinel.py
 
 # 3. Start Concurrent Dashboard Server & Webhook Listener (serves UI on :8080)
@@ -125,17 +126,18 @@ python src/telegram_bot.py --dry-run
 | `src/server.py` | Concurrent HTTP server & TradingView webhook relay | Serves `web/`, handles `/api/telemetry`, `/api/depth`, `/api/webhook/tradingview` |
 | `src/discord_webhook.py` | Visual rich embed cards for Discord | Dispatches formatted embeds using `DISCORD_WEBHOOK_URL` |
 | `src/telegram_bot.py` | HTML alert dispatcher for Telegram | Dispatches messages using `TELEGRAM_BOT_TOKEN` & `TELEGRAM_CHAT_ID` |
-| `src/depth_recorder.py` | Gzipped JSONL order book history, one file per UTC day | Invoked by `ws_feed.py --record` $ightarrow$ Writes `workspace/depth_history/` |
+| `src/depth_recorder.py` | Gzipped JSONL order book history, one file per UTC day | Invoked by `ws_feed.py --record` $\rightarrow$ Writes `workspace/depth_history/` |
 | `src/tape_profile.py` | Volume-at-price across each candle range; taker delta and CVD | Reads klines (needs Binance `taker_buy_base`) $\rightarrow$ Surfaces in telemetry as `tape_profile` / `order_flow` |
 | `src/positioning.py` | Open interest, funding, long/short ratios; 30-day history wall | Reads Binance `fapi`/`futures/data` $\rightarrow$ Surfaces in telemetry as `positioning`; `--record` writes `workspace/positioning_history/` |
 | `src/liquidity_pools.py` | Untested swings, equal highs/lows, session extremes | Reads klines $\rightarrow$ Surfaces in telemetry as `liquidity_pools` |
 | `src/pool_study.py` | Scores pools as magnets (reach + post-reach reversal), not as barriers | Reads Binance history $\rightarrow$ Writes `workspace/pool_study.json` |
 | `src/conditional_study.py` | Tests whether levels hold better under market context | Reads Binance history $\rightarrow$ Writes `workspace/conditional_study.json` |
-| `src/derivation_study.py` | Compares level derivations against a random control | Reads Binance history $ightarrow$ Writes `workspace/derivation_study.json` |
-| `src/backtester.py` | Historical S/R bounce accuracy benchmark | Simulates train/test splits $\rightarrow$ Writes `workspace/backtest_results.json`. Entry-anchored by default (~40%); `--anchor level` reports ~85% and is inflated by the zone geometry |
+| `src/derivation_study.py` | Compares level derivations against a random control | Reads Binance history $\rightarrow$ Writes `workspace/derivation_study.json` |
+| `src/backtester.py` | Walk-forward S/R hold-rate benchmark with a random-level control | Re-derives levels per fold from the trailing 500 candles, resolves HOLD/BREAK/UNRESOLVED by first touch $\rightarrow$ Writes `workspace/backtest_results.json`. Entry-anchored by default (~40%); `--anchor level` reports ~85% and is inflated by the zone geometry |
 | `scripts/install_recorders.ps1` | Registers both recorders as scheduled tasks under \Liquidity-Pulse\ | Runs pythonw.exe daemons $\rightarrow$ Writes `workspace/depth_history/`, `workspace/positioning_history/`, `workspace/logs/` |
 | `scripts/uninstall_recorders.ps1` | Removes those tasks; never deletes recorded data | Unregisters \Liquidity-Pulse\* |
-| `liquidity_pulse_sr.pine` | Official TradingView Pine Script v5 indicator | Overlays S/R lines, VPOC, and sends alert webhooks to `src/server.py` |
+| `liquidity_pulse_sr.pine` | Official TradingView Pine Script v6 indicator | Rebuilds S/R levels over a 500-bar window, overlays S/R lines and VPOC, and sends alert webhooks to `src/server.py` |
+| `tools/liquidation_probe.py` | Checks whether a liquidation stream actually delivers events | Records its own uptime and event counts to `workspace/liquidation_probe.jsonl` |
 
 ---
 
@@ -147,17 +149,21 @@ benchmark results.
 
 > [!IMPORTANT]
 > The conviction tier describes how a level was **constructed**, not how likely it is to
-> hold. Across fourteen level derivations over ~7 months of BTCUSDT 15m, none beats a
-> randomly displaced control by 2 standard deviations. Do not treat `HIGH` as a
+> hold. Against a randomly displaced control, production levels have measured between
+> +0.08 and +1.79 points depending on the window, HIGH and MEDIUM do not measurably
+> separate, and no market-context condition (trend, VPOC side, sweeps, session, flow,
+> funding) has separated over up to ~2.8 years of history. Do not treat `HIGH` as a
 > probability or add logic that assumes it predicts reversals.
 
 ## 🧠 Reasoning Guidelines for AI Agents
 
-When analyzing market structure and generating briefings from telemetry data:
+When analyzing market structure and generating briefings from telemetry data. These are the
+system's labelling conventions; present them as descriptions of structure, not predictions.
 
 1. **Volume Point of Control (VPOC)**:
    - If `current_price > vpoc` $\rightarrow$ Market bias is **BULLISH ACCUMULATION** (Fair value is acting as support).
    - If `current_price < vpoc` $\rightarrow$ Market bias is **BEARISH DISTRIBUTION** (Fair value is acting as overhead supply).
+   - Tested: over ~2.8 years, levels held no differently above VPOC than below it.
 2. **Support & Resistance Conviction**:
    - `HIGH`: $\ge 3$ touch points **AND** overlapping with High Volume Node (HVN) or VPOC.
    - `MEDIUM`: $2$ touch points.
@@ -166,6 +172,7 @@ When analyzing market structure and generating briefings from telemetry data:
    - $\text{Imbalance Delta \%} = \frac{\text{Bid Depth} - \text{Ask Depth}}{\text{Bid Depth} + \text{Ask Depth}} \times 100$.
    - Delta $> +15\%$ indicates heavy passive buy support (absorption).
    - Delta $< -15\%$ indicates heavy passive sell resistance.
+   - Untested, and on the perpetual all three bands exceed the snapshot's ~0.16% reach, so they arrive flagged incomplete in `bands_complete`. Read a flagged band's sign as unconfirmed.
 4. **Liquidation Cascade Alerts**:
    - Accumulated volume exceeding **$5,000,000 USD** within a 3-minute sliding window triggers an alert.
    - Sourced from **Bybit and OKX**, not Binance: `forceOrder` accepts a subscription here and delivers nothing (8.7h logged at zero; 0 vs Bybit 26 / OKX 57 over the same 100s).

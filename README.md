@@ -3,36 +3,38 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![AI Harness Ready](https://img.shields.io/badge/AI%20Harness-Claude%20%7C%20Cursor%20%7C%20ChatGPT%20%7C%20OpenClaw-purple.svg)](#-multi-agent-harness--llm-integration)
-[![TradingView](https://img.shields.io/badge/TradingView-Pine%20Script%20v5-orange.svg)](liquidity_pulse_sr.pine)
+[![TradingView](https://img.shields.io/badge/TradingView-Pine%20Script%20v6-orange.svg)](liquidity_pulse_sr.pine)
 
-**Liquidity-Pulse** is an institutional-grade, multi-agent market structure and liquidity monitoring system built for algorithmic traders and autonomous AI agent harnesses.
+**Liquidity-Pulse** is a market structure and liquidity monitoring system for the Binance USD-M perpetual `BINANCE:BTCUSDT.P`: S/R clusters and VPOC drawn on a TradingView chart, and the same levels plus order flow, positioning, liquidity pools, live order-book depth and multi-venue liquidations served from a local dashboard and API.
+
+Everything at runtime is deterministic Python — there are no LLM agents inside it. It is built to be *consumed* by AI agents and harnesses, which can read its telemetry over the API or the filesystem.
 
 ---
 
 ## 🏛️ System Architecture
 
-Liquidity-Pulse uses a **Sentinel & Subagent Pattern**:
+Two implementations of one strategy — a Pine indicator on the chart and a Python hub on your
+machine — kept in agreement by a shared set of invariants ([docs/STRATEGY.md](docs/STRATEGY.md) §3):
 
 ```
-                         ┌─────────────────────────────┐
-                         │ Sentinel Agent Orchestrator │
-                         │ Schedule: 00:00, 07:00, 13:30│
-                         └──────────────┬──────────────┘
-                                        │
-           ┌────────────────────────────┴────────────────────────────┐
-           ▼                                                         ▼
-┌──────────────────────┐                                 ┌──────────────────────┐
-│    Quant Subagent    │                                 │    Macro Subagent    │
-│  - REST Kline Fetch  │                                 │  - Telemetry Synthesis│
-│  - Pine S/R Density  │                                 │  - Session Briefings │
-│  - Volume Profile    │                                 │  - Discord/Telegram  │
-└──────────┬───────────┘                                 └──────────┬───────────┘
-           │                                                        │
-           ▼                                                        ▼
-┌──────────────────────┐                                 ┌──────────────────────┐
-│telemetry_latest.json │                                 │  SESSION_BRIEFING.md │
-└──────────────────────┘                                 └──────────────────────┘
+ TradingView chart                  Your machine
+┌─────────────────────────┐   ┌─────────────────────────────────────────────────┐
+│ liquidity_pulse_sr.pine │   │ sentinel.py ─► quant_engine.py                  │
+│  S/R clusters, VPOC,    │   │   levels · profiles · order flow · pools ·      │
+│  conviction, alerts     │   │   positioning ─► telemetry_latest.json          │
+└────────────┬────────────┘   │                  SESSION_BRIEFING.md            │
+             │                │ ws_feed.py                                      │
+             │ alert webhook  │   Binance depth · Bybit/OKX liquidations        │
+             │                │   ─► depth_latest.json · liquidations_latest    │
+             ▼                └────────────────────────┬────────────────────────┘
+   ┌─────────────────────────────────────────────────────────────┐
+   │ server.py · dashboard + REST API · http://localhost:8080    │
+   └─────────────────────────────────────────────────────────────┘
 ```
+
+Nothing is scheduled by default. `sentinel.py` runs when you (or `start_all.bat`, or the
+dashboard's Refresh button) start it; the only scheduled tasks are the optional data
+recorders. See [docs/AGENT_ARCHITECTURE.md](docs/AGENT_ARCHITECTURE.md) for what runs when.
 
 ---
 
@@ -41,44 +43,53 @@ Liquidity-Pulse uses a **Sentinel & Subagent Pattern**:
 ```
 Liquidity-Pulse/
 ├── AGENTS.md                          # Pointer to CLAUDE.md for agent working instructions
-├── CLAUDE.md                          # Claude Code & Anthropic harness instructions
+├── CLAUDE.md                          # Claude Code instructions, file map & data contracts
 ├── .cursorrules                       # Cursor IDE & Windsurf AI rules
-├── LICENSE                            # Open-source MIT License
-├── requirements.txt                   # Production Python dependencies
-├── README.md                          # Framework documentation
-├── start_all.bat                      # One-click Windows launcher script
-├── liquidity_pulse_sr.pine            # Official TradingView Pine Script v6 indicator
+├── LICENSE                            # MIT License
+├── requirements.txt                   # Python dependencies
+├── README.md                          # This file
+├── start_all.bat                      # One-click Windows launcher
+├── liquidity_pulse_sr.pine            # TradingView Pine Script v6 indicator
 ├── docs/
-│   ├── AGENT_ARCHITECTURE.md          # Runtime Sentinel/subagent cluster manifest
-│   ├── USER_GUIDE.md                  # Comprehensive user operational manual & API reference
-│   ├── ORDER_FLOW_MASTERCLASS.md      # Institutional Order Flow & Market Structure Masterclass
-│   ├── AGENT_INTEGRATION_GUIDE.md     # Multi-Agent & LLM Harness Integration Guide
-│   └── images/                        # Infographic diagrams
+│   ├── STRATEGY.md                    # Strategy spec, Pine/hub invariants, benchmark results
+│   ├── USER_GUIDE.md                  # Operating manual & API reference
+│   ├── AGENT_ARCHITECTURE.md          # What runs at runtime, and what starts it
+│   ├── AGENT_INTEGRATION_GUIDE.md     # Wiring external LLMs/agents to the API
+│   ├── ORDER_FLOW_MASTERCLASS.md      # Order flow & market structure primer
+│   └── images/
 ├── skills/
-│   └── pine_sr_calculator/
-│       └── SKILL.md                   # Pine Script S/R & volume profile math skill
+│   └── pine_sr_calculator/SKILL.md    # S/R clustering & volume profile algorithm reference
+├── scripts/
+│   ├── install_recorders.ps1          # Register the depth & positioning recorders as tasks
+│   └── uninstall_recorders.ps1        # Remove them (never deletes recorded data)
+├── tools/
+│   └── liquidation_probe.py           # Measures whether a liquidation stream actually delivers
 ├── src/
-│   ├── __init__.py                    # Source package initializer
-│   ├── init.py                        # Alternative initializer alias
-│   ├── quant_engine.py                # REST data fetcher, S/R clustering & volume profile engine
-│   ├── ws_feed.py                     # Binance depth delta + Bybit/OKX liquidation cascade monitor
-│   ├── sentinel.py                    # Session intelligence orchestrator & briefing generator
-│   ├── telegram_bot.py                # Telegram Bot API alert dispatcher
-│   ├── discord_webhook.py             # Discord Webhook rich visual embed dispatcher
-│   ├── backtester.py                  # Historical S/R backtester & accuracy benchmark
-│   └── server.py                      # Dashboard HTTP API & TradingView Webhook listener
-├── web/
-│   ├── index.html                     # Visual web UI structure
-│   ├── styles.css                     # Dark mode quantitative glassmorphic styles
-│   └── app.js                         # Dynamic auto-polling frontend script
+│   ├── quant_engine.py                # Klines, pivots, S/R clusters, conviction, volume profile
+│   ├── tape_profile.py                # Volume-at-price across candle ranges; taker delta & CVD
+│   ├── liquidity_pools.py             # Untested swings, equal highs/lows, session extremes
+│   ├── positioning.py                 # Open interest, funding, long/short ratios (+ recorder)
+│   ├── sentinel.py                    # Runs the engine, writes the briefing, dispatches alerts
+│   ├── ws_feed.py                     # Local order book (Binance) + liquidation cascades
+│   ├── liquidation_feed.py            # Bybit & OKX liquidations, normalised to LONG/SHORT
+│   ├── depth_recorder.py              # Gzipped JSONL order-book history, one file per UTC day
+│   ├── runlock.py                     # Single-writer lock for the recorders
+│   ├── server.py                      # Dashboard, REST API & TradingView webhook
+│   ├── telegram_bot.py                # Telegram alert dispatcher
+│   ├── discord_webhook.py             # Discord embed dispatcher
+│   ├── backtester.py                  # Walk-forward S/R hold-rate benchmark with control
+│   ├── derivation_study.py            # Compares level derivations against a random control
+│   ├── conditional_study.py           # Tests levels under market context (trend, sweeps, ...)
+│   └── pool_study.py                  # Scores liquidity pools as magnets, not barriers
+├── web/                               # index.html, styles.css, app.js (dashboard)
 └── workspace/
-    ├── telemetry_latest.json          # Machine-readable market telemetry artifact
-    ├── depth_latest.json              # Live order book depth delta snapshot
-    ├── tradingview_signals.json       # Ingested TradingView alert history
-    ├── backtest_results.json          # Historical backtest benchmark results
-    └── artifacts/
-        ├── .gitkeep                   # Artifacts directory placeholder
-        └── SESSION_BRIEFING.md        # Institutional-grade session intelligence output
+    ├── telemetry_latest.json          # Market telemetry (regenerated each run)
+    ├── depth_latest.json              # Live depth snapshot (untracked)
+    ├── liquidations_latest.json       # Live cascade window (untracked)
+    ├── tradingview_signals.json       # Received TradingView alerts (untracked)
+    ├── *_study.json, backtest_results.json   # Benchmark outputs
+    ├── depth_history/, positioning_history/  # Recorder output (untracked)
+    └── artifacts/SESSION_BRIEFING.md  # Latest session briefing
 ```
 
 ---
@@ -98,13 +109,13 @@ pip install -r requirements.txt
 ```
 
 ### 2. Run the Quantitative Telemetry Engine
-Fetches 500 candles of 15m $BTC data, detects Pine Script swing high/low pivots, clusters horizontal S/R zones, and outputs `workspace/telemetry_latest.json`:
+Fetches 500 candles of 15m `BINANCE:BTCUSDT.P` from Binance USD-M futures (Bybit fallback), detects swing pivots, clusters horizontal S/R zones, builds the volume profiles, order flow, liquidity pools and positioning, and outputs `workspace/telemetry_latest.json`:
 ```bash
 python src/quant_engine.py
 ```
 
 ### 3. Run the Sentinel Orchestrator
-Triggers the full quantitative pipeline and generates the session briefing artifact `workspace/artifacts/SESSION_BRIEFING.md`:
+Runs the quant engine, generates `workspace/artifacts/SESSION_BRIEFING.md`, and sends it to Telegram/Discord if their credentials are set:
 ```bash
 python src/sentinel.py
 ```
@@ -119,28 +130,36 @@ python src/ws_feed.py --duration 30
 
 ## 🧮 Quantitative Features
 
-1. **Pine Script Pivot Detection**: Standard `ta.pivothigh` and `ta.pivotlow` swing detection ($left\_bars=10, right\_bars=10$).
-2. **Density-Based Clustering**: Groups contiguous price pivots within a $0.35\%$ threshold window.
-3. **Conviction Tiering**:
-   - 🔥 **HIGH**: $\ge 3$ touch points + High Volume Node confluence.
-   - ⚡ **MEDIUM**: $2$ touch points.
-   - ▫️ **LOW / MINOR**: Isolated pivot points.
-4. **Volume Profile Analysis**: Calculates VPOC (Volume Point of Control), HVNs (High Volume Nodes), and LVNs (Low Volume Nodes).
-5. **Liquidity Cascade Alerting**: Tracks liquidations across Bybit and OKX over a 3-minute sliding window and alerts on $> \$5,000,000$ cascades. The threshold predates the venue change and now sums a smaller population, so it is a number to re-tune, not one to trust.
+1. **Pivot Detection**: swing highs/lows with 10 bars either side, rebuilt over a trailing 500-candle window on every run (and on every bar on the chart).
+2. **Density-Based Clustering**: pivots merged in time order into the first cluster within $0.35\%$ of its running centre.
+3. **Debounced Touch Counting**: a touch is price *entering* a level's zone from outside, not every candle that overlaps it.
+4. **Conviction Tiering**:
+   - 🔥 **HIGH**: $\ge 3$ touches **and** VPOC/HVN volume confluence.
+   - ⚡ **MEDIUM**: $\ge 2$ touches.
+   - ▫️ **LOW / MINOR**: isolated pivot.
+
+   The tier describes how a level was **constructed**, not how likely it is to hold — see [the benchmark](docs/STRATEGY.md#5-what-the-benchmark-says).
+5. **Volume Profiles**: a 50-bin mid-price profile shared with the chart (VPOC, HVN, LVN), and a finer 120-bin volume-at-price profile with value area.
+6. **Order Flow**: taker delta and CVD from Binance kline taker-buy volume.
+7. **Liquidity Pools**: untested swings, equal highs/lows and session extremes — scored as targets, not entries.
+8. **Positioning**: open interest, funding and long/short ratios. Open interest and the ratios are untested, because the exchange serves only 30 days of history.
+9. **Order-Book Depth**: a full local book maintained from the diff stream, with 0.5/1/2% imbalance bands and a flag on bands the snapshot cannot fully see.
+10. **Liquidation Cascades**: Bybit and OKX liquidations over a 3-minute window, alerting above $\$5,000,000$. The threshold predates the venue change and now sums a smaller population, so it is a number to re-tune, not one to trust.
+11. **Research Harnesses**: walk-forward benchmarks that score every level derivation and condition against a randomly displaced control, with multiple-comparison counts.
 
 ---
 
 ## 🤖 Multi-Agent Harness & LLM Integration
 
-Liquidity-Pulse is built from the ground up for seamless operation with modern AI coding agents and autonomous frameworks:
+Liquidity-Pulse is a data source for AI agents and coding assistants; it does not run any itself:
 
 | Agent / Harness | Configuration File | How to Use |
 | :--- | :--- | :--- |
-| **Claude / Claude Code** | [`CLAUDE.md`](CLAUDE.md) | Claude automatically reads `CLAUDE.md` to execute scripts, format briefings, and reason over telemetry. |
-| **Cursor / Windsurf** | [`.cursorrules`](.cursorrules) | Cursor IDE loads `.cursorrules` to guide code modifications and terminal executions. |
-| **ChatGPT / OpenAI GPTs** | [`docs/AGENT_INTEGRATION_GUIDE.md`](docs/AGENT_INTEGRATION_GUIDE.md) | Import the provided OpenAPI 3.1.0 schema into Custom GPT Actions to query `/api/telemetry` & `/api/depth`. |
-| **OpenClaw / LangChain / CrewAI** | [`docs/AGENT_INTEGRATION_GUIDE.md`](docs/AGENT_INTEGRATION_GUIDE.md) | Use the Python `@tool` wrapper classes to query live market intelligence from your multi-agent pipelines. |
-| **Google Antigravity** | [`docs/AGENT_ARCHITECTURE.md`](docs/AGENT_ARCHITECTURE.md) & [`skills/`](skills/pine_sr_calculator/SKILL.md) | Native multi-agent Sentinel orchestrator with subagent delegation. |
+| **Claude / Claude Code** | [`CLAUDE.md`](CLAUDE.md) | Claude Code reads `CLAUDE.md` for commands, the file map, data contracts and reasoning rules. |
+| **Cursor / Windsurf** | [`.cursorrules`](.cursorrules) | Loaded by the IDE to guide code changes. |
+| **ChatGPT / OpenAI GPTs** | [`docs/AGENT_INTEGRATION_GUIDE.md`](docs/AGENT_INTEGRATION_GUIDE.md) | Import the OpenAPI 3.1.0 schema into Custom GPT Actions to query `/api/telemetry`, `/api/depth` and `/api/liquidations`. |
+| **LangChain / CrewAI / CLI agents** | [`docs/AGENT_INTEGRATION_GUIDE.md`](docs/AGENT_INTEGRATION_GUIDE.md) | Python `@tool` wrappers over the REST API, or read `workspace/` directly. |
+| **Any agent** | [`skills/pine_sr_calculator/SKILL.md`](skills/pine_sr_calculator/SKILL.md) | Reference for the S/R clustering and volume profile algorithm. |
 
 ---
 
