@@ -9,6 +9,10 @@
 
 Everything at runtime is deterministic Python — there are no LLM agents inside it. It is built to be *consumed* by AI agents and harnesses, which can read its telemetry over the API or the filesystem.
 
+![Liquidity-Pulse dashboard](docs/images/dashboard_preview.png)
+
+*The dashboard at `http://localhost:8080`. Captured before the move to the perpetual, so it shows the spot symbol and predates the Positioning, Liquidity Pools and CVD panels.*
+
 ---
 
 ## 🏛️ System Architecture
