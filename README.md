@@ -34,7 +34,7 @@ machine — kept in agreement by a shared set of invariants ([docs/STRATEGY.md](
 
 Nothing is scheduled by default. `sentinel.py` runs when you (or `start_all.bat`, or the
 dashboard's Refresh button) start it; the only scheduled tasks are the optional data
-recorders. See [docs/AGENT_ARCHITECTURE.md](docs/AGENT_ARCHITECTURE.md) for what runs when.
+recorders. See [docs/RUNTIME_ARCHITECTURE.md](docs/RUNTIME_ARCHITECTURE.md) for what runs when.
 
 ---
 
@@ -42,9 +42,9 @@ recorders. See [docs/AGENT_ARCHITECTURE.md](docs/AGENT_ARCHITECTURE.md) for what
 
 ```
 Liquidity-Pulse/
-├── AGENTS.md                          # Pointer to CLAUDE.md for agent working instructions
-├── CLAUDE.md                          # Claude Code instructions, file map & data contracts
-├── .cursorrules                       # Cursor IDE & Windsurf AI rules
+├── AGENTS.md                          # Coding agent instructions, file map & data contracts
+├── CLAUDE.md                          # Imports AGENTS.md for Claude Code
+├── .cursorrules                       # Points older Cursor versions at AGENTS.md
 ├── LICENSE                            # MIT License
 ├── requirements.txt                   # Python dependencies
 ├── README.md                          # This file
@@ -53,7 +53,7 @@ Liquidity-Pulse/
 ├── docs/
 │   ├── STRATEGY.md                    # Strategy spec, Pine/hub invariants, benchmark results
 │   ├── USER_GUIDE.md                  # Operating manual & API reference
-│   ├── AGENT_ARCHITECTURE.md          # What runs at runtime, and what starts it
+│   ├── RUNTIME_ARCHITECTURE.md        # What runs at runtime, and what starts it
 │   ├── AGENT_INTEGRATION_GUIDE.md     # Wiring external LLMs/agents to the API
 │   ├── ORDER_FLOW_MASTERCLASS.md      # Order flow & market structure primer
 │   └── images/
@@ -155,8 +155,8 @@ Liquidity-Pulse is a data source for AI agents and coding assistants; it does no
 
 | Agent / Harness | Configuration File | How to Use |
 | :--- | :--- | :--- |
-| **Claude / Claude Code** | [`CLAUDE.md`](CLAUDE.md) | Claude Code reads `CLAUDE.md` for commands, the file map, data contracts and reasoning rules. |
-| **Cursor / Windsurf** | [`.cursorrules`](.cursorrules) | Loaded by the IDE to guide code changes. |
+| **Any coding agent** (Codex, Cursor, Copilot, Gemini, ...) | [`AGENTS.md`](AGENTS.md) | The single source of commands, file map, data contracts and reasoning rules. |
+| **Claude / Claude Code** | [`CLAUDE.md`](CLAUDE.md) | Imports `AGENTS.md`, so Claude Code loads the same instructions. |
 | **ChatGPT / OpenAI GPTs** | [`docs/AGENT_INTEGRATION_GUIDE.md`](docs/AGENT_INTEGRATION_GUIDE.md) | Import the OpenAPI 3.1.0 schema into Custom GPT Actions to query `/api/telemetry`, `/api/depth` and `/api/liquidations`. |
 | **LangChain / CrewAI / CLI agents** | [`docs/AGENT_INTEGRATION_GUIDE.md`](docs/AGENT_INTEGRATION_GUIDE.md) | Python `@tool` wrappers over the REST API, or read `workspace/` directly. |
 | **Any agent** | [`skills/pine_sr_calculator/SKILL.md`](skills/pine_sr_calculator/SKILL.md) | Reference for the S/R clustering and volume profile algorithm. |

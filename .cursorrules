@@ -1,35 +1,6 @@
-# Liquidity-Pulse — Cursor & AI Agent Rules
+# Liquidity-Pulse — Cursor rules
 
-You are working inside the **Liquidity-Pulse** codebase: a deterministic Python system that
-monitors market structure and liquidity for the Binance USD-M perpetual `BINANCE:BTCUSDT.P`.
-There are no LLM agents at runtime. Full instructions and data contracts are in `CLAUDE.md`;
-the strategy and its invariants are in `docs/STRATEGY.md`.
-
-## Project Structure & Key Files
-- `liquidity_pulse_sr.pine`: TradingView Pine v6 indicator. Rebuilds S/R levels from a 500-bar window, draws VPOC, fires webhook alerts. Must stay in agreement with `quant_engine.py` — see the invariant table in `docs/STRATEGY.md` §3.
-- `src/quant_engine.py`: Fetches 500 15m klines from Binance USD-M futures (Bybit `linear` fallback), detects pivots, clusters them within 0.35%, counts debounced touches, grades conviction, builds the volume profile. Writes `workspace/telemetry_latest.json`.
-- `src/tape_profile.py`, `src/liquidity_pools.py`, `src/positioning.py`: volume-at-price and taker flow, liquidity pools, and open interest / funding. Surfaced in telemetry.
-- `src/ws_feed.py`: Maintains a full local order book from the `fstream` `@depth@100ms` diff stream (REST snapshot capped at 1000 levels) and computes 0.5/1/2% imbalance bands. Takes liquidations from Bybit and OKX via `src/liquidation_feed.py`. Writes `workspace/depth_latest.json` and `workspace/liquidations_latest.json`; `--record` appends history under a single-writer lock.
-- `src/sentinel.py`: Runs the quant engine, labels the active session, writes `workspace/artifacts/SESSION_BRIEFING.md`, and dispatches Telegram/Discord only when their credentials are set.
-- `src/server.py`: ThreadingHTTPServer serving `web/` on port 8080, the REST API, and the TradingView webhook (`POST /api/webhook/tradingview`), which fails closed when bound off-box without a secret.
-- `src/discord_webhook.py`, `src/telegram_bot.py`: alert dispatchers; both log a dry run when unconfigured.
-- `src/backtester.py`, `src/derivation_study.py`, `src/conditional_study.py`, `src/pool_study.py`: walk-forward research harnesses, each scored against a randomly displaced control.
-- `web/`: Vanilla HTML/CSS/JS dashboard with live polling and a Chart.js volume profile.
-- `scripts/install_recorders.ps1`: registers the depth and positioning recorders as scheduled tasks.
-
-## Development & Execution Commands
-- Install: `pip install -r requirements.txt`
-- Run Quant Telemetry: `python src/quant_engine.py`
-- Run Sentinel Pipeline: `python src/sentinel.py`
-- Start Dashboard Server: `python src/server.py --port 8080`
-- Start WebSocket Feed: `python src/ws_feed.py`
-- Run Benchmarks: `python src/backtester.py`, `python src/derivation_study.py`
-- One-Click Windows: `.\start_all.bat`
-
-## Guidelines for Code Modifications
-1. Always preserve clean type hints and Pydantic schemas for data interchange.
-2. Ensure `src/server.py` uses non-blocking / threading concurrency for all endpoints.
-3. Keep REST API endpoints stateless and robust with JSON error responses.
-4. Changing a shared invariant (pivot bars, cluster threshold, touch counting, conviction, VPOC bins, lookback, timeframe) means changing it in both the Pine script and the Python engine.
-5. Conviction tiers describe how a level was constructed, not how likely it is to hold. Do not add logic that treats `HIGH` as a probability.
-6. All file paths should use `pathlib.Path` relative to project root.
+All instructions for coding agents on this project live in AGENTS.md at the repository
+root: commands, file map, data contracts, reasoning rules and code conventions. Read it
+before making changes. Current Cursor versions load AGENTS.md on their own; this file
+exists for older ones and should not grow its own copy of those instructions.

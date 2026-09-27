@@ -18,7 +18,7 @@ There are no LLM agents at runtime; "Sentinel" and "Quant engine" are module nam
 
 `sentinel.py` runs when you start it, when `start_all.bat` starts it, or when the dashboard's
 Refresh button is pressed. Nothing runs it on a timer. `ws_feed.py` and `server.py` are
-long-running. See [AGENT_ARCHITECTURE.md](AGENT_ARCHITECTURE.md) for the full picture.
+long-running. See [RUNTIME_ARCHITECTURE.md](RUNTIME_ARCHITECTURE.md) for the full picture.
 
 ## 💻 Standalone Windows Operating & Startup Guide (No Antigravity Required)
 

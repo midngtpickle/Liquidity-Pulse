@@ -114,7 +114,7 @@ Always query `getMarketTelemetry` and `getDepthDelta` before answering questions
 ## 3. Claude & Claude Code Integration
 
 For **Claude Code** and Anthropic API harnesses:
-- **Project Configuration**: The root directory contains **[`CLAUDE.md`](../CLAUDE.md)** with build instructions, command shortcuts, reasoning rules, and error handling conventions.
+- **Project Configuration**: The root **[`CLAUDE.md`](../CLAUDE.md)** imports **[`AGENTS.md`](../AGENTS.md)**, which holds the build instructions, command shortcuts, reasoning rules, and code conventions.
 - **Anthropic Tool Definition Example**:
 ```python
 liquidity_pulse_tool = {
@@ -134,8 +134,8 @@ liquidity_pulse_tool = {
 ## 4. Cursor & Windsurf IDE Agents
 
 For **Cursor IDE** and **Windsurf**:
-- The project includes **[`.cursorrules`](../.cursorrules)** in the root directory, which Cursor loads automatically.
-- It lists the modules, their inputs and outputs, and the rule that the Pine indicator and `quant_engine.py` share invariants that must change together.
+- Current Cursor versions read **[`AGENTS.md`](../AGENTS.md)** at the repository root directly. **[`.cursorrules`](../.cursorrules)** only points older versions at it.
+- `AGENTS.md` lists the modules, their inputs and outputs, and the rule that the Pine indicator and `quant_engine.py` share invariants that must change together.
 
 ---
 

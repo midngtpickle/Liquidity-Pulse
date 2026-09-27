@@ -334,7 +334,7 @@ class QuantEngine:
     @staticmethod
     def grade_conviction(touch_count: int, volume_confluence: bool) -> str:
         """
-        Conviction tiers per CLAUDE.md: HIGH requires >= 3 distinct touches AND
+        Conviction tiers per AGENTS.md: HIGH requires >= 3 distinct touches AND
         overlap with a High Volume Node or the VPOC. Touch count alone never
         reaches HIGH — a level price revisits often but that no volume has
         accepted is not an institutional level.
