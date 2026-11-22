@@ -22,6 +22,7 @@ from typing import Optional, Dict, Any
 sys.path.insert(0, str(Path(__file__).parent))
 
 from quant_engine import QuantEngine
+import sessions
 from telegram_bot import TelegramAlertDispatcher
 from discord_webhook import DiscordWebhookDispatcher
 
@@ -48,27 +49,21 @@ class SentinelOrchestrator:
 
     def detect_active_session(self, now_utc: Optional[datetime] = None) -> str:
         """
-        Determines current active trading session based on UTC hour:
-        - Asia Session: 00:00 - 07:00 UTC
-        - London Session: 07:00 - 13:30 UTC
-        - New York Session: 13:30 - 21:00 UTC
-        - Off-Hours / NY Close: 21:00 - 00:00 UTC
+        Current session from the daylight-saving aware clock in src/sessions.py:
+        Asia from the Tokyo open (00:00 UTC) to the London open (08:00 London),
+        London to the NYSE open (09:30 New York), New York to the NYSE close
+        (16:00 New York), then pre-Asia until Tokyo opens.
         """
         if now_utc is None:
             now_utc = datetime.now(timezone.utc)
-        
-        hour = now_utc.hour
-        minute = now_utc.minute
-        time_decimal = hour + (minute / 60.0)
-
-        if 0.0 <= time_decimal < 7.0:
-            return "ASIA_SESSION (00:00 UTC Open)"
-        elif 7.0 <= time_decimal < 13.5:
-            return "LONDON_SESSION (07:00 UTC Open)"
-        elif 13.5 <= time_decimal < 21.0:
-            return "NEW_YORK_SESSION (13:30 UTC Open)"
-        else:
-            return "NY_CLOSE_OFF_HOURS"
+        london_open, ny_open, ny_close = sessions.session_bounds_utc(now_utc)
+        hhmm = lambda m: f"{m // 60:02d}:{m % 60:02d} UTC"
+        return {
+            "ASIA": "ASIA_SESSION (Tokyo open 00:00 UTC)",
+            "LONDON": f"LONDON_SESSION (open {hhmm(london_open)})",
+            "NY": f"NEW_YORK_SESSION (open {hhmm(ny_open)})",
+            "PRE_ASIA": f"PRE_ASIA (NY closed {hhmm(ny_close)}, Tokyo opens 00:00 UTC)",
+        }[sessions.session_at(now_utc)]
 
     def run_quant_pipeline(self) -> dict:
         """
@@ -230,7 +225,7 @@ class SentinelOrchestrator:
                 f"still running: {', '.join(stalled)}. Continuing without them."
             )
 
-    def run_pipeline(self):
+    def run_pipeline(self, dispatch: bool = True):
         """
         Executes full orchestration pipeline.
         """
@@ -239,7 +234,9 @@ class SentinelOrchestrator:
         briefing = self.generate_session_briefing(telemetry)
         session_name = self.detect_active_session()
         
-        self.dispatch_alerts(telemetry, session_name)
+        # dispatch=False: the server's automatic 15m refresh, which must not notify.
+        if dispatch:
+            self.dispatch_alerts(telemetry, session_name)
         
         logger.info(f"=== Sentinel Pipeline Completed Successfully ===")
         return briefing

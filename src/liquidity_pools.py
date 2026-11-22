@@ -42,6 +42,8 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
+import sessions
+
 logger = logging.getLogger("LiquidityPools")
 
 Klines = List[Dict[str, Any]]
@@ -202,19 +204,10 @@ def equal_levels(
     return pools
 
 
-SESSION_BOUNDS = (
-    ("ASIA", 0, 7),
-    ("LONDON", 7, 13),
-    ("NY", 13, 21),
-)
-
-
 def _session_of(open_time_ms: float) -> Optional[str]:
-    hour = datetime.fromtimestamp(open_time_ms / 1000.0, tz=timezone.utc).hour
-    for name, start, end in SESSION_BOUNDS:
-        if start <= hour < end:
-            return name
-    return None
+    # Daylight-saving aware (see src/sessions.py). The old fixed UTC table opened
+    # London and New York an hour early whenever the UK or US was on winter time.
+    return sessions.session_of_ms(open_time_ms)
 
 
 def session_extremes(klines: Klines, sessions_back: int = 3) -> List[Pool]:
@@ -245,7 +238,10 @@ def session_extremes(klines: Klines, sessions_back: int = 3) -> List[Pool]:
         runs.append((current, start, len(klines) - 1))
 
     # The final run may still be in progress; its extremes are not settled yet.
-    completed = [r for r in runs if r[0] is not None][:-1] if runs else []
+    # Drop that run first and only then the pre-Asia gaps (None). Filtering the gaps
+    # first meant that between NY close and Tokyo open the just-finished NY session
+    # was the last named run and got dropped as if it were still in progress.
+    completed = [r for r in runs[:-1] if r[0] is not None]
     pools: List[Pool] = []
 
     for name, lo_i, hi_i in completed[-sessions_back:]:
