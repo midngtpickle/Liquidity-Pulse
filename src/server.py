@@ -415,12 +415,41 @@ class DashboardHTTPRequestHandler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
 
+AUTO_REFRESH_OFFSET_SECONDS = 20  # after each 15m candle closes, so the closed bar is in
+
+
+def _auto_refresh_loop() -> None:
+    """
+    Rebuild telemetry a few seconds after every 15m candle close.
+
+    Before this, telemetry (price, S/R, VPOC, CVD, positioning, pools) was only built at
+    launch or on the Refresh button, so a dashboard left open all session showed
+    numbers hours old while the depth and liquidation cards stayed live beside them.
+    Never dispatches Telegram/Discord; skips a slot if a manual refresh is running.
+    """
+    import time as _time
+    while True:
+        now = _time.time()
+        nxt = (now // 900 + 1) * 900 + AUTO_REFRESH_OFFSET_SECONDS
+        _time.sleep(max(1.0, nxt - now))
+        if not _pipeline_lock.acquire(blocking=False):
+            continue
+        try:
+            SentinelOrchestrator(project_root=str(PROJECT_ROOT)).run_pipeline(dispatch=False)
+            logger.info("Auto refresh at 15m close finished.")
+        except Exception as err:
+            logger.error(f"Auto refresh failed: {err}")
+        finally:
+            _pipeline_lock.release()
+
+
 def run_server(host: str = "127.0.0.1", port: int = 8080):
     global BOUND_OFF_BOX
     BOUND_OFF_BOX = host not in LOOPBACK_HOSTS
 
     server_address = (host, port)
     httpd = ThreadingHTTPServer(server_address, DashboardHTTPRequestHandler)
+    threading.Thread(target=_auto_refresh_loop, daemon=True, name="auto-refresh").start()
     logger.info(f"⚡ Liquidity-Pulse Concurrent Dashboard Server running on http://{host}:{port}")
 
     # Say the security posture out loud at startup, so an exposed-and-open

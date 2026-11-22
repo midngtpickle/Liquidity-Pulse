@@ -85,6 +85,10 @@ class LocalOrderBook:
         # invisible until it moves. Bands wider than this are under-reported.
         self.complete_bid_span_pct: float = 0.0
         self.complete_ask_span_pct: float = 0.0
+        # Outermost snapshot prices. The complete region is everything inside them,
+        # so the span is re-measured from the live mid (refresh_complete_span).
+        self.seed_min_bid: float = 0.0
+        self.seed_max_ask: float = 0.0
         # When the current seed landed. The diff stream keeps adding levels beyond
         # the snapshot's reach for minutes after a seed, so any band wider than that
         # reach keeps drifting while the book fills. Consumers need to know how long
@@ -99,6 +103,8 @@ class LocalOrderBook:
         self.awaiting_first_event = True
         self.complete_bid_span_pct = 0.0
         self.complete_ask_span_pct = 0.0
+        self.seed_min_bid = 0.0
+        self.seed_max_ask = 0.0
         self.seeded_at = 0.0
 
     @property
@@ -140,13 +146,28 @@ class LocalOrderBook:
         # isolated far-out levels into the book and make the raw min/max look
         # deeper than the data actually supports.
         if self.bids and self.asks:
-            mid = (max(self.bids) + min(self.asks)) / 2.0
-            if mid > 0:
-                self.complete_bid_span_pct = (mid - min(self.bids)) / mid * 100.0
-                self.complete_ask_span_pct = (max(self.asks) - mid) / mid * 100.0
+            self.seed_min_bid = min(self.bids)
+            self.seed_max_ask = max(self.asks)
+            self.refresh_complete_span((max(self.bids) + min(self.asks)) / 2.0)
 
         self.seeded_at = time.time()
         self.synced = True
+
+    def refresh_complete_span(self, mid: float) -> None:
+        """
+        Re-measure the complete reach from the current mid.
+
+        The complete region is fixed in price, not in distance: every bid at or above
+        the snapshot's lowest bid (and every ask at or below its highest ask) is known,
+        because the diff stream reports every change inside it. Measured once at seed
+        time, the span went stale as soon as price moved: after a 0.1% drift down the
+        bid side really reached ~0.06% while the book still claimed ~0.16%, so the
+        headline "complete span" summed a partly unknown side.
+        """
+        if mid <= 0 or not self.seed_min_bid or not self.seed_max_ask:
+            return
+        self.complete_bid_span_pct = max(0.0, (mid - self.seed_min_bid) / mid * 100.0)
+        self.complete_ask_span_pct = max(0.0, (self.seed_max_ask - mid) / mid * 100.0)
 
     def apply_event(self, event: Dict) -> bool:
         """
@@ -195,12 +216,18 @@ class LiquidityPulseWS:
     # nothing, ever -- see src/liquidation_feed.py for how that was established and
     # which venues replaced it.
     STREAM_URL = "wss://fstream.binance.com/stream?streams=btcusdt@depth@100ms"
-    # Was written for Binance's whole USD-M market. It now sums only the venues
-    # actually connected, which is a smaller population, so it trips less often and is
-    # a number to re-tune against observed cascades rather than a constant to trust.
-    CASCADE_THRESHOLD_USD = 5_000_000.0  # $5M
+    # Re-tuned 23 Nov 2026 against 16 days of recorded Bybit + OKX BTC liquidations
+    # (Oct-Nov 2026, after fixing OKX's 100x contract-size error). Episodes of 3-minute
+    # totals, 15 minutes apart:
+    #   >= $1M  ~2.8/day   >= $2M  ~1.8/day   >= $3M  ~1.1/day   >= $5M  ~0.7/day
+    # WATCH ($2M) marks the dashboard; CASCADE ($5M) also sends Telegram/Discord. A
+    # volatile, trending month, so expect fewer in a quiet one. Revisit with more data.
+    CASCADE_THRESHOLD_USD = 5_000_000.0  # $5M: notify
+    WATCH_THRESHOLD_USD = 2_000_000.0    # $2M: dashboard only
     CASCADE_WINDOW_SECONDS = 180  # 3 minutes
-    CASCADE_COOLDOWN_SECONDS = 180  # Cooldown between Telegram cascade alerts
+    # One alert per episode. At 180s (= the window) a single cascade that ran for ten
+    # minutes re-alerted three times.
+    CASCADE_COOLDOWN_SECONDS = 900
     # Heartbeat for the liquidation snapshot. Writing only when a liquidation
     # arrives would leave the file untouched through a quiet market, and a consumer
     # cannot tell a quiet market from a dead feed.
@@ -269,6 +296,7 @@ class LiquidityPulseWS:
         best_bid, best_ask = book.best_bid_ask()
         mid_price = (best_bid + best_ask) / 2.0
         self.last_mid_price = mid_price
+        book.refresh_complete_span(mid_price)
 
         # The three published bands all sit outside the ~0.16% a 1000-level futures
         # snapshot can vouch for, so each is a sum over a partially known side. The
@@ -395,7 +423,12 @@ class LiquidityPulseWS:
             "timestamp": now,
             "window_seconds": self.CASCADE_WINDOW_SECONDS,
             "threshold_usd": self.CASCADE_THRESHOLD_USD,
-            "status": "CASCADE" if total >= self.CASCADE_THRESHOLD_USD else "NORMAL",
+            "watch_threshold_usd": self.WATCH_THRESHOLD_USD,
+            "status": (
+                "CASCADE" if total >= self.CASCADE_THRESHOLD_USD
+                else "WATCH" if total >= self.WATCH_THRESHOLD_USD
+                else "NORMAL"
+            ),
             "total_liquidations_usd": round(total, 2),
             # Longs liquidated are forced sells; shorts liquidated are forced buys.
             "long_liquidations_usd": round(longs, 2),
@@ -444,6 +477,15 @@ class LiquidityPulseWS:
         # Guard against a venue clock running ahead of ours, which would otherwise
         # park an event beyond the cutoff and keep it in the window indefinitely.
         stamp = min(stamp, now)
+        # OKX delivers about a quarter of its events more than three minutes late
+        # (some by hours). They belong in the history but not in a live window: the
+        # deque is pruned from the left, so an old event appended on the right sat in
+        # the total until everything ahead of it aged out.
+        if stamp < now - self.CASCADE_WINDOW_SECONDS:
+            if self.recorder:
+                self.recorder.record_liquidation(event, now)
+            logger.debug(f"Late {event.venue} liquidation ({now - stamp:.0f}s old) recorded, not windowed")
+            return
 
         self.liquidation_window.append((stamp, event.usd, event.liquidated_side, event.price))
 

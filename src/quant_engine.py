@@ -558,7 +558,7 @@ class QuantEngine:
                 flow = OrderFlow(
                     available=True,
                     cvd=round(series[-1], 3),
-                    cvd_24h=round(series[-1] - series[-96], 3) if len(series) > 96 else round(series[-1], 3),
+                    cvd_24h=round(series[-1] - series[-97], 3) if len(series) > 96 else round(series[-1], 3),
                     last_bar_delta_ratio=round(ratio or 0.0, 4),
                     divergence=round(divergence or 0.0, 4)
                 )

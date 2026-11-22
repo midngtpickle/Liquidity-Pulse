@@ -218,7 +218,8 @@ body {
 /* Stats Row */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* Six stat cards: one row on wide desktops, two rows of three below 1400px. */
+  grid-template-columns: repeat(6, 1fr);
   gap: 16px;
 }
 
@@ -267,10 +268,11 @@ body {
   gap: 20px;
 }
 
+/* Desktop: the column wrappers dissolve so every card sits in one two-wide grid,
+   in source order: S/R | Positioning, Pools | Depth, Volume Profile | Briefing.
+   Below 1024px the grid drops to one column and the cards stack in the same order. */
 .left-col, .right-col {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  display: contents;
 }
 
 /* Generic Card */
@@ -569,8 +571,16 @@ body {
 .text-center { text-align: center; }
 
 /* Responsive */
+@media (max-width: 1400px) {
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Two cards per row down to 1100px; below that they stack. */
 @media (max-width: 1024px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 1100px) {
   .dashboard-body { grid-template-columns: 1fr; }
 }
 

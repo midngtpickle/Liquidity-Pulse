@@ -216,6 +216,15 @@ class OKXLiquidations(LiquidationSource):
 
     name = "okx"
     WS_URL = "wss://ws.okx.com:8443/ws/v5/public"
+    # OKX reports `sz` in contracts, not coin. One BTC-USDT-SWAP contract is 0.01 BTC
+    # (OKX instrument ctVal), so reading sz as BTC overstated every OKX liquidation
+    # 100x: a recorded day of 1,414 OKX events summed $1.41B against Bybit's $35M.
+    # Instruments missing here are skipped rather than guessed.
+    CONTRACT_VALUE = {
+        "BTC-USDT-SWAP": 0.01,
+        "ETH-USDT-SWAP": 0.1,
+        "SOL-USDT-SWAP": 1.0,
+    }
 
     def __init__(self, symbols: Sequence[str]):
         super().__init__(symbols)
@@ -246,10 +255,14 @@ class OKXLiquidations(LiquidationSource):
             inst = str(row.get("instId", ""))
             if inst not in self.instruments:
                 continue
+            ct_val = self.CONTRACT_VALUE.get(inst)
+            if ct_val is None:
+                logger.warning(f"okx: no contract value for {inst}; skipping its liquidations")
+                continue
             for detail in row.get("details", []) or []:
                 try:
                     price = float(detail["bkPx"])
-                    qty = float(detail["sz"])
+                    qty = float(detail["sz"]) * ct_val  # contracts -> coin
                 except (KeyError, TypeError, ValueError):
                     continue
                 pos_side = str(detail.get("posSide", "")).lower()

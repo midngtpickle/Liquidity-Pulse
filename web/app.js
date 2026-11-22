@@ -48,8 +48,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function startPolling() {
     stopPolling();
+    renderSession();
+    setInterval(renderSession, 30000);
     telemetryTimer = setInterval(fetchTelemetry, 5000);
     depthTimer = setInterval(fetchDepth, 2000);
+    fetchLiquidations();
+    setInterval(fetchLiquidations, 3000);
     briefingTimer = setInterval(fetchBriefing, 15000);
   }
 
@@ -88,6 +92,32 @@ document.addEventListener("DOMContentLoaded", () => {
       renderDepthDelta();
     } catch (err) {
       console.debug("Depth fetch error:", err);
+    }
+  }
+
+  async function fetchLiquidations() {
+    const valueEl = document.getElementById("stat-liq");
+    const subEl = document.getElementById("stat-liq-sub");
+    if (!valueEl || !subEl) return;
+    try {
+      const res = await fetch("/api/liquidations");
+      if (!res.ok) throw new Error(res.status);
+      const d = await res.json();
+      const age = d.timestamp ? Date.now() / 1000 - d.timestamp : Infinity;
+      if (d.status === "waiting_for_feed" || age > 30) {
+        valueEl.innerText = "n/a";
+        valueEl.className = "stat-value text-muted";
+        subEl.innerText = "Liquidation feed not running";
+        return;
+      }
+      const m = v => `$${((v || 0) / 1e6).toFixed(2)}M`;
+      valueEl.innerText = m(d.total_liquidations_usd);
+      valueEl.className = "stat-value " + (d.status === "CASCADE" ? "text-red" : d.status === "WATCH" ? "text-gold" : "");
+      const longs = d.long_liquidations_usd || 0, shorts = d.short_liquidations_usd || 0;
+      const lead = longs + shorts === 0 ? "quiet" : longs >= shorts ? `longs ${m(longs)} (forced selling)` : `shorts ${m(shorts)} (forced buying)`;
+      subEl.innerText = `${d.status} · ${lead}`;
+    } catch (err) {
+      console.debug("Liquidation fetch error:", err);
     }
   }
 
@@ -189,15 +219,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("stat-vpoc").innerText = `$${vpoc.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
     document.getElementById("stat-high-conviction").innerText = summary.high_conviction_count || 0;
 
-    // Session determination
-    const nowUtcHour = new Date().getUTCHours() + (new Date().getUTCMinutes() / 60.0);
-    let sessionName = "NY CLOSE (21:00 UTC)";
-    if (nowUtcHour >= 0 && nowUtcHour < 7) sessionName = "ASIA (00:00 UTC Open)";
-    else if (nowUtcHour >= 7 && nowUtcHour < 13.5) sessionName = "LONDON (07:00 UTC Open)";
-    else if (nowUtcHour >= 13.5 && nowUtcHour < 21) sessionName = "NEW YORK (13:30 UTC Open)";
-
-    document.getElementById("header-session").innerText = sessionName;
-
     renderOrderFlow(telemetryData.order_flow);
 
     // Market Bias
@@ -209,6 +230,51 @@ document.addEventListener("DOMContentLoaded", () => {
       biasElem.innerText = "BEARISH";
       biasElem.className = "stat-value text-red";
     }
+  }
+
+  // Session clock. Opens follow local exchange time, so London and New York move an
+  // hour when the UK or US changes clocks (see src/sessions.py for the same rules).
+  // The old fixed UTC table labelled NY close -> Tokyo open as "NY CLOSE", which read
+  // as New York still trading during pre-Asia. Runs on its own timer: inside the
+  // header update it only refreshed when the price fingerprint changed.
+  function tzOffsetMinutes(timeZone, date) {
+    const parts = {};
+    for (const p of new Intl.DateTimeFormat("en-US", {
+      timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit"
+    }).formatToParts(date)) parts[p.type] = p.value;
+    const wall = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
+    return Math.round((wall - date.getTime()) / 60000);
+  }
+
+  function sessionNow(now = new Date()) {
+    const londonOpen = 8 * 60 - tzOffsetMinutes("Europe/London", now);
+    const nyOffset = tzOffsetMinutes("America/New_York", now);
+    const nyOpen = 9 * 60 + 30 - nyOffset;
+    const nyClose = 16 * 60 - nyOffset;
+    const m = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const sessions = [
+      { name: "ASIA", start: 0, end: londonOpen, next: "London" },
+      { name: "LONDON", start: londonOpen, end: nyOpen, next: "New York" },
+      { name: "NEW YORK", start: nyOpen, end: nyClose, next: "NY close" },
+      { name: "PRE-ASIA", start: nyClose, end: 24 * 60, next: "Tokyo" }
+    ];
+    const s = sessions.find(x => m >= x.start && m < x.end) || sessions[3];
+    // Asia Power Window (playbook Section 4): 23:00-01:00 UTC.
+    const powerWindow = m >= 23 * 60 || m < 60;
+    return { ...s, minsToNext: s.end - m, powerWindow };
+  }
+
+  function renderSession() {
+    const el = document.getElementById("header-session");
+    if (!el) return;
+    const s = sessionNow();
+    const h = Math.floor(s.minsToNext / 60), mm = s.minsToNext % 60;
+    const eta = h > 0 ? `${h}h ${mm}m` : `${mm}m`;
+    el.innerText = `${s.name}${s.powerWindow ? " · POWER WINDOW" : ""} · ${s.next} in ${eta}`;
+    el.title = "Asia: Tokyo open 00:00 UTC. London: 08:00 London time. " +
+      "New York: 09:30-16:00 New York time. Pre-Asia: NY close to Tokyo open. " +
+      "Asia Power Window: 23:00-01:00 UTC.";
   }
 
   // Taker flow. Binance reports per-kline taker-buy volume, so this is who crossed
