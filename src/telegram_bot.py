@@ -77,9 +77,15 @@ class TelegramAlertDispatcher:
         sup_text = "\n".join([f"  • <b>${s.get('price', 0):,.2f}</b> ({s.get('conviction', '')} - {s.get('touch_count', 0)} touches)" for s in supports])
         res_text = "\n".join([f"  • <b>${r.get('price', 0):,.2f}</b> ({r.get('conviction', '')} - {r.get('touch_count', 0)} touches)" for r in resistances])
 
+        # Same rule as the Discord embed: at or above VPOC reads as bullish.
+        is_bullish = price >= vpoc
+        bias_icon = "🟢" if is_bullish else "🔴"
+        bias_text = "BULLISH (Above VPOC)" if is_bullish else "BEARISH (Below VPOC)"
+
         msg = (
-            f"🟢 <b>LIQUIDITY-PULSE — SESSION BRIEFING</b>\n\n"
+            f"{bias_icon} <b>LIQUIDITY-PULSE — SESSION BRIEFING</b>\n\n"
             f"<b>Active Session:</b> {session_name}\n"
+            f"<b>Market Bias:</b> {bias_icon} {bias_text}\n"
             f"<b>Symbol:</b> $BTCUSDT\n"
             f"<b>Current Price:</b> <code>${price:,.2f}</code>\n"
             f"<b>VPOC (Fair Value):</b> <code>${vpoc:,.2f}</code>\n"
